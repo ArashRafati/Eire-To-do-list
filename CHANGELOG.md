@@ -1,5 +1,14 @@
 # Changes
 
+## 1.2.0 — app icon
+
+- Added a custom golden-yellow tile with the black three-bar Eire mark.
+- Embedded a multi-resolution Windows ICO (16–256 px) in the executable.
+- Applied the icon to the main window, task/project editors, taskbar and
+  window switcher, and used matching artwork in the widget header.
+- Icon files are bundled; the portable app still requires only its executable.
+- Existing data and preferences use the same local profile folder.
+
 ## 1.1.0 — readable dark interface
 
 - Increased main text and task cells to 17 px, button/header text to 16 px,

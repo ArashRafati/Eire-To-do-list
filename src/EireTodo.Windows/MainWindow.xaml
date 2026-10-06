@@ -5,8 +5,7 @@
       <Grid.RowDefinitions><RowDefinition Height="60"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
       <Grid Background="#080C12" MouseLeftButtonDown="HeaderDrag" Margin="0,0,0,12">
         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <!-- Full reference logo proportions retained, with a transparent remainder. -->
-        <Viewbox Width="146" Height="36" Stretch="Uniform" HorizontalAlignment="Left" IsHitTestVisible="False"><Canvas Width="500" Height="123" Background="Transparent"><Rectangle Width="123" Height="123" Fill="#FFCC33"/><Rectangle Canvas.Left="37.5" Canvas.Top="26" Width="48" Height="16" RadiusX="8" RadiusY="8" Fill="#000000"/><Rectangle Canvas.Left="29.5" Canvas.Top="54" Width="64" Height="16" RadiusX="8" RadiusY="8" Fill="#000000"/><Rectangle Canvas.Left="37.5" Canvas.Top="82" Width="48" Height="16" RadiusX="8" RadiusY="8" Fill="#000000"/></Canvas></Viewbox>
+        <Border Width="46" Height="46" Margin="0,0,15,0" HorizontalAlignment="Left" IsHitTestVisible="False"><Image Source="/EireTodo;component/Assets/AppIcon.png" Stretch="Uniform"/></Border>
         <TextBlock Grid.Column="1" Text="TO-DO" Foreground="#FFCC33" FontFamily="Bahnschrift, Segoe UI" FontWeight="SemiBold" FontSize="24" VerticalAlignment="Center" IsHitTestVisible="False"/>
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
           <Border Background="#111B25" BorderBrush="#51687F" BorderThickness="1" Padding="10,5" Margin="0,0,12,0" VerticalAlignment="Center" IsHitTestVisible="False"><StackPanel Orientation="Horizontal"><Rectangle Width="5" Height="5" Fill="#FFCC33" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="OFFLINE" Foreground="#FFFFFF" FontFamily="Consolas" FontSize="14"/></StackPanel></Border>

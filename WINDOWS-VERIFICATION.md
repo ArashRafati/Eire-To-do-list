@@ -6,6 +6,11 @@ security controls, change execution policy, or bypass an organisation's rules.
 If the unsigned app is blocked, seek approval through the normal IT process.
 Back up existing app data first if you have used it before.
 
+0. **1.2 icon.** Verify the executable's icon in Explorer, a normal desktop
+   shortcut, the taskbar and Alt+Tab. Check task/project editor title bars and
+   the widget header use the same mark. Test 100%, 150% and 200% display scaling.
+   Existing pinned shortcuts may need unpinning and re-pinning to refresh their
+   cached icon; use normal Windows menus without changing security settings.
 0. **1.1 readability regression.** Confirm the main window, task editor and
    project editor have dark backgrounds with bright labels. Check task text
    is visibly larger, even with the previous saved window size. Project and

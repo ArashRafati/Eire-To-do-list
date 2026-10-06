@@ -1,4 +1,4 @@
-# Windows download — version 1.1
+# Windows download — version 1.2
 
 `EireTodo-Windows-x64.zip` contains the self-contained Windows x64 executable,
 short instructions and remaining Windows acceptance checks. Download the raw
@@ -20,3 +20,6 @@ Version 1.1 increases body/table text to 17 px, fixes the white window backgroun
 uses bright labels and black/slate panels, and corrects project/category labels.
 Close the previous app, unzip this release, and run the new executable. Existing
 tasks and projects are read from the same data folder without a migration.
+
+Version 1.2 embeds a custom multi-resolution black-and-yellow app icon in the
+executable and uses it in the taskbar, app windows and header.

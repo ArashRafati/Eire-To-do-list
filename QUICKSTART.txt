@@ -1,14 +1,17 @@
-EIRE TO-DO 1.1 — PORTABLE WINDOWS WIDGET
+EIRE TO-DO 1.2 — PORTABLE WINDOWS WIDGET
 
 1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
 2. Double-click EireTodo.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
 
-UPDATING FROM 1.0: Close the running app, unzip the new release, then run the
+UPDATING FROM 1.0 / 1.1: Close the running app, unzip the new release, then run the
 new EireTodo.exe. Your tasks, projects and preferences are read from the same
 profile data folder. The update needs no data migration. Larger text and dark
-high-contrast panels are now used throughout the app.
+high-contrast panels are used throughout the app. Version 1.2 adds a custom
+black-and-yellow icon to the executable, taskbar, app windows and header.
+If a previously pinned shortcut keeps an old icon, unpin it and pin the
+updated executable through the normal Windows menu.
 
 For 64-bit Windows 10 (22H2) / Windows 11. The executable is unsigned.
 If Windows or company policy blocks it, ask your IT administrator to approve

@@ -1,10 +1,10 @@
 # Build and verification evidence
 
-Current delivery: version **1.1.0**, including larger typography, explicit
+Current delivery: version **1.2.0**, including a custom Windows app icon, larger typography, explicit
 window styles, high-contrast control templates and corrected dropdown labels.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 1.1 interface.
+Windows acceptance checks or the updated 1.2 interface.
 
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
@@ -23,6 +23,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Failed-save rollback, previous-save recovery and single-profile lock | Passed automated core checks |
 | Packaged executable's PE architecture and GUI subsystem | Inspected: Windows x64 GUI |
 | Packaged executable's embedded privilege manifest | Inspected: `asInvoker`, `uiAccess=false` |
+| Packaged executable's icon | Passed: all nine embedded 16–256 px frames match the source ICO byte-for-byte; window/header assets are bundled. Windows Explorer/taskbar rendering not run |
 | Packaged executable's embedded DPI manifest | Inspected: `PerMonitorV2` |
 | Single-file runtime contents | Inspected: 384 entries, WPF assemblies/native libraries, embedded CLR/JIT host, included .NET and WindowsDesktop 10.0.12 frameworks; no installed-framework reference |
 | Interactive Windows desktop and standard-user Windows launch | **Not run**; Linux cannot execute WPF |

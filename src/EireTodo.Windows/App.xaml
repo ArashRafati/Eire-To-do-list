@@ -11,6 +11,7 @@
 
     <!-- Derived Window classes require this explicit style; an implicit Window style does not reach them. -->
     <Style x:Key="AppWindow" TargetType="Window">
+      <Setter Property="Icon" Value="/EireTodo;component/Assets/AppIcon.ico"/>
       <Setter Property="Background" Value="{StaticResource CanvasBrush}"/>
       <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
       <Setter Property="FontFamily" Value="Segoe UI"/>

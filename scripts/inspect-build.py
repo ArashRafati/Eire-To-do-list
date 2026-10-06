@@ -36,6 +36,43 @@ def entries(offset):
     d = resources + offset
     return [struct.unpack_from('<II', b, d+16+8*i) for i in range(u16(d+12)+u16(d+14))]
 
+def resource_payload(resource_type, resource_id):
+    type_offset = next(offset & 0x7fffffff for name, offset in entries(0) if name == resource_type)
+    resource_offset = next(offset & 0x7fffffff for name, offset in entries(type_offset) if name == resource_id)
+    leaf_offset = entries(resource_offset)[0][1]
+    assert not leaf_offset & 0x80000000
+    rva, size = struct.unpack_from('<II', b, resources + leaf_offset)
+    start = file_offset(rva)
+    return b[start:start + size]
+
+# Verify that the published PE, rather than just the source project, embeds the artwork.
+source_icon = Path(__file__).resolve().parents[1] / 'src/EireTodo.Windows/Assets/AppIcon.ico'
+ico = source_icon.read_bytes()
+reserved, icon_type, source_count = struct.unpack_from('<HHH', ico)
+assert reserved == 0 and icon_type == 1
+source_frames = {}
+for i in range(source_count):
+    width, height, colors, reserved, planes, bits, size, offset = struct.unpack_from('<BBBBHHII', ico, 6 + 16 * i)
+    source_frames[(width or 256, height or 256)] = ico[offset:offset + size]
+group_offset = next(offset & 0x7fffffff for name, offset in entries(0) if name == 14)
+embedded_icon_sizes = None
+for group_id, offset in entries(group_offset):
+    if group_id & 0x80000000: continue
+    group = resource_payload(14, group_id)
+    reserved, icon_type, group_count = struct.unpack_from('<HHH', group)
+    if group_count != source_count: continue
+    matched = []
+    for i in range(group_count):
+        width, height, colors, reserved, planes, bits, size, icon_id = struct.unpack_from('<BBBBHHIH', group, 6 + 14 * i)
+        dimensions = (width or 256, height or 256)
+        payload = resource_payload(3, icon_id)
+        if len(payload) != size or payload != source_frames.get(dimensions): break
+        matched.append(dimensions[0])
+    else:
+        embedded_icon_sizes = sorted(matched)
+        break
+assert embedded_icon_sizes == [16, 20, 24, 32, 40, 48, 64, 128, 256], 'Published app icon does not match all source ICO frames'
+
 manifest_dir = next(offset & 0x7fffffff for name, offset in entries(0) if name == 24)
 level = entries(manifest_dir)[0][1] & 0x7fffffff
 leaf = entries(level)[0][1]
@@ -85,6 +122,11 @@ def content(name):
     raw = b[offset:offset+(compressed or size)]
     return zlib.decompress(raw, -15) if compressed else raw
 
+managed_app = content('EireTodo.dll')
+assert ico in managed_app, 'Window ICO not bundled in WPF resources'
+header_artwork = source_icon.with_suffix('.png').read_bytes()
+assert header_artwork in managed_app, 'Header PNG not bundled in WPF resources'
+
 runtime = json.loads(content('EireTodo.runtimeconfig.json'))['runtimeOptions']
 assert 'frameworks' not in runtime and 'framework' not in runtime, 'Requires an installed framework'
 frameworks = {f['name']: f['version'] for f in runtime['includedFrameworks']}
@@ -100,5 +142,5 @@ for i in range(export_count):
 assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
 print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
     'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
-    'dpi_awareness': 'PerMonitorV2', 'bundle_files': count,
+    'dpi_awareness': 'PerMonitorV2', 'embedded_icon_sizes': embedded_icon_sizes, 'bundle_files': count,
     'bundled_frameworks': frameworks, 'requires_installed_dotnet': False}, indent=2))

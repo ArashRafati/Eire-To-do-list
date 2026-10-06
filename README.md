@@ -5,6 +5,16 @@ The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## App icon update 1.2
+
+A custom black-and-yellow Eire icon is now embedded in the Windows executable
+and applied to all app windows. The icon appears in Explorer, desktop shortcuts,
+the taskbar and the window switcher. The header uses the same artwork. The
+Windows ICO contains 16, 20, 24, 32, 40, 48, 64, 128 and 256 px sizes.
+
+The icon is embedded in the self-contained app; no external image file or
+installation step is needed when running the portable executable.
+
 ## Interface update 1.1
 
 The interface now uses 17 px body/table text, bright white labels, dark black/slate
@@ -46,10 +56,9 @@ require IT approval. The app does not bypass security controls.
   single-instance profile lock, validated full-data backup/restore, and a
   pre-restore safety copy. Save failures stay visible and reject the failed edit.
 
-The supplied logo's visible yellow/black mark is rendered as WPF vector geometry,
-with the reference image's 500:123 proportions and a transparent remainder. The
-original attachment binary was not available as a local file; this is a vector
-reproduction of the visible artwork, not an embedded original image file.
+The header and application icon share the black-and-yellow three-bar mark,
+using new icon artwork inspired by the supplied logo. Artwork and the
+multi-resolution ICO are included under `src/EireTodo.Windows/Assets`.
 
 ## Build on Windows (no administrator privileges)
 

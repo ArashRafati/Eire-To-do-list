@@ -8,7 +8,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>EireTodo</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
+    <ApplicationIcon>Assets/AppIcon.ico</ApplicationIcon>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
@@ -17,5 +18,6 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
+  <ItemGroup><Resource Include="Assets/AppIcon.ico" /><Resource Include="Assets/AppIcon.png" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../EireTodo.Core/EireTodo.Core.csproj" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishSingleFile" /></ItemGroup>
 </Project>
