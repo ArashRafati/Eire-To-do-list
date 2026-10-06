@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Inspect the actual PE manifest and .NET bundle, without executing Windows code."""
+import json
+import struct
+import sys
+import xml.etree.ElementTree as ET
+import zlib
+from pathlib import Path
+
+path = Path(sys.argv[1] if len(sys.argv) > 1 else 'artifacts/windows-x64/EireTodo.exe')
+b = path.read_bytes()
+
+def u16(i): return struct.unpack_from('<H', b, i)[0]
+def u32(i): return struct.unpack_from('<I', b, i)[0]
+def u64(i): return struct.unpack_from('<Q', b, i)[0]
+
+assert b[:2] == b'MZ', 'Not a Windows executable'
+pe = u32(0x3c)
+assert b[pe:pe+4] == b'PE\0\0'
+assert u16(pe+4) == 0x8664, 'Not Windows x64'
+optional = pe + 24
+assert u16(optional) == 0x20b, 'Not a PE32+ executable'
+assert u16(optional+68) == 2, 'Not a Windows GUI application'
+sections = optional + u16(pe+20)
+
+def file_offset(rva):
+    for i in range(u16(pe+6)):
+        s = sections + i * 40
+        size, start, raw_size, raw = struct.unpack_from('<IIII', b, s+8)
+        if start <= rva < start + max(size, raw_size): return raw + rva - start
+    raise AssertionError('RVA outside PE sections')
+
+resources = file_offset(u32(optional+112+16))
+
+def entries(offset):
+    d = resources + offset
+    return [struct.unpack_from('<II', b, d+16+8*i) for i in range(u16(d+12)+u16(d+14))]
+
+manifest_dir = next(offset & 0x7fffffff for name, offset in entries(0) if name == 24)
+level = entries(manifest_dir)[0][1] & 0x7fffffff
+leaf = entries(level)[0][1]
+assert not leaf & 0x80000000
+rva, size = struct.unpack_from('<II', b, resources + leaf)
+manifest = b[file_offset(rva):file_offset(rva)+size].decode('utf-8-sig').rstrip('\0')
+xml = ET.fromstring(manifest)
+execution = next(n for n in xml.iter() if n.tag.endswith('requestedExecutionLevel'))
+assert execution.attrib == {'level': 'asInvoker', 'uiAccess': 'false'}
+assert next(n for n in xml.iter() if n.tag.endswith('dpiAwareness')).text == 'PerMonitorV2'
+
+signature = bytes.fromhex('8b1202b96a612038727b930214d7a03213f5b9e6efae3318ee3b2dce24b36aae')
+signature_position = b.find(signature)
+assert signature_position > 8, 'Missing .NET single-file bundle marker'
+p = u64(signature_position - 8)
+major, minor, count = struct.unpack_from('<III', b, p)
+p += 12
+assert major == 6, f'Unexpected bundle format {major}.{minor}'
+
+def read_string():
+    global p
+    size = 0
+    for shift in range(0, 35, 7):
+        c = b[p]; p += 1; size |= (c & 0x7f) << shift
+        if c < 128: break
+    else: raise AssertionError('Invalid string length')
+    text = b[p:p+size].decode('utf-8'); p += size
+    return text
+
+bundle_id = read_string()
+p += 40  # deps/config locations + header flags
+files = {}
+for i in range(count):
+    offset, size, compressed_size = struct.unpack_from('<QQQ', b, p)
+    p += 24
+    kind = b[p]; p += 1
+    name = read_string()
+    assert offset + (compressed_size or size) <= len(b), 'Invalid bundle entry'
+    files[name] = (offset, size, compressed_size, kind)
+for name in ['EireTodo.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
+             'PresentationFramework.dll', 'PresentationCore.dll', 'WindowsBase.dll',
+             'PresentationNative_cor3.dll']:
+    assert name in files, 'Missing bundled runtime/application file: ' + name
+
+def content(name):
+    offset, size, compressed, kind = files[name]
+    raw = b[offset:offset+(compressed or size)]
+    return zlib.decompress(raw, -15) if compressed else raw
+
+runtime = json.loads(content('EireTodo.runtimeconfig.json'))['runtimeOptions']
+assert 'frameworks' not in runtime and 'framework' not in runtime, 'Requires an installed framework'
+frameworks = {f['name']: f['version'] for f in runtime['includedFrameworks']}
+assert 'Microsoft.NETCore.App' in frameworks and 'Microsoft.WindowsDesktop.App' in frameworks
+# .NET 10's single-file host statically includes the CLR and JIT. Verify exports.
+export_table = file_offset(u32(optional + 112))
+export_count = u32(export_table + 24)
+export_names = file_offset(u32(export_table + 32))
+exports = set()
+for i in range(export_count):
+    offset = file_offset(u32(export_names + 4 * i))
+    exports.add(b[offset:b.index(0, offset)].decode('ascii'))
+assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
+print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
+    'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
+    'dpi_awareness': 'PerMonitorV2', 'bundle_files': count,
+    'bundled_frameworks': frameworks, 'requires_installed_dotnet': False}, indent=2))

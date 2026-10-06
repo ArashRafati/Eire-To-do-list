@@ -1,0 +1,67 @@
+EIRE TO-DO — PORTABLE WINDOWS WIDGET
+
+1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
+   your Desktop or Documents. Do not run it from inside the zip.
+2. Double-click EireTodo.exe. No installer, runtime installation, account,
+   network connection or administrator privileges are required.
+
+For 64-bit Windows 10 (22H2) / Windows 11. The executable is unsigned.
+If Windows or company policy blocks it, ask your IT administrator to approve
+it through the normal process. Do not disable protection or bypass policy.
+
+Add task opens the editor. Project and description are required. Dates are
+optional and use dd/MM/yyyy. Category accepts a new value or an existing one.
+Notes supports multiple lines. Created time is automatic and cannot be edited.
+Click a status checkbox to complete/reopen. Select a row then Edit / notes
+(or double-click the row / press Enter) to see and edit full notes.
+Delete asks for confirmation. Completed tasks stay saved.
+
+Projects lets you create, rename, archive and unarchive projects. Archiving
+retains tasks and keeps them visible in All projects and the project view.
+New tasks can only be assigned to active projects.
+
+Project view, task search and Hide completed are above the table. More filters
+contains notes search, blank notes, category, status, start/finish date ranges
+or blank dates, and created date/time ranges. Created bounds use
+ dd/MM/yyyy HH:mm (24-hour time); the end includes the entire selected minute.
+All active filters combine. Clear filters resets them, including Hide completed.
+Invalid filters show a message and retain the previous valid results.
+Click column headers to sort. Drag column edges to resize. Scroll sideways
+for all eight columns. The task count also shows the number of active filters.
+
+Drag the black header to move; drag window edges/corners to resize.
+Always on top and opacity are on the toolbar. Opacity defaults to 97% and
+ranges from 65% to 100%. Header buttons minimise, maximise/restore and close.
+Alt+F4 closes normally. Position, size, opacity, topmost and column widths
+are saved automatically. A disconnected monitor is handled by moving an
+otherwise inaccessible window to the primary display.
+
+DATA
+All application data and window settings are stored at:
+  %LOCALAPPDATA%\EireTodo\data.json
+Paste %LOCALAPPDATA%\EireTodo into File Explorer, or click Data folder.
+No data is stored alongside the executable; moving/updating the app keeps it.
+The directory is local to the current Windows user. Files are not encrypted.
+The bundled runtime may unpack native files under the user's TEMP\.net folder.
+This is a cache, not an installed runtime, and contains no task data.
+
+Every task/project change is saved immediately using an atomic file replace.
+Window settings save shortly after changes and are flushed when you close.
+Saving errors are displayed; failed task/project edits are not accepted and
+an editor remains open for retry. Window-setting failures show a retry banner.
+Only one app instance per user's data folder is permitted.
+
+BACKUP AND RESTORE
+Backup / export saves one JSON file containing all projects, tasks, categories
+and settings. Choose a writable backup location outside the live data files.
+Restore validates a backup, asks for confirmation, and replaces current data.
+A before-restore-*.json safety copy is kept in the data folder.
+The previous successful save is kept at data.previous.json. If data.json is
+unreadable, the app offers recovery from that copy and preserves the unreadable
+file. The previous save may omit the most recent change. For a separate
+export backup when recovery is unavailable: close the app, preserve the whole
+data folder, move only data.json aside, reopen the app, then use Restore.
+
+Windows UI behaviour has not been executed in the Linux build environment.
+See WINDOWS-VERIFICATION.md for the remaining desktop checks. Data, filters,
+validation, restart persistence and backup/restore passed automated checks.
