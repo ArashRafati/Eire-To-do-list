@@ -1,5 +1,11 @@
 # Build and verification evidence
 
+Current delivery: version **1.1.0**, including larger typography, explicit
+window styles, high-contrast control templates and corrected dropdown labels.
+The two user-supplied Windows screenshots demonstrate 1.0 launching and
+rendering, and identify readability/label defects; they do not verify all
+Windows acceptance checks or the updated 1.1 interface.
+
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 

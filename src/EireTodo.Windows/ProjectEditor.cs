@@ -7,15 +7,18 @@ namespace EireTodo.Windows;
 public sealed class ProjectEditor : Window
 {
     private readonly TodoService service;
-    private readonly ListBox list = new() { DisplayMemberPath = "DisplayName", MinHeight = 120 };
+    private readonly ListBox list = new() { ItemTemplate = Ui.DisplayTemplate("DisplayName"), MinHeight = 100 };
     private readonly TextBox name = new() { MaxLength = 100 };
     private readonly TextBlock error = new() { Foreground = Ui.Accent, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0) };
     private readonly Button rename;
     private readonly Button archive;
     public ProjectEditor(TodoService service)
     {
+        Ui.ApplyWindowStyle(this);
         this.service = service;
-        Title = "Manage projects"; Width = 440; Height = 470; MinWidth = 380; MinHeight = 350;
+        Title = "Manage projects"; Width = 540; Height = 550; MinWidth = 460; MinHeight = 440;
+        MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
+        MaxWidth = Math.Max(MinWidth, SystemParameters.WorkArea.Width - 32);
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var root = new DockPanel { Margin = new Thickness(18) };
         var bottom = new StackPanel();
@@ -32,9 +35,10 @@ public sealed class ProjectEditor : Window
         rename.Margin = archive.Margin = new Thickness(8, 0, 0, 0);
         actions.Children.Add(add); actions.Children.Add(rename); actions.Children.Add(archive); bottom.Children.Add(actions);
         bottom.Children.Add(error);
-        bottom.Children.Add(new TextBlock { Text = "Archived projects retain their tasks and history. Select one to unarchive it.", Foreground = System.Windows.Media.Brushes.Silver, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 12) });
+        bottom.Children.Add(new TextBlock { Text = "Archived projects retain their tasks and history. Select one to unarchive it.", Foreground = System.Windows.Media.Brushes.White, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 12) });
         var close = Ui.Button("Close", (_, _) => Close()); close.IsCancel = true; close.HorizontalAlignment = HorizontalAlignment.Right; bottom.Children.Add(close);
         DockPanel.SetDock(bottom, Dock.Bottom); root.Children.Add(bottom); root.Children.Add(list); Content = root;
+        TextSearch.SetTextPath(list, "DisplayName");
         list.SelectionChanged += (_, _) =>
         {
             var p = list.SelectedItem as Project;

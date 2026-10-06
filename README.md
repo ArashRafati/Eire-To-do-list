@@ -5,6 +5,17 @@ The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Interface update 1.1
+
+The interface now uses 17 px body/table text, bright white labels, dark black/slate
+panels and yellow focus indicators. Explicit window styling fixes the white
+background shown in the first Windows screenshots; explicit dropdown templates
+show project and category names. See [CHANGELOG.md](CHANGELOG.md).
+
+To update, close the running app, download and extract the new ZIP, then replace
+or run the new `EireTodo.exe`. The app reads the same local data folder and schema;
+there is no data migration or separate runtime installation.
+
 ## Run and data
 
 Unzip `artifacts/EireTodo-Windows-x64.zip` into a writable folder and double-click

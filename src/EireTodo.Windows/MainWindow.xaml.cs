@@ -13,8 +13,14 @@ using EireTodo.Core;
 
 namespace EireTodo.Windows;
 
-public sealed record ProjectChoice(string Label, Guid? Value);
-public sealed record CategoryChoice(string Label, CategoryFilterMode Mode, string Value = "");
+public sealed record ProjectChoice(string Label, Guid? Value)
+{
+    public override string ToString() => Label;
+}
+public sealed record CategoryChoice(string Label, CategoryFilterMode Mode, string Value = "")
+{
+    public override string ToString() => Label;
+}
 
 public sealed class TaskRow
 {
@@ -66,12 +72,21 @@ public partial class MainWindow : Window
         initialized = true;
         ApplyFilters();
         LocationChanged += (_, _) => QueueSettings();
-        SizeChanged += (_, _) => QueueSettings();
+        SizeChanged += (_, _) => { UpdateControlsViewport(); QueueSettings(); };
+        FooterPanel.SizeChanged += (_, _) => UpdateControlsViewport();
+        SaveErrorPanel.SizeChanged += (_, _) => UpdateControlsViewport();
         foreach (var column in TaskGrid.Columns)
             DependencyPropertyDescriptor.FromProperty(DataGridColumn.WidthProperty, typeof(DataGridColumn))
                 .AddValueChanged(column, (_, _) => QueueSettings());
-        Loaded += (_, _) => EnsureVisible();
+        Loaded += (_, _) => { EnsureVisible(); UpdateControlsViewport(); };
         Closing += OnClosing;
+    }
+
+    private void UpdateControlsViewport()
+    {
+        if (!IsLoaded) return;
+        // Reserve space for the header, footer and several task rows as controls wrap.
+        ControlsScroll.MaxHeight = Math.Max(88, ActualHeight - FooterPanel.ActualHeight - SaveErrorPanel.ActualHeight - 210);
     }
 
     private void ApplyWindowSettings()

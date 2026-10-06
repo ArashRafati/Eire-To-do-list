@@ -1,9 +1,14 @@
-EIRE TO-DO — PORTABLE WINDOWS WIDGET
+EIRE TO-DO 1.1 — PORTABLE WINDOWS WIDGET
 
 1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
 2. Double-click EireTodo.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
+
+UPDATING FROM 1.0: Close the running app, unzip the new release, then run the
+new EireTodo.exe. Your tasks, projects and preferences are read from the same
+profile data folder. The update needs no data migration. Larger text and dark
+high-contrast panels are now used throughout the app.
 
 For 64-bit Windows 10 (22H2) / Windows 11. The executable is unsigned.
 If Windows or company policy blocks it, ask your IT administrator to approve
@@ -28,6 +33,9 @@ All active filters combine. Clear filters resets them, including Hide completed.
 Invalid filters show a message and retain the previous valid results.
 Click column headers to sort. Drag column edges to resize. Scroll sideways
 for all eight columns. The task count also shows the number of active filters.
+
+If the upper controls need more space in a small window, scroll that panel.
+The task table stays available below it.
 
 Drag the black header to move; drag window edges/corners to resize.
 Always on top and opacity are on the toolbar. Opacity defaults to 97% and

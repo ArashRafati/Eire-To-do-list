@@ -9,7 +9,7 @@ public sealed class TaskEditor : Window
 {
     private readonly TodoService service;
     private readonly TodoTask? original;
-    private readonly ComboBox project = new() { DisplayMemberPath = "DisplayName", SelectedValuePath = "Id" };
+    private readonly ComboBox project = new() { ItemTemplate = Ui.DisplayTemplate("DisplayName"), SelectedValuePath = "Id" };
     private readonly TextBox description = new() { MaxLength = 10000, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 56, MaxHeight = 100, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     private readonly TextBox start = new();
     private readonly TextBox finish = new();
@@ -20,9 +20,12 @@ public sealed class TaskEditor : Window
 
     public TaskEditor(TodoService service, TodoTask? task, Guid? preferredProject)
     {
+        Ui.ApplyWindowStyle(this);
         this.service = service; original = task;
         Title = task is null ? "Add task" : "Edit task / full notes";
-        Width = 530; Height = 685; MinWidth = 400; MinHeight = 380;
+        Width = 660; Height = 790; MinWidth = 460; MinHeight = 430;
+        MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
+        MaxWidth = Math.Max(MinWidth, SystemParameters.WorkArea.Width - 32);
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var root = new DockPanel { Margin = new Thickness(18) };
         var footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
@@ -44,6 +47,7 @@ public sealed class TaskEditor : Window
         panel.Children.Add(created); panel.Children.Add(completed); panel.Children.Add(error);
         root.Children.Add(new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }); Content = root;
         var projects = service.Data.Projects.Where(p => !p.Archived || p.Id == task?.ProjectId).OrderBy(p => p.Archived).ThenBy(p => p.Name).ToList();
+        TextSearch.SetTextPath(project, "DisplayName");
         project.ItemsSource = projects;
         project.SelectedItem = projects.FirstOrDefault(p => p.Id == (task?.ProjectId ?? preferredProject)) ?? projects.FirstOrDefault();
         category.ItemsSource = service.Data.Categories.Order(StringComparer.CurrentCultureIgnoreCase).ToList();
@@ -76,7 +80,15 @@ public sealed class TaskEditor : Window
 internal static class Ui
 {
     internal static readonly System.Windows.Media.Brush Accent = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 204, 51));
-    internal static TextBlock Label(string text) => new() { Text = text, Margin = new Thickness(0, 12, 0, 5), TextWrapping = TextWrapping.Wrap };
+    internal static void ApplyWindowStyle(Window window) => window.Style = (Style)Application.Current.FindResource("AppWindow");
+    internal static DataTemplate DisplayTemplate(string property)
+    {
+        var text = new FrameworkElementFactory(typeof(TextBlock));
+        text.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding(property));
+        text.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+        return new DataTemplate { VisualTree = text };
+    }
+    internal static TextBlock Label(string text) => new() { Text = text, Style = (Style)Application.Current.FindResource("FieldLabel"), Margin = new Thickness(0, 14, 0, 6) };
     internal static StackPanel Field(string label, Control control) { var panel = new StackPanel(); panel.Children.Add(Label(label)); panel.Children.Add(control); return panel; }
     internal static Button Button(string text, RoutedEventHandler click, bool primary = false)
     {
