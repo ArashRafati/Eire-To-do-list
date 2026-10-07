@@ -77,6 +77,7 @@ internal sealed partial class ChartWorkspace
     }
     public bool FinishInlineEdit(bool discardPending = false)
     {
+        if (freeDragOriginal is not null) EndFreeDrag(discardPending);
         if (!FlushZoom()) return false;
         if (inline is null || endingInline) return true;
         titleTimer.Stop(); if (!discardPending && !SaveInlineTitle()) { inline.Focus(); return false; }
@@ -87,7 +88,7 @@ internal sealed partial class ChartWorkspace
         }
         var reflow = inlineSaved; var version = renderVersion;
         inline = null; inlineId = null; inlineBefore = null; endingInline = false;
-        if (reflow) Dispatcher.InvokeAsync(() => { if (inline is null && renderVersion == version) RefreshData(); }, DispatcherPriority.Background);
+        if (reflow) Dispatcher.InvokeAsync(() => { if (inline is null && freeDragOriginal is null && renderVersion == version) RefreshData(); }, DispatcherPriority.Background);
         return true;
     }
     private void StartConnection()
@@ -120,7 +121,7 @@ internal sealed partial class ChartWorkspace
             if (!ClickNode(id)) { e.Handled = true; return; }
             viewport.Focus();
             if (e.ClickCount == 2) { BeginTitle(); e.Handled = true; return; }
-            pressed = e.GetPosition(viewport); original = networkMode ? new Point(Canvas.GetLeft(border) - canvasOrigin.X, Canvas.GetTop(border) - canvasOrigin.Y) : new Point(Canvas.GetLeft(border), Canvas.GetTop(border)); moved = false;
+            pressed = e.GetPosition(viewport); original = networkMode || Current?.FreeMove == true ? new Point(Canvas.GetLeft(border) - canvasOrigin.X, Canvas.GetTop(border) - canvasOrigin.Y) : new Point(Canvas.GetLeft(border), Canvas.GetTop(border)); moved = false;
             border.CaptureMouse(); e.Handled = true;
         };
         border.MouseMove += (_, e) =>
@@ -129,21 +130,22 @@ internal sealed partial class ChartWorkspace
             var p = e.GetPosition(viewport); var scale = displayZoom; var dx = (p.X - start.X) / scale; var dy = (p.Y - start.Y) / scale;
             if (!moved && Math.Abs(dx) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(dy) < SystemParameters.MinimumVerticalDragDistance) return;
             moved = true;
-            if (!networkMode)
+            if (!networkMode && Current?.FreeMove != true)
             {
                 pressed = null; border.ReleaseMouseCapture(); if (Current is Diagram d) { ShowInsertionSlots(id); try { DragDrop.DoDragDrop(border, new DataObject(DragFormat, new NodeDrag(d.Id, id)), DragDropEffects.Move); } finally { ClearInsertionSlots(); } } Render(); return;
             }
+            if (!networkMode) { QueueFreeDrag(id,Math.Clamp(original.X + dx,-100000,100000),Math.Clamp(original.Y + dy,-100000,100000)); return; }
             var worldX = Math.Clamp(original.X + dx, -100000, 100000); var worldY = Math.Clamp(original.Y + dy, -100000, 100000); MakeWorldPointVisible(worldX, worldY, border.Width, border.Height); var x = worldX + canvasOrigin.X; var y = worldY + canvasOrigin.Y; Canvas.SetLeft(border, x); Canvas.SetTop(border, y);
             var boxes = scene.Boxes.Select(b => b.Id == id ? b with { X = x, Y = y } : b).ToDictionary(b => b.Id);
             if (Current is Diagram chart) DrawLeads(chart, boxes); canvas.Width = Math.Max(canvas.Width, x + border.Width + OpenWorkspace.Padding); canvas.Height = Math.Max(canvas.Height, y + border.Height + OpenWorkspace.Padding);
         };
         border.MouseLeftButtonUp += (_, e) =>
         {
-            if (pressed.HasValue) { pressed = null; border.ReleaseMouseCapture(); if (networkMode && moved) { var x = Canvas.GetLeft(border) - canvasOrigin.X; var y = Canvas.GetTop(border) - canvasOrigin.Y; Modify(c => NetworkCharts.Move(c, id, x, y)); } e.Handled = true; }
+            if (pressed.HasValue) { pressed = null; border.ReleaseMouseCapture(); if (!networkMode && moved && Current?.FreeMove == true) EndFreeDrag(); if (networkMode && moved) { var x = Canvas.GetLeft(border) - canvasOrigin.X; var y = Canvas.GetTop(border) - canvasOrigin.Y; Modify(c => NetworkCharts.Move(c, id, x, y)); } e.Handled = true; }
             pressed = null;
         };
-        border.LostMouseCapture += (_, _) => { if (pressed.HasValue && networkMode) { pressed = null; if (moved) Render(); } };
-        border.AllowDrop = !networkMode;
+        border.LostMouseCapture += (_, _) => { if (pressed.HasValue && freeDragOriginal is not null) { pressed = null; EndFreeDrag(true); } if (pressed.HasValue && networkMode) { pressed = null; if (moved) Render(); } };
+        border.AllowDrop = !networkMode && Current?.FreeMove != true;
         NodeDrop Position(DragEventArgs e) { var point = e.GetPosition(border); var fraction = Current?.Layout == ChartLayout.TopDown ? point.X / border.ActualWidth : point.Y / border.ActualHeight; return fraction < .28 ? NodeDrop.Before : fraction > .72 ? NodeDrop.After : NodeDrop.Child; }
         border.DragOver += (_, e) =>
         {

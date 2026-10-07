@@ -50,6 +50,7 @@ public sealed class DataDocument
     [JsonRequired] public List<string> Categories { get; set; } = [];
     public List<Diagram> Diagrams { get; set; } = [];
     public List<OverdueEntry> OverdueLog { get; set; } = [];
+    public byte[] BrandLogoPng { get; set; } = [];
     [JsonRequired] public WindowSettings Settings { get; set; } = new();
     public DataDocument Clone() => JsonSerializer.Deserialize<DataDocument>(JsonSerializer.Serialize(this, JsonOptions), JsonOptions)!;
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
@@ -89,6 +90,7 @@ public static class Validation
     }
     public static void Document(DataDocument data)
     {
+        LogoAsset.Validate(data.BrandLogoPng);
         if (data.SchemaVersion != 1) throw new ArgumentException("This backup uses an unsupported data format.");
         if (data.Projects is null || data.Tasks is null || data.Categories is null || data.Settings is null || data.Settings.ColumnWidths is null)
             throw new ArgumentException("The data file is incomplete.");

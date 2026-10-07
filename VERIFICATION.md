@@ -1,12 +1,12 @@
 # Build and verification evidence
 
-Current delivery: version **3.4.0**, including the combined mind-map/WBS module, five layouts,
+Current delivery: version **3.5.0**, including the combined mind-map/WBS module, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
-text formatting, overdue history, a header clock and the Graph module, the custom Windows app icon,
+text formatting, overdue history, a bottom-right clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.4 interface.
+Windows acceptance checks or the updated 3.5 interface.
 
 Version 3.3 also adds the corrected SUMAPP wordmark/icon, exact shared brand
 palette, light surfaces, priority states, project deletion and real font-based
@@ -88,7 +88,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **55 passed; 0 failed**. These are fifty-five named groups
+The functional runner reports **61 passed; 0 failed**. These are sixty-one named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 
@@ -110,3 +110,18 @@ Artifacts are unsigned. See `WINDOWS-VERIFICATION.md` for the remaining standard
 account desktop checks. Source and portable ZIPs are delivered on the GitHub branch
 `delivery/windows-v1` under `downloads/`. They are repository downloads, not
 a GitHub Release or a cloud-environment publication.
+
+Version 3.5 executed six new functional groups: collision-free free placement with
+exact pinned positions and unchanged hierarchy/numbering; all layouts with long
+titles, fonts, insertion and folding; live profile restart plus .sumapp snapshot
+restore; negative hierarchy PDF compaction and portrait/landscape fitting; and
+deterministic 1,000-node movement. Placement alone took 2 ms in the last measured
+Linux sample. This is not a measurement of native mouse/UI smoothness. Shared
+ribbon, caption edge, footer clock and frame-coalesced drag code compile; actual
+Windows events, resizing and smoothness remain unrun. The exact latest PNG icon
+replacement is blocked on access to the original artwork; previous assets remain.
+
+The sixth new group verifies PNG-byte persistence across live data/restart/copy/
+restore, legacy documents without a logo, and rejection of damaged/oversized PNGs
+without data mutation. The desktop PNG picker and dynamic WPF icon resource
+compile; native decoder/rendering/taskbar checks have not executed on Linux.

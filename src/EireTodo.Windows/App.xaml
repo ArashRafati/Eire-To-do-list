@@ -28,9 +28,10 @@
     <Thickness x:Key="ButtonPadding">13,8</Thickness>
     <BooleanToVisibilityConverter x:Key="BooleanVisibility"/>
 
+    <BitmapImage x:Key="ProgramIcon" UriSource="/SUMAPP;component/Assets/AppIcon.ico"/>
     <!-- Derived Window classes require this explicit style; an implicit Window style does not reach them. -->
     <Style x:Key="AppWindow" TargetType="Window">
-      <Setter Property="Icon" Value="/SUMAPP;component/Assets/AppIcon.ico"/>
+      <Setter Property="Icon" Value="{DynamicResource ProgramIcon}"/>
       <Setter Property="Background" Value="{StaticResource CanvasBrush}"/>
       <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
       <Setter Property="FontFamily" Value="Segoe UI"/>
@@ -68,32 +69,34 @@
       </ControlTemplate></Setter.Value></Setter>
     </Style>
     <Style TargetType="Button">
-      <Setter Property="Background" Value="{StaticResource PanelBrush}"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-      <Setter Property="FontSize" Value="16"/><Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/><Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Padding" Value="{StaticResource ButtonPadding}"/><Setter Property="MinHeight" Value="{StaticResource ControlHeight}"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+      <Setter Property="FontSize" Value="14"/><Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="8,4"/><Setter Property="MinHeight" Value="30"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
         <Border x:Name="Surface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{StaticResource ControlRadius}" Padding="{TemplateBinding Padding}">
-          <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}"/>
+          <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" RecognizesAccessKey="True" TextElement.Foreground="{TemplateBinding Foreground}"/>
         </Border>
         <ControlTemplate.Triggers>
-          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/></Trigger>
-          <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource DarkTeal}"/><Setter Property="Foreground" Value="{StaticResource WhiteBrush}"/></Trigger>
-          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/><Setter TargetName="Surface" Property="BorderThickness" Value="2"/></Trigger>
-          <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Background" Value="{StaticResource Surface}"/><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource LineBrush}"/><Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/></Trigger>
+          <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
         </ControlTemplate.Triggers>
       </ControlTemplate></Setter.Value></Setter>
     </Style>
-    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Background" Value="{StaticResource DarkTeal}"/><Setter Property="Foreground" Value="{StaticResource WhiteBrush}"/><Setter Property="BorderBrush" Value="{StaticResource DarkTeal}"/></Style>
-    <Style x:Key="HeaderButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Background" Value="{StaticResource EireBlack}"/><Setter Property="Foreground" Value="{StaticResource WhiteBrush}"/><Setter Property="BorderBrush" Value="{StaticResource DarkTeal}"/></Style>
+    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Foreground" Value="{StaticResource DarkTeal}"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style x:Key="HeaderButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Foreground" Value="{StaticResource WhiteBrush}"/><Setter Property="HorizontalContentAlignment" Value="Center"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Surface" Background="Transparent"><ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource Ink}"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/><Setter TargetName="Surface" Property="BorderThickness" Value="1"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
     <Style TargetType="ToolTip"><Setter Property="Background" Value="{StaticResource FieldBrush}"/><Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="12,9"/><Setter Property="FontSize" Value="15"/><Setter Property="MaxWidth" Value="500"/></Style>
     <Style x:Key="RibbonButton" TargetType="Button">
       <Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="Background" Value="Transparent"/>
       <Setter Property="BorderBrush" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="FontSize" Value="14"/><Setter Property="Padding" Value="7,5"/><Setter Property="MinHeight" Value="34"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="FontSize" Value="14"/><Setter Property="Padding" Value="5,3"/><Setter Property="MinHeight" Value="28"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
         <Border x:Name="Surface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
-          <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
+          <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" TextElement.Foreground="{TemplateBinding Foreground}"/>
         </Border>
         <ControlTemplate.Triggers>
           <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/><Setter Property="Foreground" Value="{StaticResource DarkTeal}"/></Trigger>
@@ -104,19 +107,21 @@
       </ControlTemplate></Setter.Value></Setter>
     </Style>
     <Style x:Key="RibbonPrimaryButton" TargetType="Button" BasedOn="{StaticResource RibbonButton}">
-      <Setter Property="Background" Value="{StaticResource DarkTeal}"/><Setter Property="Foreground" Value="{StaticResource WhiteBrush}"/>
+      <Setter Property="Foreground" Value="{StaticResource DarkTeal}"/><Setter Property="FontWeight" Value="SemiBold"/>
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
-        <Border x:Name="Surface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="{StaticResource ControlRadius}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"><ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/></Border>
+        <Border x:Name="Surface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="2" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"><ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" TextElement.Foreground="{TemplateBinding Foreground}"/></Border>
         <ControlTemplate.Triggers>
-          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/><Setter TargetName="Surface" Property="BorderThickness" Value="1"/></Trigger>
-          <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource Ink}"/></Trigger>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/></Trigger>
+          <Trigger Property="IsPressed" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/></Trigger>
           <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/><Setter TargetName="Surface" Property="BorderThickness" Value="2"/></Trigger>
           <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Background" Value="{StaticResource Surface}"/><Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}"/><Setter Property="Cursor" Value="Arrow"/></Trigger>
         </ControlTemplate.Triggers>
       </ControlTemplate></Setter.Value></Setter>
     </Style>
+    <Style x:Key="RibbonTabSelected" TargetType="Button" BasedOn="{StaticResource RibbonButton}"><Setter Property="Background" Value="{StaticResource DarkTeal}"/><Setter Property="Foreground" Value="{StaticResource WhiteBrush}"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="SelectedTabSurface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="2" BorderThickness="1" BorderBrush="Transparent"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="SelectedTabSurface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SelectedTabSurface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
+    <Style x:Key="RibbonCommandToggle" TargetType="CheckBox"><Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="FontSize" Value="14"/><Setter Property="MinHeight" Value="28"/><Setter Property="Padding" Value="5,3"/><Setter Property="Cursor" Value="Hand"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox"><Border x:Name="Surface" Padding="{TemplateBinding Padding}" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="2"><ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsChecked" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/><Setter Property="Foreground" Value="{StaticResource DarkTeal}"/></Trigger><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{StaticResource PrimaryTeal}"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.55"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>
     <Style x:Key="RibbonToggle" TargetType="CheckBox">
-      <Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="FontSize" Value="17"/><Setter Property="MinHeight" Value="34"/><Setter Property="Width" Value="34"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Foreground" Value="{StaticResource TextBrush}"/><Setter Property="FontSize" Value="14"/><Setter Property="MinHeight" Value="28"/><Setter Property="Width" Value="28"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox"><Border x:Name="Surface" Background="Transparent" CornerRadius="4" Padding="5"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/></Border>
         <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/></Trigger><Trigger Property="IsChecked" Value="True"><Setter TargetName="Surface" Property="Background" Value="{StaticResource SoftTeal}"/><Setter Property="Foreground" Value="{StaticResource DarkTeal}"/></Trigger></ControlTemplate.Triggers>
       </ControlTemplate></Setter.Value></Setter>

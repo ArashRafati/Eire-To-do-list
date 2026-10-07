@@ -1,5 +1,15 @@
 # Changes
 
+## 3.5.0 — compact shared ribbon, free hierarchy placement and PC copies
+
+- Move module selection into Home, caption controls to the far right, and the 1.2× clock to the bottom right.
+- Share one compact ribbon across modules, use flat left-aligned commands, and retain per-tab command icons when collapsed.
+- Add persisted Free move for hierarchy diagrams, collision spacing, frame-coalesced visual updates, Undo/cancel and position reset.
+- Save complete .sumapp copies to a chosen PC folder while retaining profile autosave; restore copies with a safety backup.
+- Add six functional check groups, including 1,000-node movement, signed-position PDF fitting and full-file persistence.
+- Add a desktop PNG picker that stores original image bytes with data and updates header/window/taskbar branding; include a persistence/rejection check.
+- Prepare exact-PNG icon packaging; latest symbol-only logo remains pending because the supplied share URL is inaccessible.
+
 ## 3.4.0 — visual diagram galleries and Eire header
 
 - Add SmartArt-style ribbon thumbnails and expandable, keyboard-accessible galleries for ten node designs, sixteen colour combinations and five layouts.

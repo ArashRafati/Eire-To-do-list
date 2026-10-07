@@ -38,6 +38,7 @@ public sealed class Diagram
     public ChartLayout Layout { get; set; } = ChartLayout.MindMap;
     public DiagramPalette Palette { get; set; }
     public NodeDesign Design { get; set; }
+    public bool FreeMove { get; set; }
     public DateOnly ScheduleStart { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public double Zoom { get; set; } = 1;
     public int NextNumber { get; set; } = 1;
@@ -280,7 +281,8 @@ public static class ChartGeometry
         if (boxes.Count == 0) return new(boxes, 500, 300);
         var minX = boxes.Min(b => b.X); var minY = boxes.Min(b => b.Y);
         boxes = boxes.Select(b => b with { X = b.X - minX + Margin, Y = b.Y - minY + Margin }).ToList();
-        return new(boxes, boxes.Max(b => b.X + b.Width) + Margin, boxes.Max(b => b.Y + b.Height) + Margin);
+        var arranged = new ChartScene(boxes, boxes.Max(b => b.X + b.Width) + Margin, boxes.Max(b => b.Y + b.Height) + Margin);
+        return chart.FreeMove ? FreePlacement.Arrange(chart, arranged) : arranged;
     }
     public static (double X1, double Y1, double X2, double Y2) Connector(NodeBox parent, NodeBox child, ChartLayout layout)
     {

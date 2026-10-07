@@ -59,6 +59,8 @@ public sealed class TaskRow
 
 public partial class MainWindow : Window
 {
+    private readonly RibbonBar ribbon;
+    private readonly ComboBox ModeSelector = new() { Width = 190, MinHeight = 28, FontSize = 14, ItemsSource = new[] { "To-do", "Mind map / WBS", "Graph" }, SelectedIndex = 0, ToolTip = "Choose application module" };
     private readonly TodoService service;
     private readonly string dataDirectory;
     private readonly ChartWorkspace chartWorkspace;
@@ -83,9 +85,18 @@ public partial class MainWindow : Window
         this.dataDirectory = dataDirectory;
         InitializeComponent();
         Branding.ApplyEireLogo(EireLogo, EireLogoPending);
+        ApplyChosenLogo();
         overdueView = new OverdueView(service, ToggleOverdue); OverdueHost.Content = overdueView;
-        chartWorkspace = new ChartWorkspace(service, dataDirectory, painter, ToggleOverdue, RefreshOverdueView);
-        var ribbon = new RibbonBar();
+        ribbon = new RibbonBar();
+        RegisterName("ModeSelector", ModeSelector); ModeSelector.SelectionChanged += ModeChanged;
+        var application = ribbon.Group("Home", "Application"); application.Children.Add(ModeSelector);
+        var modules = new Button { Style = (Style)FindResource("RibbonButton"), Width = 30, Height = 28, Padding = new Thickness(4) };
+        RibbonBar.Label(modules,"Modules"); if (modules.Content is StackPanel motif) motif.Children.RemoveAt(motif.Children.Count - 1);
+        modules.Click += (_, _) => { var menu = new ContextMenu(); for (var i = 0; i < 3; i++) { var index = i; var item = new MenuItem { Header = ModeSelector.Items[i], IsCheckable = true, IsChecked = ModeSelector.SelectedIndex == i }; item.Click += (_, _) => ModeSelector.SelectedIndex = index; menu.Items.Add(item); } menu.PlacementTarget = modules; menu.IsOpen = true; };
+        ribbon.AddShortcut(application, modules);
+        var files = ribbon.Group("Home", "Files"); RibbonBar.Action(files,"Save a copy…",SaveCopy); RibbonBar.Action(files,"Open saved copy…",() => RestoreClick(this,new()));
+        var brand = ribbon.Group("Home", "Brand"); RibbonBar.Action(brand,"Choose logo PNG…",ChooseLogo);
+        ribbon.BeginScope("Todo");
         var legacy = (WrapPanel)LegacyActionsCard.Child; LegacyActionsCard.Child = null; LegacyActionsCard.Visibility = Visibility.Collapsed;
         var commands = legacy.Children.Cast<UIElement>().ToList(); legacy.Children.Clear();
         var taskCommands = ribbon.Group("Home", "Tasks");
@@ -93,10 +104,12 @@ public partial class MainWindow : Window
         var projects = ribbon.Group("Home", "Projects"); RibbonBar.Prepare((Control)commands[3]); projects.Children.Add(commands[3]);
         RibbonBar.Action(ribbon.Group("Insert", "New task"), "Add task", () => AddClick(this, new()), true);
         taskFormatTools = new FormattingTools(() => (TaskGrid.SelectedItem as TaskRow)?.Task.Format, ApplyTaskFormat, painter); ribbon.Group("Format", "Text").Children.Add(taskFormatTools);
-        var window = ribbon.Group("View", "Window"); var windowControls = (StackPanel)commands[4]; windowControls.Children.Remove(TopToggle); TopToggle.MinHeight = 34; TopToggle.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(TopToggle); windowControls.Height = 34; windowControls.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(windowControls);
+        var window = ribbon.Group("View", "Window"); var windowControls = (StackPanel)commands[4]; windowControls.Children.Remove(TopToggle); TopToggle.MinHeight = 28; TopToggle.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(TopToggle); windowControls.Height = 28; windowControls.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(windowControls);
         var view = ribbon.Group("View", "Data"); RibbonBar.Action(view, "Overdue log", ToggleOverdue); RibbonBar.Action(view, "Clear filters", () => ClearFiltersClick(this, new()));
         var settings = ribbon.Group("View", "Settings"); RibbonBar.Action(settings, "Window settings", () => WindowOptionsClick(this, new()));
         TaskRibbonHost.Content = ribbon;
+        ribbon.BeginScope("Charts");
+        chartWorkspace = new ChartWorkspace(service, dataDirectory, painter, ToggleOverdue, RefreshOverdueView, ribbon);
         TaskGrid.PreviewMouseLeftButtonUp += PaintTask;
         clockTimer.Tick += (_, _) => ClockTick(); ClockTick(); clockTimer.Start();
         ChartHost.Children.Add(chartWorkspace);
@@ -109,7 +122,7 @@ public partial class MainWindow : Window
         ApplyMode(false);
         ApplyFilters();
         LocationChanged += (_, _) => QueueSettings();
-        SizeChanged += (_, _) => { UpdateControlsViewport(); QueueSettings(); };
+        SizeChanged += (_, _) => { ribbon.SetCompact(ActualHeight < 470); UpdateControlsViewport(); QueueSettings(); };
         FooterPanel.SizeChanged += (_, _) => UpdateControlsViewport();
         SaveErrorPanel.SizeChanged += (_, _) => UpdateControlsViewport();
         foreach (var column in TaskGrid.Columns)
@@ -125,7 +138,7 @@ public partial class MainWindow : Window
         OfflineBadge.Visibility = ActualWidth < 710 ? Visibility.Collapsed : Visibility.Visible;
         overdueView.MaxHeight = Math.Clamp(ActualHeight * .27, 75, 230);
         // Reserve space for the header, footer and several task rows as controls wrap.
-        ControlsScroll.MaxHeight = Math.Max(48, ActualHeight - FooterPanel.ActualHeight - SaveErrorPanel.ActualHeight - OverdueHost.ActualHeight - 190);
+        ControlsScroll.MaxHeight = Math.Max(48, ActualHeight - FooterPanel.ActualHeight - SaveErrorPanel.ActualHeight - OverdueHost.ActualHeight - TaskRibbonHost.ActualHeight - 120);
     }
 
     private void ApplyWindowSettings()
@@ -323,6 +336,12 @@ public partial class MainWindow : Window
         new ProjectEditor(service) { Owner = this }.ShowDialog();
         RefreshChoices(); ApplyFilters(); chartWorkspace.RefreshData(); RefreshOverdueView();
     }
+    private void SaveCopy()
+    {
+        if (!chartWorkspace.FinishInlineEdit() || settingsDirty && !SaveWindowSettings()) return;
+        var dialog = new SaveFileDialog { Title = "Save a complete SUMAPP file on your PC", Filter = "SUMAPP file (*.sumapp)|*.sumapp", FileName = "SUMAPP-" + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".sumapp", DefaultExt = ".sumapp", AddExtension = true };
+        if (dialog.ShowDialog(this) == true && TryAction(() => service.Export(dialog.FileName))) MessageBox.Show(this,"Copy saved. Live changes continue saving in your profile. Save another copy to update this file.","File saved",MessageBoxButton.OK,MessageBoxImage.Information);
+    }
     private void ExportClick(object sender, RoutedEventArgs e)
     {
         if (!chartWorkspace.FinishInlineEdit()) return;
@@ -334,7 +353,7 @@ public partial class MainWindow : Window
     private void RestoreClick(object sender, RoutedEventArgs e)
     {
         if (!chartWorkspace.FinishInlineEdit()) return;
-        var dialog = new OpenFileDialog { Title = "Restore a SUMAPP backup", Filter = "SUMAPP backup (*.json)|*.json", CheckFileExists = true };
+        var dialog = new OpenFileDialog { Title = "Restore a SUMAPP backup", Filter = "SUMAPP files and backups (*.sumapp;*.json)|*.sumapp;*.json", CheckFileExists = true };
         if (dialog.ShowDialog(this) != true) return;
         if (MessageBox.Show(this, "Replace all current data and settings with this backup?\n\nA safety copy of the current data will be kept in the data folder.", "Confirm restore", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         settingsTimer.Stop();
@@ -344,6 +363,7 @@ public partial class MainWindow : Window
             initialized = false;
             WindowState = WindowState.Normal;
             ApplyWindowSettings();
+            ApplyChosenLogo();
             RefreshChoices();
             initialized = true;
             chartWorkspace.RefreshData(true);
@@ -394,6 +414,7 @@ public partial class MainWindow : Window
         ChartHost.Visibility = todo ? Visibility.Collapsed : Visibility.Visible;
         Title = mode == AppMode.Todo ? "SUMAPP · To-do" : mode == AppMode.Diagram ? "SUMAPP · Mind map / WBS" : "SUMAPP · Graph";
         if (!todo) chartWorkspace.SetMode(mode, changeLayout);
+        ribbon.SetScope(todo ? "Todo" : "Charts");
         UpdateControlsViewport();
     }
     private void WindowOptionsClick(object sender, RoutedEventArgs e)

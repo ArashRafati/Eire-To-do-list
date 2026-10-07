@@ -37,11 +37,11 @@ internal sealed partial class ChartWorkspace : UserControl
     private Diagram? Current => service.Data.Diagrams.FirstOrDefault(d => d.Id == chartId);
     private Window OwnerWindow => Window.GetWindow(this);
 
-    public ChartWorkspace(TodoService service, string dataDirectory, FormatPainter painter, Action showOverdue, Action changed)
+    public ChartWorkspace(TodoService service, string dataDirectory, FormatPainter painter, Action showOverdue, Action changed, RibbonBar sharedRibbon)
     {
         this.service = service; this.dataDirectory = dataDirectory; this.painter = painter; this.changed = changed;
-        var root = new Grid(); root.RowDefinitions.Add(new() { Height = GridLength.Auto }); root.RowDefinitions.Add(new()); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        ribbon = new RibbonBar();
+        var root = new Grid(); root.RowDefinitions.Add(new()); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
+        ribbon = sharedRibbon;
         var first = ribbon.Group("Home", "Diagram"); first.Children.Add(diagrams); Add(first, "New diagram", NewDiagram, true); Add(first, "Settings / rename", RenameDiagram); Add(first, "Delete diagram", DeleteDiagram);
         var edit = ribbon.Group("Home", "Edit"); NodeAction(edit, "Edit title", BeginTitle); NodeAction(edit, "Node details", EditNode); NodeAction(edit, "Delete node", DeleteNode);
         var history = ribbon.Group("Home", "History"); undoButton = Add(history, "Undo", Undo); redoButton = Add(history, "Redo", Redo);
@@ -53,19 +53,18 @@ internal sealed partial class ChartWorkspace : UserControl
         var third = ribbon.Group("View", "Hierarchy"); hierarchyControls = third; NodeAction(third, "Earlier", () => Modify(c => Charts.Reorder(c, selectedId!.Value, -1))); NodeAction(third, "Later", () => Modify(c => Charts.Reorder(c, selectedId!.Value, 1))); NodeAction(third, "Indent", () => Modify(c => Charts.Indent(c, selectedId!.Value))); NodeAction(third, "Outdent", () => Modify(c => Charts.Outdent(c, selectedId!.Value))); NodeAction(third, "Fold / unfold", ToggleFold); Add(third, "Unfold all", () => Modify(c => c.Nodes.ForEach(n => n.Collapsed = false)));
         var formatting = ribbon.Group("Format", "Text"); formatTools = new FormattingTools(SelectedFormat, ApplyFormat, painter); formatting.Children.Add(formatTools);
         var layoutGroup = ribbon.Group("View", "Diagram layout"); layoutControls = layoutGroup;
-        layoutGallery = new(DiagramGalleryKind.Layouts, index => { if (Current?.Layout != (ChartLayout)index) Modify(c => c.Layout = (ChartLayout)index, false); }); layoutGroup.Children.Add(layoutGallery);
-        var placement = ribbon.Group("View", "Branch placement"); balanceButton = Add(placement, "Balance branches", () => Modify(MindMapPlacement.Rebalance)); balanceButton.ToolTip = "Redistribute mind-map branches by subtree size.";
+        layoutGallery = new(DiagramGalleryKind.Layouts, index => { if (Current?.Layout != (ChartLayout)index) Modify(c => { c.Layout = (ChartLayout)index; FreePlacement.Reset(c); }, false); }); layoutGroup.Children.Add(layoutGallery);
+        var placement = ribbon.Group("View", "Placement"); placementControls = placement; placement.Children.Add(freeMoveToggle); freeMoveToggle.Checked += (_, _) => SetFreeMove(true); freeMoveToggle.Unchecked += (_, _) => SetFreeMove(false); Add(placement,"Reset positions",() => Modify(FreePlacement.Reset)); balanceButton = Add(placement, "Balance branches", () => Modify(MindMapPlacement.Rebalance)); balanceButton.ToolTip = "Redistribute mind-map branches by subtree size.";
         var appearance = ribbon.Group("Format", "Node designs"); designGallery = new(DiagramGalleryKind.Styles, index => { if (Current?.Design != (NodeDesign)index) Modify(c => c.Design = (NodeDesign)index, false); }); appearance.Children.Add(designGallery);
         var colours = ribbon.Group("Format", "Colour combinations"); paletteGallery = new(DiagramGalleryKind.Colours, index => { if (Current?.Palette != (DiagramPalette)index) Modify(c => c.Palette = (DiagramPalette)index, false); }); colours.Children.Add(paletteGallery);
         var camera = ribbon.Group("View", "Canvas"); var scale = new StackPanel { Orientation = Orientation.Horizontal, Height = 34 }; scale.Children.Add(zoom); scale.Children.Add(zoomLabel); camera.Children.Add(scale); Add(camera, "Fit / centre", Fit);
         var output = ribbon.Group("Home", "Output"); Add(output, "Export", Export, true); Add(output, "Overdue log", showOverdue);
-        root.Children.Add(ribbon);
-        var stage = new Grid(); stage.Children.Add(viewport); stage.Children.Add(empty); Grid.SetRow(stage, 1); root.Children.Add(stage); InitialiseSmoothZoom(); Grid.SetRow(status, 2); root.Children.Add(status); Content = root;
+        var stage = new Grid(); stage.Children.Add(viewport); stage.Children.Add(empty); Grid.SetRow(stage, 0); root.Children.Add(stage); InitialiseSmoothZoom(); Grid.SetRow(status, 1); root.Children.Add(status); Content = root;
         diagrams.SelectionChanged += DiagramChanged; zoom.ValueChanged += ZoomChanged;
         viewport.PreviewKeyDown += KeyDownChart; viewport.PreviewMouseWheel += ZoomWheel;
         canvas.MouseLeftButtonDown += (_, e) => { if (e.Source == canvas) { viewport.Focus(); e.Handled = true; } };
         InitialiseOpenCanvas();
-        SizeChanged += (_, _) => ribbon.SetCompact(ActualHeight < 390);
+        Unloaded += (_, _) => EndFreeDrag(true);
         RefreshData();
     }
     private Button Add(Panel panel, string text, Action action, bool primary = false)
@@ -80,12 +79,12 @@ internal sealed partial class ChartWorkspace : UserControl
         if (network != networkMode) { networkMode = network; chartId = null; selectedId = null; selectedLeadId = null; undo.Clear(); redo.Clear(); connectFrom = null; }
         defaultLayout = network ? ChartLayout.Freeform : ChartLayout.MindMap;
         RibbonBar.ShowGroup(hierarchyControls, !network); RibbonBar.ShowGroup(leadControls, network); RibbonBar.ShowGroup(leadOptions, network); RibbonBar.ShowGroup(unlinkedControls, network); RibbonBar.ShowGroup(layoutControls, !network); RibbonBar.ShowGroup((Panel)fromTodoButton.Parent, !network);
-        RibbonBar.ShowGroup((Panel)balanceButton.Parent, !network); fromTodoButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
+        RibbonBar.ShowGroup(placementControls, !network); fromTodoButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
         empty.Text = network ? "Create a graph to start. Enter / Insert adds a node linked from the selection." : "Create a diagram. Choose a mind-map or WBS layout in View.";
         RibbonBar.Label(siblingButton, network ? "Linked node" : "Sibling"); RibbonBar.Label(childButton, "Child"); childButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
         RefreshData(); if (!network && Current is Diagram chart) defaultLayout = chart.Layout;
     }
-    public void RefreshIfIdle() { if (inline is null) RefreshData(); }
+    public void RefreshIfIdle() { if (inline is null && freeDragOriginal is null) RefreshData(); }
     internal void CaptureRibbon(string tab) => ribbon.Show(tab);
     public void RefreshData(bool resetHistory = false)
     {
@@ -102,6 +101,7 @@ internal sealed partial class ChartWorkspace : UserControl
             if (!chart.Leads.Any(l => l.Id == selectedLeadId) && !chart.Nodes.Any(n => n.Id == selectedId)) selectedId = chart.Nodes.FirstOrDefault()?.Id;
         }
         designGallery.Refresh(Current); paletteGallery.Refresh(Current); layoutGallery.Refresh(Current);
+        freeMoveToggle.IsChecked = Current?.FreeMove == true; freeMoveToggle.IsEnabled = Current is not null;
         refreshing = false; Render();
     }
     private void DiagramChanged(object sender, SelectionChangedEventArgs e)
@@ -255,7 +255,7 @@ internal sealed partial class ChartWorkspace : UserControl
         var oldOffset = new Point(viewport.HorizontalOffset, viewport.VerticalOffset);
         var oldChartId = renderedChartId;
         var version = ++renderVersion;
-        canvas.Children.Clear(); nodeViews.Clear(); titleViews.Clear();
+        canvas.Children.Clear(); nodeViews.Clear(); titleViews.Clear(); hierarchyPaths.Clear();
         var chart = Current; renderedChartId = chart?.Id; balanceButton.IsEnabled = chart?.Layout == ChartLayout.MindMap; empty.Visibility = chart is null || chart.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         foreach (var button in nodeActions) button.IsEnabled = selectedId.HasValue && chart?.Nodes.Any(n => n.Id == selectedId) == true;
         undoButton.IsEnabled = undo.Count > 0; redoButton.IsEnabled = redo.Count > 0;
@@ -273,16 +273,8 @@ internal sealed partial class ChartWorkspace : UserControl
         {
             var node = nodeIndex[box.Id].Node;
             if (node.ParentId is not Guid parent || !index.TryGetValue(parent, out var from)) continue;
-            var c = ChartGeometry.Connector(from, box, chart.Layout);
-            var path = new System.Windows.Shapes.Path { Stroke = Colour(DiagramAppearance.Colours(chart.Palette).Lead), StrokeThickness = 1.6, IsHitTestVisible = false };
-            var geometry = new StreamGeometry(); using (var context = geometry.Open())
-            {
-                context.BeginFigure(new Point(c.X1, c.Y1), false, false);
-                if (chart.Layout is ChartLayout.MindMap or ChartLayout.RightTree) context.BezierTo(new Point((c.X1 + c.X2) / 2, c.Y1), new Point((c.X1 + c.X2) / 2, c.Y2), new Point(c.X2, c.Y2), true, false);
-                else if (chart.Layout == ChartLayout.TopDown) { context.LineTo(new Point(c.X1, (c.Y1 + c.Y2) / 2), true, false); context.LineTo(new Point(c.X2, (c.Y1 + c.Y2) / 2), true, false); context.LineTo(new Point(c.X2, c.Y2), true, false); }
-                else { context.LineTo(new Point((c.X1 + c.X2) / 2, c.Y1), true, false); context.LineTo(new Point((c.X1 + c.X2) / 2, c.Y2), true, false); context.LineTo(new Point(c.X2, c.Y2), true, false); }
-            }
-            geometry.Freeze(); path.Data = geometry; canvas.Children.Add(path);
+            var path = new System.Windows.Shapes.Path { Stroke = Colour(DiagramAppearance.Colours(chart.Palette).Lead), StrokeThickness = 1.6, IsHitTestVisible = false, Data = HierarchyGeometry(from,box,chart.Layout,chart.FreeMove) };
+            hierarchyPaths[box.Id] = path; canvas.Children.Add(path);
         }
         if (networkMode) DrawLeads(chart, index);
         var nodeLevels = DiagramAppearance.Levels(chart);
@@ -348,6 +340,7 @@ internal sealed partial class ChartWorkspace : UserControl
     }
     private void KeyDownChart(object sender, KeyEventArgs e)
     {
+        if (freeDragOriginal is not null) { if (e.Key == Key.Escape) { EndFreeDrag(true); Mouse.Capture(null); } e.Handled = true; return; }
         if (IsInsideTextBox(e.OriginalSource as DependencyObject) || e.IsRepeat && e.Key == Key.Enter) return;
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
@@ -381,6 +374,7 @@ internal sealed partial class ChartWorkspace : UserControl
     }
     private void ZoomWheel(object sender, MouseWheelEventArgs e)
     {
+        if (freeDragOriginal is not null) { e.Handled = true; return; }
         if (Keyboard.Modifiers == ModifierKeys.Control) { zoomPivot = e.GetPosition(viewport); zoom.Value = Math.Clamp(zoom.Value * Math.Pow(1.08,e.Delta / 120d), .2, 2); zoomPivot = null; }
         else if (Keyboard.Modifiers == ModifierKeys.Shift) PanTo(viewport.HorizontalOffset - e.Delta * .6, viewport.VerticalOffset);
         else PanTo(viewport.HorizontalOffset, viewport.VerticalOffset - e.Delta * .6);

@@ -35,7 +35,7 @@ public static class DiagramPdf
         var shortSide = options.Paper == PdfPaper.A4 ? 595.276 : 841.89; var longSide = options.Paper == PdfPaper.A4 ? 841.89 : 1190.551;
         var width = options.Orientation == PdfOrientation.Landscape ? longSide : shortSide; var height = options.Orientation == PdfOrientation.Landscape ? shortSide : longSide;
         const double margin = 28, top = 64; var areaWidth = width-2*margin; var areaHeight = height-top-margin;
-        var scene = diagram.Kind == DiagramKind.Network ? OpenWorkspace.CompactGraph(diagram) : ChartGeometry.Arrange(diagram,true);
+        var scene = diagram.Kind == DiagramKind.Network || diagram.FreeMove ? OpenWorkspace.CompactGraph(diagram) : ChartGeometry.Arrange(diagram,true);
         var scale = options.FitToPaper ? Math.Min(1,Math.Min(areaWidth/Math.Max(1,scene.Width),areaHeight/Math.Max(1,scene.Height))) : .75;
         var tileWidth = areaWidth/scale; var tileHeight = areaHeight/scale;
         var columns = options.FitToPaper ? 1 : Math.Max(1,(int)Math.Ceiling(scene.Width/tileWidth)); var rows = options.FitToPaper ? 1 : Math.Max(1,(int)Math.Ceiling(scene.Height/tileHeight));
@@ -46,6 +46,11 @@ public static class DiagramPdf
             var node = outline[box.Id].Node;
             if (node.ParentId is Guid parent && boxes.TryGetValue(parent,out var from))
             {
+                if (diagram.FreeMove)
+                {
+                    var route = FreePlacement.Connection(from,box,diagram.Layout);
+                    chartMarks.Add(new PdfLine(LeadGeometry.Vertices(route),colours.Lead,1.5,diagram.Layout is ChartLayout.MindMap or ChartLayout.RightTree)); continue;
+                }
                 var c = ChartGeometry.Connector(from,box,diagram.Layout);
                 if (diagram.Layout is ChartLayout.MindMap or ChartLayout.RightTree) chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new((c.X1+c.X2)/2,c.Y1),new((c.X1+c.X2)/2,c.Y2),new(c.X2,c.Y2)],colours.Lead,1.5,true));
                 else if (diagram.Layout == ChartLayout.TopDown) chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new(c.X1,(c.Y1+c.Y2)/2),new(c.X2,(c.Y1+c.Y2)/2),new(c.X2,c.Y2)],colours.Lead));

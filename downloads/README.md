@@ -1,4 +1,4 @@
-# SUMAPP Windows download — version 3.4
+# SUMAPP Windows download — version 3.5
 
 Download `SUMAPP-Windows-x64.zip`, unzip it into a writable folder and double-click
 `SUMAPP.exe`. Runtime and SUMAPP artwork/icon are bundled; no installation,
@@ -14,10 +14,18 @@ and real font-based node sizing. It adds thumbnail galleries for 10 designs,
 `SHA256SUMS.txt` records both archive hashes. These downloads are delivered through
 GitHub as an alternative to the failing chat artifact route.
 
-55 core check groups pass. The Windows standard-user manifest, icon resources and
+61 core check groups pass. The Windows standard-user manifest, icon resources and
 bundled runtime were inspected. Native WPF, taskbar/Explorer rendering and Windows
 non-elevated launch remain unrun in the Linux environment. `BRANDING.md` and
 `WINDOWS-VERIFICATION.md` describe exact capture/build/acceptance commands.
 
 Older EireTodo ZIPs retained here are superseded by the SUMAPP files above.
 Do not use older executables to edit data containing the new priority fields.
+
+The new symbol-only PNG is still awaiting accessible original bytes. This build
+retains the prior SUMAPP artwork; see BRANDING.md. Free move, compact ribbon,
+PC copies and bottom-right clock are included. Native Windows UI checks remain
+unrun in Linux.
+
+Use Home → Brand → Choose logo PNG to select your original desktop file for
+header/window/taskbar branding. Its original bytes are saved in data and backups.

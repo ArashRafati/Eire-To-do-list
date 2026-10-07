@@ -28,7 +28,7 @@ internal sealed class DiagramGallery : StackPanel
     {
         this.kind = kind; this.choose = choose;
         count = kind == DiagramGalleryKind.Styles ? Enum.GetValues<NodeDesign>().Length : kind == DiagramGalleryKind.Colours ? Enum.GetValues<DiagramPalette>().Length : Enum.GetValues<ChartLayout>().Count(l => l != ChartLayout.Freeform);
-        Width = 396; Height = 106; Margin = new Thickness(0, 0, 4, 0);
+        Width = 354; Height = 84; Margin = new Thickness(0, 0, 4, 0);
         Children.Add(strip); Children.Add(caption);
         Unloaded += (_, _) => popup.IsOpen = false;
         IsEnabledChanged += (_, _) => { if (!IsEnabled) popup.IsOpen = false; };
@@ -46,27 +46,34 @@ internal sealed class DiagramGallery : StackPanel
         strip.Children.Clear();
         // Show useful alternatives immediately, as well as the current choice.
         var featured = kind == DiagramGalleryKind.Styles ? new[] { selected, (int)NodeDesign.Flat, (int)NodeDesign.Underlined } : kind == DiagramGalleryKind.Colours ? new[] { selected, (int)DiagramPalette.Navy, (int)DiagramPalette.Plum } : new[] { selected, (int)ChartLayout.MindMap, (int)ChartLayout.TopDown };
-        foreach (var index in featured.Concat(Enumerable.Range(0, count)).Distinct().Take(3)) strip.Children.Add(Tile(index, 112));
-        var more = new Button { Content = "▾", Width = 34, Height = 84, Style = (Style)Application.Current.FindResource("RibbonButton"), Padding = new Thickness(2), Margin = new Thickness(2, 0, 0, 0), ToolTip = kind == DiagramGalleryKind.Colours ? "Show all 16 colour combinations" : kind == DiagramGalleryKind.Layouts ? "Show all diagram layouts" : "Show all node designs" };
+        foreach (var index in featured.Concat(Enumerable.Range(0, count)).Distinct().Take(3)) strip.Children.Add(Tile(index, 100, true));
+        var more = new Button { Content = "▾", Width = 34, Height = 64, Style = (Style)Application.Current.FindResource("RibbonButton"), Padding = new Thickness(2), Margin = new Thickness(2, 0, 0, 0), ToolTip = kind == DiagramGalleryKind.Colours ? "Show all 16 colour combinations" : kind == DiagramGalleryKind.Layouts ? "Show all diagram layouts" : "Show all node designs" };
         AutomationProperties.SetName(more, "More " + kind.ToString().ToLowerInvariant());
         more.Click += (_, _) => Open(more); strip.Children.Add(more);
         if (popup.IsOpen) popup.IsOpen = false;
     }
 
     private string ItemName(int index) => kind == DiagramGalleryKind.Styles ? DiagramAppearance.DesignName((NodeDesign)index) : kind == DiagramGalleryKind.Colours ? DiagramAppearance.Colours((DiagramPalette)index).Name : Charts.LayoutName((ChartLayout)index);
-    private Button Tile(int index, double width)
+    private Button Tile(int index, double width, bool compact = false)
     {
         var label = ItemName(index);
         var panel = new StackPanel();
-        panel.Children.Add(new DiagramThumbnail(kind == DiagramGalleryKind.Colours ? (DiagramPalette)index : palette, kind == DiagramGalleryKind.Styles ? (NodeDesign)index : design, kind == DiagramGalleryKind.Layouts ? (ChartLayout)index : layout) { Width = width - 12, Height = 50 });
+        panel.Children.Add(new DiagramThumbnail(kind == DiagramGalleryKind.Colours ? (DiagramPalette)index : palette, kind == DiagramGalleryKind.Styles ? (NodeDesign)index : design, kind == DiagramGalleryKind.Layouts ? (ChartLayout)index : layout) { Width = width - 12, Height = compact ? 30 : 50 });
         panel.Children.Add(new TextBlock { Text = label, FontSize = 13, Foreground = Ui.Ink, TextTrimming = TextTrimming.CharacterEllipsis, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0), MaxWidth = width - 12 });
-        var button = new Button { Content = panel, Width = width, Height = 84, Padding = new Thickness(4), Margin = new Thickness(0, 0, 4, 0), Style = (Style)Application.Current.FindResource("RibbonButton"), BorderThickness = new Thickness(1), BorderBrush = index == selected ? Ui.Accent : Brushes.Transparent, Background = index == selected ? Ui.Brush("SoftTeal") : Brushes.Transparent, ToolTip = label + "\n" + (kind == DiagramGalleryKind.Styles ? DiagramAppearance.DesignDescription((NodeDesign)index) : kind == DiagramGalleryKind.Colours ? "Apply to all nodes and connections; priority and overdue highlights remain visible." : "Arrange all visible nodes using this layout.") };
+        var button = new Button { Content = panel, Width = width, Height = compact ? 64 : 84, Padding = new Thickness(4), Margin = new Thickness(0, 0, 4, 0), Style = (Style)Application.Current.FindResource("RibbonButton"), BorderThickness = new Thickness(1), BorderBrush = index == selected ? Ui.Accent : Brushes.Transparent, Background = index == selected ? Ui.Brush("SoftTeal") : Brushes.Transparent, ToolTip = label + "\n" + (kind == DiagramGalleryKind.Styles ? DiagramAppearance.DesignDescription((NodeDesign)index) : kind == DiagramGalleryKind.Colours ? "Apply to all nodes and connections; priority and overdue highlights remain visible." : "Arrange all visible nodes using this layout.") };
         AutomationProperties.SetName(button, label); AutomationProperties.SetItemStatus(button, index == selected ? "Selected" : "Available");
         ToolTipService.SetInitialShowDelay(button, 400);
         button.Click += (_, _) => { popup.IsOpen = false; choose(index); };
         return button;
     }
 
+    internal Button CompactButton()
+    {
+        var button = new Button { Style = (Style)Application.Current.FindResource("RibbonButton"), Width = 30, Height = 28, Padding = new Thickness(4) };
+        RibbonBar.Label(button,kind == DiagramGalleryKind.Colours ? "Colour combinations" : kind == DiagramGalleryKind.Layouts ? "Diagram layouts" : "Node designs");
+        if (button.Content is StackPanel row) row.Children.RemoveAt(row.Children.Count - 1);
+        button.SetBinding(IsEnabledProperty,new System.Windows.Data.Binding("IsEnabled") { Source = this }); button.Click += (_, _) => Open(button); return button;
+    }
     private void Open(Button anchor)
     {
         var columns = Math.Clamp((int)((SystemParameters.WorkArea.Width - 68) / 142), 1, 4);

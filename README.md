@@ -5,6 +5,42 @@ The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Compact ribbon and free placement — version 3.5
+
+The header is 48 px tall, with caption controls at the far right. The module
+selector is under **Home → Application**, and one shared ribbon serves all views.
+Buttons are flat, finer, smaller and left aligned. Double-click a tab or click
+⌃ to switch between the full ribbon and compact command icons. Tabs stay visible;
+hover identifies commands. Compact galleries and diagram/module pickers remain
+accessible. The clock is now at the bottom right, at 15.6 px (1.2× its prior size).
+
+**View → Placement → Free move** lets any mind-map/WBS node move to a chosen
+position. Nearby nodes make room without changing parents, sibling order,
+permanent IDs or WBS numbers. Pointer updates are coalesced to display frames and
+reuse node/connector visuals. Release saves one Undo step; Esc cancels. Turn Free
+move off to use the existing structural branch drag/drop. Reset positions or
+choose a layout to return to automatic placement. Free positions persist with the
+diagram; Graph retains its existing free movement.
+
+**Home → Files → Save a copy…** writes every project, task, diagram, setting and
+log into one `.sumapp` file in your chosen folder. Live profile autosave continues;
+the copy is a snapshot and does not update automatically. **Open saved copy…**
+restores it after confirmation, preserving a safety backup in the profile folder.
+
+**Home → Brand → Choose logo PNG…** lets you select the original PNG from your
+own desktop. It is stored byte-for-byte with your data and used in the header and
+window/taskbar icons. All-data copies/backups carry it too. No separate file must
+remain on the desktop after selection. The chooser validates the PNG before
+saving, preserves proportions and updates open dialog icons through a shared
+resource. The executable's embedded Explorer icon requires a source rebuild.
+
+**Embedded logo update pending:** the latest symbol-only PNG is visible in the chat but its
+original bytes are unavailable. The provided ChatGPT share page returned a network
+policy denial. This build retains the previous SUMAPP artwork. When the original
+PNG is accessible, run `python3 scripts/package-brand.py /path/to/logo.png` and
+rebuild; the script preserves the supplied PNG unchanged in both resources and
+encodes nine proportional executable-icon sizes. It does not generate a new logo.
+
 ## Visual diagram galleries — version 3.4
 
 The ribbon now shows SmartArt-style thumbnails rather than style dropdowns.
@@ -36,7 +72,7 @@ Existing enum values, node IDs, numbering, data and graph positions are retained
 The supplied SAMAP wordmark was changed to **SUMAPP**, as requested, preserving
 its teal ribbon symbol. The corrected transparent artwork is used in the header
 and nine-resolution executable/window icon. The header has a small neutral logo
-backing, a black background, thin Eire yellow top strip and top-right local clock.
+backing, a black background, thin Eire yellow top strip and bottom-right local clock.
 Shared component resources use the requested neutral/teal palette with readable
 ink text, dark-teal primary actions and restrained yellow priority badges.
 
@@ -173,7 +209,7 @@ retain the Microsoft Project / P6 planning exports. Free-form relationships are
 not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
 portable output and preserves size, weight, italic, underline and alignment;
 Windows font families use this export fallback. All new data is included in
-JSON backup/restore. **Back up before updating and continue using version 3.4;
+JSON backup/restore. **Back up before updating and continue using version 3.5;
 older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1

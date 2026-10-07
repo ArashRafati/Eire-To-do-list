@@ -29,6 +29,9 @@ internal static class VisualCapture
             Charts.Add(chart, procurement.Id, true, titles[0]); service.SaveDiagram(chart);
             var settings = service.Data.Settings; settings.Width = 1280; settings.Height = 850; settings.Opacity = 1; settings.SelectedDiagramId = chart.Id; service.SaveSettings(settings);
             window = new MainWindow(service, directory); Application.Current.MainWindow = window; window.Show();
+            var logo = Application.GetResourceStream(new Uri("/SUMAPP;component/Assets/SumappLogo.png",UriKind.Relative))!;
+            using (logo.Stream) using (var original = new MemoryStream()) { logo.Stream.CopyTo(original); window.CaptureLogo(original.ToArray()); }
+            Assert(ReferenceEquals(((Image)window.FindName("SumappLogo")).Source,window.Icon),"Chosen logo and window icon differ");
             await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-to-do.png"));
             window.CaptureMode(AppMode.Diagram); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-mind-map.png"));
             var workspace = Descendants<ChartWorkspace>(window).Single(); workspace.CaptureRibbon("Format"); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-diagram-gallery.png"));
@@ -40,9 +43,12 @@ internal static class VisualCapture
             {
                 window.Width = size.Width; window.Height = size.Height; await Settle(window);
                 var mode = (ComboBox)window.FindName("ModeSelector"); var clock = (TextBlock)window.FindName("HeaderClock");
-                Assert(mode.ActualWidth > 0 && clock.ActualWidth > 0 && clock.TransformToAncestor(window).Transform(new Point(clock.ActualWidth, 0)).X <= window.ActualWidth + 1, "Header clipped at " + size);
+                Assert(mode.ActualWidth > 0 && clock.ActualWidth > 0 && clock.TransformToAncestor(window).Transform(new Point(clock.ActualWidth, 0)).X <= window.ActualWidth + 1, "Module / footer clipped at " + size);
                 Assert(Descendants<Button>(window).Any(b => b.IsVisible && System.Windows.Automation.AutomationProperties.GetName(b) == "View") || Descendants<Button>(window).Any(b => b.IsVisible && Equals(b.Content, "View")), "View tab hidden at " + size);
-                results.Add("PASS header / View tab at " + size);
+                var close = (Button)window.FindName("CloseWindowButton"); var edge = close.TransformToAncestor(window).Transform(new Point(close.ActualWidth,0));
+                Assert(Math.Abs(edge.X - window.ActualWidth) <= 2,"Caption controls are not at the right edge");
+                Assert(Math.Abs(clock.FontSize - 15.6) < .01 && clock.TransformToAncestor(window).Transform(new Point(0,0)).Y > window.ActualHeight - 65,"Clock is not in the bottom footer");
+                results.Add("PASS module / footer / View tab / caption edge at " + size);
             }
             foreach (var font in new[] { "Segoe UI", "Arial", "Consolas" }) foreach (var size in new[] { 12d, 17, 32, 48 })
             {

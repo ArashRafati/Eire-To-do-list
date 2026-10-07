@@ -153,7 +153,7 @@ not establish native UI or Windows launch behaviour.
     unfinished tasks and WBS nodes. Only yesterday should be red and active
     in the log. Complete, reopen, reschedule and delete disposable items:
     resolved history must remain. Test Include resolved history and persisted
-    show/hide. The header clock must follow the local computer's date/time.
+    show/hide. The bottom-right clock must follow the local computer's date/time.
     Leave open through local midnight or restart the next day to verify newly
     overdue items are recorded. Check a log save failure produces a retry banner.
 18. **Graph.** Create a separate GRAPH diagram. Enter and Insert both add a
@@ -179,7 +179,7 @@ not establish native UI or Windows launch behaviour.
     while a title is pending and verify it saves first. Drag Graph cells into
     areas above/left of the original root, reopen/restore and check positions.
     Export signed positions: PDF must include all nodes without large empty
-    workspace margins. Check the clock in the top-right corner at compact,
+    workspace margins. Check the clock in the bottom-right corner at compact,
     maximised and mixed-DPI sizes. Ribbon groups must keep consistent heights,
     scroll sideways and collapse/expand via the arrow or double-clicked tab.
 20. **3.1 merged modules and automatic leads.** The menu must contain To-do,
@@ -237,3 +237,28 @@ not establish native UI or Windows launch behaviour.
     errors are visible for unwritable targets. Print opens normal Windows
     printer selection and uses the selected orientation/paper; cancel normally.
     PDF saving must work with no printer installed or external PDF viewer.
+
+23. **3.5 shared ribbon and placement.** At 520×400, 940×620 and 1440×900, verify
+    caption controls touch the right edge, module selection is under Home, the
+    footer clock is bottom-right and the full ribbon has no clipped controls.
+    Collapse it, change every tab and invoke its compact command icons, diagram
+    picker, module picker and gallery popups. Hover/focus every command.
+    In each hierarchy layout, enable View → Placement → Free move and drag a root,
+    branch and leaf into empty/occupied space and across negative world positions.
+    Nearby nodes must make room while numbering stays unchanged. Test Esc, Undo,
+    Redo and restart. Turn off Free move and repeat structural reparent/reorder.
+    Use long titles and 48 px fonts, add children, fold/unfold and reset positions.
+    Observe frame smoothness at 100/150/200% scaling and with a large diagram.
+24. **PC copies.** Save a .sumapp file to Documents. Edit live tasks; verify the
+    copy remains a snapshot and profile changes persist. Restore the saved copy,
+    confirm replacement and check the safety backup. Cancel dialogs and try an
+    unwritable target: error must be visible and live data preserved.
+25. **Original PNG pending.** After installing an accessible authoritative PNG
+    with package-brand.py and rebuilding, compare the header/icon resources to
+    its SHA256 and verify executable/window/taskbar/shortcut icons on Windows.
+
+26. **Desktop logo picker.** Home → Brand → Choose logo PNG: select the supplied
+    transparent desktop file. Verify original proportions in the header, icon
+    updates on the window/taskbar/open dialogs, and restart/backup/copy/restore.
+    Cancel and damaged/oversized image selection must preserve the previous logo
+    and task data. The Explorer executable icon is unchanged until a rebuild.

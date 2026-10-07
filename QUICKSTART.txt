@@ -1,4 +1,4 @@
-SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.4 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.5 — PORTABLE WINDOWS WIDGET
 
 1. Unzip SUMAPP-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
@@ -72,7 +72,7 @@ Microsoft Project XML, native P6 XML and PDF chart + full node details.
 XML carries hierarchy directly. P6's CSV needs mapping into a P6-exported XLSX
 template; it is not a direct P6 CSV import. The guide PLANNING-EXPORTS.md included
 with this app provides the exact routes and scheduling/calendar conventions.
-Backups/restores include all diagrams, formatting, leads and overdue history. Continue using version 3.4 after making
+Backups/restores include all diagrams, formatting, leads and overdue history. Continue using version 3.5 after making
 charts; older versions cannot preserve the new diagram fields when saving.
 
 DRAGGING AND RIBBON
@@ -93,7 +93,7 @@ painter copies the selected style; click the destination task or node to apply.
 Click the painter again to cancel. New cells inherit the selection's style.
 
 OVERDUE AND CLOCK
-The top-right clock shows the computer's local dd/MM/yyyy HH:mm:ss time.
+The bottom-right clock shows the computer's local dd/MM/yyyy HH:mm:ss time.
 Unfinished tasks/nodes with an entered finish date before today turn red.
 Show overdue log (footer or View ribbon) displays active entries and optional
 resolved history. Completion, deletion and rescheduling retain the old episode.
@@ -193,3 +193,18 @@ WINDOWS SCREENSHOTS: From the app folder in a normal PowerShell window, run:
 This uses isolated temporary sample data and leaves your actual profile intact.
 It saves real WPF to-do/mind-map/gallery PNGs and visual-checks.txt. This command cannot
 be tested in the Linux cloud environment. See BRANDING.md for current limitations.
+
+VERSION 3.5
+Home → Application selects the module. Caption buttons sit at the far right.
+Double-click a tab / use the fold icon for compact command icons; hover for help.
+View → Placement → Free move: drag any hierarchy node without renumbering.
+Nearby nodes make room. Release saves; Esc cancels; Undo restores the arrangement.
+Turn Free move off for structural branch dragging. Reset positions restores layout.
+Home → Files → Save a copy writes a complete .sumapp snapshot to a chosen folder.
+Profile autosave continues. Open saved copy restores after confirmation and backup.
+Latest symbol-only logo pending: share-page download was blocked. This build uses
+the previous SUMAPP artwork. See BRANDING.md for original-PNG packaging steps.
+
+Home → Brand → Choose logo PNG lets you select your original desktop image.
+It updates the header and window/taskbar icons and is preserved in data/backups.
+The embedded Explorer executable icon still needs an original-PNG source rebuild.

@@ -151,6 +151,7 @@ try
     WorkspaceChecks.Run(Check, root);
     InteractionChecks.Run(Check, root);
     BrandChecks.Run(Check, root);
+    FreePlacementChecks.Run(Check, root);
     if (args.Length == 2 && args[0] == "--exports-dir") { ChartChecks.WriteFixtures(args[1]); UpdateChecks.WriteFixtures(args[1]); InteractionChecks.WriteFixtures(args[1]); BrandChecks.WriteFixtures(args[1]); }
 }
 finally { Directory.Delete(root, recursive: true); }

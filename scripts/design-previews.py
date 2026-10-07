@@ -25,26 +25,28 @@ def rect(x, y, w, h, fill, stroke='', radius=4):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="{fill}" stroke="{stroke or "none"}" stroke-width="1"/>'
 
 def frame(module, active_tab='Home'):
-    s = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{W}" height="{H}">', rect(0,0,W,H,T['Surface']),rect(0,0,W,104,T['Black'],radius=0),rect(0,0,W,3,T['Yellow'],radius=0),rect(12,10,44,44,'#FFFFFF'), f'<image x="14" y="12" width="40" height="40" xlink:href="data:image/png;base64,{logo}"/>',text(68,40,'SUMAPP','#FFFFFF',22,True),rect(W-288,16,104,34,'#FFFFFF'),f'<image x="{W-282}" y="19" width="28" height="28" xlink:href="data:image/png;base64,{eire}"/>',text(W-246,40,'Eire',size=17,bold=True)]
-    for x, label in [(W-166,'−'),(W-119,'□'),(W-72,'×')]: s += [rect(x,18,36,28,T['Black'],T['DarkTeal']),text(x+10,39,label,'#FFFFFF',17)]
-    s += [rect(12,64,210,32,T['DarkTeal']),text(24,86,module,'#FFFFFF',16,True),text(196,86,'⌄','#FFFFFF',16),text(W-315,85,'OFFLINE','#FFFFFF',12),text(W-200,85,'07/10/2026 14:30','#FFFFFF',13)]
-    for x, label in [(12,'Home'),(90,'Insert'),(162,'Format'),(249,'View')]:
-        s += [rect(x,112,72,34,T['DarkTeal'] if label==active_tab else T['Surface']),text(x+10,135,label,'#FFFFFF' if label==active_tab else T['Ink'],15,True)]
-    s += [rect(12,151,W-24,102,'#FFFFFF')]
+    s = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{W}" height="{H}">', rect(0,0,W,H,T['Surface']),rect(0,0,W,48,T['Black'],radius=0),rect(0,0,W,3,T['Yellow'],radius=0),rect(10,8,34,34,'#FFFFFF'), f'<image x="12" y="10" width="30" height="30" xlink:href="data:image/png;base64,{logo}"/>',text(54,33,'SUMAPP','#FFFFFF',20,True),rect(W-228,12,94,28,'#FFFFFF'),f'<image x="{W-222}" y="14" width="24" height="24" xlink:href="data:image/png;base64,{eire}"/>',text(W-190,33,'Eire',size=16,bold=True)]
+    for x,label in [(W-120,'−'),(W-80,'□'),(W-40,'×')]:s.append(text(x+13,32,label,'#FFFFFF',17))
+    for x,label in [(8,'Home'),(82,'Insert'),(150,'Format'),(227,'View')]:
+        s += [rect(x,48,68,30,T['DarkTeal'] if label==active_tab else T['Surface'],radius=2),text(x+10,69,label,'#FFFFFF' if label==active_tab else T['Ink'],14,True)]
+    s += [rect(0,78,W,106,'#FFFFFF',radius=0)]
+    # Existing demo coordinates are translated to the smaller ribbon/canvas.
+    s += ['<g transform="translate(0 -69)">']
+    if active_tab == 'Home':
+        action(s,1300,182,'Choose logo PNG…',icon='doc');s.append(text(1300,245,'BRAND',size=11))
     return s
 
 def action(s, x, y, label, primary=False, icon='plus'):
     width = len(label)*8+44
-    if primary: s.append(rect(x,y-22,width,34,T['DarkTeal']))
-    colour = '#FFFFFF' if primary else T['Ink']
+    colour = T['DarkTeal'] if primary else T['Ink']
     if icon=='plus': motif=f'M{x+12} {y-14} v16 M{x+4} {y-6} h16'
     elif icon=='trash': motif=f'M{x+4} {y-13} h16 M{x+7} {y-13} v16 h10 v-16 M{x+9} {y-17} h6'
     else: motif=f'M{x+4} {y-15} h16 v18 h-16 z M{x+8} {y-10} h8 M{x+8} {y-4} h8'
-    s.append(f'<path d="{motif}" stroke="{colour}" fill="none" stroke-width="1.6"/>')
+    s.append(f'<path d="{motif}" stroke="{colour}" fill="none" stroke-width="1.25"/>')
     s.append(text(x+28,y,label,colour,14))
 
 def save(name, parts):
-    parts += [text(16,H-20,'DESIGN PREVIEW · Shared Core styles and geometry · Native Windows screenshot not captured',T['Ink'],13),'</svg>']
+    parts += ['</g>',text(W-240,H-18,'07/10/2026 14:30:45',T['Ink'],15.6),text(16,H-20,'DESIGN PREVIEW · Shared Core styles and geometry · Native Windows screenshot not captured',T['Ink'],13),'</svg>']
     svg = ''.join(parts).encode()
     (out / (name+'.svg')).write_bytes(svg)
     document=fitz.open(stream=svg,filetype='svg'); pdf=fitz.open(stream=document.convert_to_pdf(),filetype='pdf')
@@ -52,8 +54,9 @@ def save(name, parts):
     (out / (name+'.html')).write_text('<!doctype html><title>SUMAPP design preview</title><body style="margin:0">'+svg.decode()+'</body>')
 
 s=frame('TO-DO')
-action(s,26,182,'Add task',True); action(s,26,223,'Edit / notes',icon='doc'); action(s,194,182,'Delete',icon='trash'); action(s,194,223,'Projects',icon='doc')
-s += [text(70,246,'TASKS',size=12),text(238,246,'PROJECTS',size=12)]
+s += [rect(12,162,190,28,T['Surface'],T['DarkTeal']),text(22,182,'To-do     ⌄',T['Ink'],14),text(12,245,'APPLICATION',size=11)]
+action(s,225,182,'Save a copy…',icon='doc');action(s,225,216,'Open saved copy…',icon='doc');action(s,445,182,'Add task',True); action(s,445,216,'Edit / notes',icon='doc'); action(s,622,182,'Delete',icon='trash'); action(s,622,216,'Projects',icon='doc')
+s += [text(225,245,'FILES',size=11),text(445,245,'TASKS',size=11),text(622,245,'PROJECTS',size=11)]
 s += [rect(12,267,W-24,107,'#FFFFFF'),text(25,288,'PROJECT VIEW',size=14,bold=True),rect(25,298,200,40,'#FFFFFF',T['DarkTeal']),text(37,324,'All projects',size=17),text(241,288,'SEARCH TASK',size=14,bold=True),rect(241,298,220,40,'#FFFFFF',T['DarkTeal']),rect(480,309,22,22,'#FFFFFF',T['DarkTeal']),text(512,326,'Hide completed',size=16)]
 action(s,683,324,'Clear filters',icon='doc');s.append(text(27,363,'⌄  More filters · notes, category, status and dates',size=16))
 cols=[('Status',155),('Project',160),('Task',300),('Start date',135),('Finish date',135),('Category',160),('Notes',220),('Created date / time',205)]
@@ -72,8 +75,9 @@ action(s,340,824,'Show overdue log',icon='doc');action(s,570,824,'Backup / expor
 save('SUMAPP-to-do-design',s)
 
 s=frame('MIND MAP / WBS')
-s += [rect(26,160,250,34,'#FFFFFF',T['DarkTeal']),text(37,182,'SOU001 · Mechanical items',size=15)]
-action(s,26,223,'New diagram',icon='doc');action(s,326,182,'Sibling',True);action(s,326,223,'Child',icon='plus');action(s,500,182,'Edit title',icon='doc');action(s,500,223,'Node details',icon='doc');action(s,688,182,'Delete node',icon='trash');action(s,888,182,'Export',True,icon='doc');action(s,888,223,'Overdue log',icon='doc')
+s += [rect(12,162,190,28,T['Surface'],T['DarkTeal']),text(22,182,'Mind map / WBS   ⌄',size=14),text(12,245,'APPLICATION',size=11)]
+action(s,222,182,'Save a copy…',icon='doc');action(s,222,216,'Open saved copy…',icon='doc');s += [rect(410,162,210,28,T['Surface'],T['DarkTeal']),text(420,182,'Mechanical items  ⌄',size=14)]
+action(s,410,216,'New diagram',icon='doc');action(s,670,182,'Edit title',icon='doc');action(s,670,216,'Node details',icon='doc');action(s,866,182,'Delete node',icon='trash');action(s,1035,182,'Export',True,icon='doc');action(s,1035,216,'Overdue log',icon='doc')
 scene=fixture['Scene'];scale=min(1.2,(W-100)/scene['Width'],570/scene['Height']);dx=(W-scene['Width']*scale)/2;dy=285+(570-scene['Height']*scale)/2
 s.append(f'<g transform="translate({dx} {dy}) scale({scale})">')
 for mark in fixture['Marks']:
