@@ -1,9 +1,30 @@
 # Eire To-do
 
-A portable, offline Windows desktop to-do widget built with WPF and .NET 10.
+A portable, offline Windows desktop to-do, mind-map and WBS widget built with WPF and .NET 10.
 The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
+
+## Mind maps and WBS — version 2.0
+
+The yellow **TO-DO** title is now a module dropdown: switch to **MIND MAP** or
+**WBS CHART**. Create saved diagrams, select cells and press **Enter** for a sibling
+or **Insert** for a child. Five layouts are available: two-sided mind map, right
+tree, top-down WBS, left-to-right WBS and numbered outline. Edit full notes,
+parent, dates, duration and completion; reorder, indent/outdent, fold, zoom,
+fit and undo/redo. Copy a project's existing tasks into a diagram if useful.
+
+Export CSV, Microsoft Project XML (MSPDI), Primavera P6 XML (PMXML, target versions
+18.8 / 23.12 / 24.12 / 25.12), and directly generated PDF chart/detail pages.
+[PLANNING-EXPORTS.md](PLANNING-EXPORTS.md) explains scheduling defaults and exact
+import/mapping routes. P6 CSV is spreadsheet mapping material: its native
+spreadsheet importer normally requires a P6-exported XLSX template. XML is the
+preferred route for carrying hierarchy. Native MSP/P6 import has not been run;
+exported XML is independently parsed and checked with MPXJ.
+
+Diagrams and view preferences autosave in the existing user data file and are
+included in full-data backup/restore. Back up before updating, and use the new
+executable for subsequent changes; older app versions do not understand diagrams.
 
 ## App icon update 1.2
 
@@ -99,7 +120,7 @@ bash scripts/setup-cloud.sh
 ```
 
 This uses a checksum-verified portable Linux SDK in `/workspace/.tools/dotnet`,
-restores locked dependencies, runs functional checks, and cross-publishes the
+restores locked dependencies, runs functional checks, generates export fixtures, and cross-publishes the
 Windows executable. Existing checkouts are used; each cloud task is isolated,
 so no additional Git worktree is needed. The Linux setup script's paths assume
 the onboarding checkout `/workspace/Eire-To-do-list`.
@@ -113,12 +134,13 @@ and real Windows account launch remain unverified.
 ## Source and verification
 
 - `src/EireTodo.Core`: models, validation, combined filtering, atomic JSON
-  storage, backup/restore and transactional operations.
+  storage, chart hierarchies/layouts/planning exports, backup/restore and transactional operations.
 - `src/EireTodo.Windows`: WPF UI, Windows manifest, window settings and profile
   data location.
-- `tests/EireTodo.Checks`: dependency-free executable functional checks,
+- `tests/EireTodo.Checks`: executable functional checks without an external test framework,
   including disk failures and corruption recovery. A failing check exits nonzero.
 - [VERIFICATION.md](VERIFICATION.md): actual build/check evidence and limits.
+- [PLANNING-EXPORTS.md](PLANNING-EXPORTS.md): chart guide and MSP/P6 import routes.
 - [WINDOWS-VERIFICATION.md](WINDOWS-VERIFICATION.md): exact remaining desktop
   acceptance steps to run under a standard Windows account.
 
@@ -126,3 +148,14 @@ Data is plain JSON with schema version 1. Internal JSON dates use ISO serializat
 only display/input uses Australian formatting. Created timestamps retain their
 offset and display in the computer's current local timezone. Exported backups
 contain notes and other personal data; store them where you intend.
+
+For an optional independent planning-export check (development tools only):
+
+```bash
+python3 -m pip install --target /tmp/eire-export-tools mpxj==16.10.0 JPype1==1.7.1
+PYTHONPATH=/tmp/eire-export-tools python3 scripts/verify-chart-exports.py
+```
+
+This requires Java and Poppler's `pdftotext` locally; neither is required by the
+Windows app. PDF generation uses bundled PDFsharp and a DejaVu font, with no
+printer/runtime installation or accounts. See [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt).

@@ -6,9 +6,10 @@
       <Grid Background="#080C12" MouseLeftButtonDown="HeaderDrag" Margin="0,0,0,12">
         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
         <Border Width="46" Height="46" Margin="0,0,15,0" HorizontalAlignment="Left" IsHitTestVisible="False"><Image Source="/EireTodo;component/Assets/AppIcon.png" Stretch="Uniform"/></Border>
-        <TextBlock Grid.Column="1" Text="TO-DO" Foreground="#FFCC33" FontFamily="Bahnschrift, Segoe UI" FontWeight="SemiBold" FontSize="24" VerticalAlignment="Center" IsHitTestVisible="False"/>
+        <ComboBox x:Name="ModeSelector" Grid.Column="1" Width="180" HorizontalAlignment="Left" VerticalAlignment="Center" Foreground="#FFCC33" FontFamily="Bahnschrift, Segoe UI" FontWeight="SemiBold" FontSize="20" SelectionChanged="ModeChanged" AutomationProperties.Name="Application module"><ComboBoxItem Content="TO-DO"/><ComboBoxItem Content="MIND MAP"/><ComboBoxItem Content="WBS CHART"/></ComboBox>
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-          <Border Background="#111B25" BorderBrush="#51687F" BorderThickness="1" Padding="10,5" Margin="0,0,12,0" VerticalAlignment="Center" IsHitTestVisible="False"><StackPanel Orientation="Horizontal"><Rectangle Width="5" Height="5" Fill="#FFCC33" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="OFFLINE" Foreground="#FFFFFF" FontFamily="Consolas" FontSize="14"/></StackPanel></Border>
+          <Border x:Name="OfflineBadge" Background="#111B25" BorderBrush="#51687F" BorderThickness="1" Padding="10,5" Margin="0,0,12,0" VerticalAlignment="Center" IsHitTestVisible="False"><StackPanel Orientation="Horizontal"><Rectangle Width="5" Height="5" Fill="#FFCC33" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="OFFLINE" Foreground="#FFFFFF" FontFamily="Consolas" FontSize="14"/></StackPanel></Border>
+          <Button Content="⚙" Width="38" MinHeight="32" Padding="0,2" Margin="0,0,7,0" Click="WindowOptionsClick" ToolTip="Window settings · always on top and opacity" AutomationProperties.Name="Window settings"/>
           <Button Content="—" Width="38" MinHeight="32" Padding="0,2" Click="MinimizeClick" ToolTip="Minimise" AutomationProperties.Name="Minimise"/>
           <Button Content="□" Width="38" MinHeight="32" Padding="0,2" Margin="5,0" Click="MaximizeClick" ToolTip="Maximise / restore" AutomationProperties.Name="Maximise or restore"/>
           <Button Content="✕" Width="38" MinHeight="32" Padding="0,2" Click="CloseClick" ToolTip="Close" AutomationProperties.Name="Close"/>
@@ -69,7 +70,7 @@
           </Border>
         </StackPanel>
       </ScrollViewer>
-      <Grid Grid.Row="2">
+      <Grid x:Name="TodoTablePanel" Grid.Row="2">
         <DataGrid x:Name="TaskGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" CanUserResizeColumns="True" CanUserReorderColumns="False" SelectionMode="Single" SelectionUnit="FullRow" MouseDoubleClick="GridDoubleClick" SelectionChanged="GridSelectionChanged" Sorting="GridSorting" PreviewKeyDown="GridKeyDown" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" MinColumnWidth="35">
           <DataGrid.Columns>
             <DataGridTextColumn ElementStyle="{StaticResource GridText}" Header="Project" Binding="{Binding Project}" SortMemberPath="Project" Width="160" MinWidth="130"/>
@@ -84,6 +85,7 @@
         </DataGrid>
         <TextBlock x:Name="EmptyMessage" Text="No tasks yet. Add your first task." Foreground="#FFFFFF" FontSize="17" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Margin="20"/>
       </Grid>
+      <Grid x:Name="ChartHost" Grid.Row="1" Grid.RowSpan="2" Visibility="Collapsed"/>
       <WrapPanel x:Name="FooterPanel" Grid.Row="3" Margin="0,12,0,0">
         <TextBlock x:Name="TaskCount" Foreground="#FFFFFF" FontSize="16" VerticalAlignment="Center" Margin="0,0,18,5"/>
         <Button Content="Backup / export" Click="ExportClick" Margin="0,0,7,5"/>

@@ -1,13 +1,13 @@
-EIRE TO-DO 1.2 — PORTABLE WINDOWS WIDGET
+EIRE TO-DO / MIND MAP / WBS 2.0 — PORTABLE WINDOWS WIDGET
 
 1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
 2. Double-click EireTodo.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
 
-UPDATING FROM 1.0 / 1.1: Close the running app, unzip the new release, then run the
+UPDATING FROM 1.x: Back up your data first. Close the running app, unzip the new release, then run the
 new EireTodo.exe. Your tasks, projects and preferences are read from the same
-profile data folder. The update needs no data migration. Larger text and dark
+profile data folder. The update needs no manual data migration. Larger text and dark
 high-contrast panels are used throughout the app. Version 1.2 adds a custom
 black-and-yellow icon to the executable, taskbar, app windows and header.
 If a previously pinned shortcut keeps an old icon, unpin it and pin the
@@ -41,11 +41,31 @@ If the upper controls need more space in a small window, scroll that panel.
 The task table stays available below it.
 
 Drag the black header to move; drag window edges/corners to resize.
-Always on top and opacity are on the toolbar. Opacity defaults to 97% and
+Always on top and opacity are on the toolbar and header gear menu. Opacity defaults to 97% and
 ranges from 65% to 100%. Header buttons minimise, maximise/restore and close.
 Alt+F4 closes normally. Position, size, opacity, topmost and column widths
 are saved automatically. A disconnected monitor is handled by moving an
 otherwise inaccessible window to the primary display.
+
+MIND MAPS AND WBS
+Click the yellow TO-DO title dropdown to choose MIND MAP or WBS CHART.
+Create a diagram, select a cell and press Enter to create a same-level sibling
+or Insert to create a child. F2/double-click edits the label and full notes.
+New cells save immediately and open an editor. Cancel keeps the placeholder;
+Undo removes it. Enter in a notes field makes a new line; Ctrl+Enter saves.
+Choose among five layouts; reorder/indent/outdent, fold/unfold, undo/redo,
+zoom with the slider or Ctrl+wheel, and use Fit chart. Use scrollbars for large
+charts. Deleting a node confirms removal of its whole branch. Diagram settings
+include a project and scheduling start; From to-do copies a project's tasks.
+Copy edits are independent. Diagrams, layout, zoom and selected module persist.
+
+Export CSV / XML / PDF offers general hierarchy CSV, MSP/P6 mapping CSV,
+Microsoft Project XML, native P6 XML and PDF chart + full node details.
+XML carries hierarchy directly. P6's CSV needs mapping into a P6-exported XLSX
+template; it is not a direct P6 CSV import. The guide PLANNING-EXPORTS.md included
+with this app provides the exact routes and scheduling/calendar conventions.
+Backups/restores include all diagrams. Continue using version 2.0 after making
+charts; older versions cannot preserve the new diagram fields when saving.
 
 DATA
 All application data and window settings are stored at:
@@ -56,14 +76,14 @@ The directory is local to the current Windows user. Files are not encrypted.
 The bundled runtime may unpack native files under the user's TEMP\.net folder.
 This is a cache, not an installed runtime, and contains no task data.
 
-Every task/project change is saved immediately using an atomic file replace.
+Every task/project/diagram change is saved immediately using an atomic file replace.
 Window settings save shortly after changes and are flushed when you close.
 Saving errors are displayed; failed task/project edits are not accepted and
 an editor remains open for retry. Window-setting failures show a retry banner.
 Only one app instance per user's data folder is permitted.
 
 BACKUP AND RESTORE
-Backup / export saves one JSON file containing all projects, tasks, categories
+Backup / export saves one JSON file containing all projects, tasks, categories, diagrams
 and settings. Choose a writable backup location outside the live data files.
 Restore validates a backup, asks for confirmation, and replaces current data.
 A before-restore-*.json safety copy is kept in the data folder.

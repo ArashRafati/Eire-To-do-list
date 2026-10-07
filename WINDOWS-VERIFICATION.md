@@ -74,3 +74,33 @@ and any security policy block. Automated core checks already cover editing,
 project operations, combined filters, dates, disk persistence, backup/restore,
 settings serialization, corruption recovery and failed-save rollback; they do
 not establish native UI or Windows launch behaviour.
+
+10. **2.0 module switcher and chart editing.** Open the TO-DO dropdown, select
+    MIND MAP and create a diagram. Click its root, press Insert and name a child;
+    press Enter for a sibling. Verify roots can also have siblings. Use F2 and
+    double-click to edit full notes; Enter inside notes must add a line and
+    Ctrl+Enter must save. Test date validation, parent moves, completion,
+    reorder, indent/outdent, branch folding, Undo/Redo and confirmed deletion.
+    Confirm a folded parent opens when adding/moving a child into it. Try all
+    five layouts with uneven-depth branches and multiple roots. Zoom, fit,
+    scroll both ways and switch to WBS then back to To-do. In a compact window,
+    scroll the chart toolbar and ensure all controls stay reachable. The title
+    dropdown/gear must work without dragging the window accidentally.
+11. **Chart persistence/recovery.** Associate a diagram with a project, set its
+    scheduling start, layout and zoom, then close/reopen. Check module, selected
+    diagram, node IDs/content and window settings. Copy a project with From
+    to-do; verify later task/chart edits are independent. Back up, modify/remove
+    a diagram, restore and check it returns. Repeat a failed-save restriction
+    with a chart edit: the editor must show the failure and stay open; the saved
+    hierarchy and previous data must remain intact. Retry after restoring access.
+12. **Exports and native planning imports.** Follow PLANNING-EXPORTS.md. Export
+    folded branches as each CSV/XML/PDF type, preserving all nodes and notes.
+    Open the PDF and inspect every chart tile and detail page. Check canceled
+    export dialogs leave data unchanged and unwritable targets show errors.
+    In a new Microsoft Project project open MSPDI XML; compare summary levels,
+    task UIDs, dates, durations, completion and notes. In a disposable P6 project
+    import native P6 XML with a namespace no newer than that installation;
+    verify project/WBS/activity parents, activity IDs, calendar, status and
+    notebook notes. Record the tool versions and any import log warnings.
+    For CSV, test the Project task mapping and the P6-exported XLSX template
+    workflow described in the guide; do not treat P6 CSV as a direct import.

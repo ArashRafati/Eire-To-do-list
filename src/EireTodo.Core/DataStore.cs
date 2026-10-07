@@ -53,6 +53,8 @@ public sealed class DataStore
         return recovered;
     }
     private static bool SamePath(string a, string b) => string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    internal static void WriteExport(string path, byte[] bytes) => AtomicWrite(path, bytes, null);
+
     private static void AtomicWrite(string path, byte[] bytes, string? backup)
     {
         var full = Path.GetFullPath(path);
@@ -76,7 +78,7 @@ public sealed class DataStore
     }
 }
 
-public sealed class TodoService
+public sealed partial class TodoService
 {
     private readonly DataStore store;
     public DataDocument Data { get; private set; }

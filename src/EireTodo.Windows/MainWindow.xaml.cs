@@ -51,6 +51,7 @@ public partial class MainWindow : Window
 {
     private readonly TodoService service;
     private readonly string dataDirectory;
+    private readonly ChartWorkspace chartWorkspace;
     private readonly DispatcherTimer settingsTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private readonly DispatcherTimer filterTimer = new() { Interval = TimeSpan.FromMilliseconds(220) };
     private bool initialized;
@@ -65,11 +66,14 @@ public partial class MainWindow : Window
         this.service = service;
         this.dataDirectory = dataDirectory;
         InitializeComponent();
+        chartWorkspace = new ChartWorkspace(service, dataDirectory);
+        ChartHost.Children.Add(chartWorkspace);
         settingsTimer.Tick += (_, _) => { settingsTimer.Stop(); SaveWindowSettings(); };
         filterTimer.Tick += (_, _) => { filterTimer.Stop(); ApplyFilters(); };
         ApplyWindowSettings();
         RefreshChoices();
         initialized = true;
+        ApplyMode(false);
         ApplyFilters();
         LocationChanged += (_, _) => QueueSettings();
         SizeChanged += (_, _) => { UpdateControlsViewport(); QueueSettings(); };
@@ -85,6 +89,7 @@ public partial class MainWindow : Window
     private void UpdateControlsViewport()
     {
         if (!IsLoaded) return;
+        OfflineBadge.Visibility = ActualWidth < 710 ? Visibility.Collapsed : Visibility.Visible;
         // Reserve space for the header, footer and several task rows as controls wrap.
         ControlsScroll.MaxHeight = Math.Max(88, ActualHeight - FooterPanel.ActualHeight - SaveErrorPanel.ActualHeight - 210);
     }
@@ -92,6 +97,7 @@ public partial class MainWindow : Window
     private void ApplyWindowSettings()
     {
         var s = service.Data.Settings;
+        ModeSelector.SelectedIndex = (int)s.ActiveMode;
         var virtualWidth = SystemParameters.VirtualScreenWidth;
         var virtualHeight = SystemParameters.VirtualScreenHeight;
         Width = Math.Clamp(s.Width, MinWidth, Math.Max(MinWidth, virtualWidth));
@@ -281,14 +287,14 @@ public partial class MainWindow : Window
     private void ProjectsClick(object sender, RoutedEventArgs e)
     {
         new ProjectEditor(service) { Owner = this }.ShowDialog();
-        RefreshChoices(); ApplyFilters();
+        RefreshChoices(); ApplyFilters(); chartWorkspace.RefreshData();
     }
     private void ExportClick(object sender, RoutedEventArgs e)
     {
         if (settingsDirty && !SaveWindowSettings()) return;
-        var dialog = new SaveFileDialog { Title = "Back up all projects, tasks and window settings", Filter = "Eire backup (*.json)|*.json", FileName = $"EireTodo-backup-{DateTime.Now:yyyyMMdd-HHmm}.json", AddExtension = true, DefaultExt = ".json" };
+        var dialog = new SaveFileDialog { Title = "Back up all projects, tasks, diagrams and window settings", Filter = "Eire backup (*.json)|*.json", FileName = $"EireTodo-backup-{DateTime.Now:yyyyMMdd-HHmm}.json", AddExtension = true, DefaultExt = ".json" };
         if (dialog.ShowDialog(this) == true && TryAction(() => service.Export(dialog.FileName)))
-            MessageBox.Show(this, "Backup saved. It includes all projects, tasks, categories and window settings.", "Backup complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, "Backup saved. It includes all projects, tasks, categories, diagrams and window settings.", "Backup complete", MessageBoxButton.OK, MessageBoxImage.Information);
     }
     private void RestoreClick(object sender, RoutedEventArgs e)
     {
@@ -304,6 +310,8 @@ public partial class MainWindow : Window
             ApplyWindowSettings();
             RefreshChoices();
             initialized = true;
+            chartWorkspace.RefreshData(true);
+            ApplyMode(false);
             ClearFiltersClick(this, new RoutedEventArgs());
             EnsureVisible();
             SaveErrorPanel.Visibility = Visibility.Collapsed;
@@ -330,10 +338,38 @@ public partial class MainWindow : Window
     }
     private void HeaderDrag(object sender, MouseButtonEventArgs e)
     {
-        if (HasAncestor<Button>(e.OriginalSource as DependencyObject)) return;
+        if (HasAncestor<Button>(e.OriginalSource as DependencyObject) || HasAncestor<ComboBox>(e.OriginalSource as DependencyObject)) return;
         if (e.ClickCount == 2) { MaximizeClick(sender, e); return; }
         if (WindowState == WindowState.Maximized) WindowState = WindowState.Normal;
         if (e.LeftButton == MouseButtonState.Pressed) DragMove();
+    }
+    private void ModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!initialized) return;
+        ApplyMode(true); QueueSettings();
+    }
+    private void ApplyMode(bool changeLayout)
+    {
+        var mode = (AppMode)Math.Max(0, ModeSelector.SelectedIndex);
+        var todo = mode == AppMode.Todo;
+        ControlsScroll.Visibility = TodoTablePanel.Visibility = TaskCount.Visibility = todo ? Visibility.Visible : Visibility.Collapsed;
+        ChartHost.Visibility = todo ? Visibility.Collapsed : Visibility.Visible;
+        Title = mode == AppMode.Todo ? "Eire To-do" : mode == AppMode.MindMap ? "Eire Mind map" : "Eire WBS chart";
+        if (!todo) chartWorkspace.SetMode(mode, changeLayout);
+        UpdateControlsViewport();
+    }
+    private void WindowOptionsClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Window { Title = "Window settings", Width = 425, Height = 245, MinWidth = 350, MinHeight = 220, Owner = this, WindowStartupLocation = WindowStartupLocation.CenterOwner };
+        Ui.ApplyWindowStyle(dialog);
+        var panel = new StackPanel { Margin = new Thickness(18) };
+        var top = new CheckBox { Content = "Always on top", IsChecked = TopToggle.IsChecked, Margin = new Thickness(0,0,0,14) };
+        top.Checked += (_, _) => TopToggle.IsChecked = true; top.Unchecked += (_, _) => TopToggle.IsChecked = false;
+        var slider = new Slider { Minimum = .65, Maximum = 1, Value = OpacitySlider.Value, TickFrequency = .01, IsSnapToTickEnabled = true, Margin = new Thickness(0,8,0,12) };
+        var label = Ui.Label($"Window opacity · {slider.Value:P0}");
+        slider.ValueChanged += (_, _) => { OpacitySlider.Value = slider.Value; label.Text = $"Window opacity · {slider.Value:P0}"; };
+        panel.Children.Add(top); panel.Children.Add(label); panel.Children.Add(slider);
+        panel.Children.Add(Ui.Button("Done", (_, _) => dialog.Close(), true)); dialog.Content = panel; dialog.ShowDialog();
     }
     private void MinimizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     private void MaximizeClick(object sender, RoutedEventArgs e) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
@@ -365,6 +401,7 @@ public partial class MainWindow : Window
         {
             Left = bounds.Left, Top = bounds.Top, Width = Math.Max(MinWidth, bounds.Width), Height = Math.Max(MinHeight, bounds.Height),
             Opacity = OpacitySlider.Value, AlwaysOnTop = TopToggle.IsChecked == true,
+            ActiveMode = (AppMode)Math.Max(0, ModeSelector.SelectedIndex), SelectedDiagramId = service.Data.Settings.SelectedDiagramId,
             ColumnWidths = TaskGrid.Columns.ToDictionary(c => c.SortMemberPath, c => Math.Clamp(c.ActualWidth, 35, 3000))
         };
         try

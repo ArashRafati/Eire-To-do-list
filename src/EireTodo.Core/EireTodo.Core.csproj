@@ -7,4 +7,11 @@
     <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
     <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets/DejaVuSans.ttf"/>
+    <EmbeddedResource Include="Assets/DejaVu-LICENSE.txt"/>
+  </ItemGroup>
 </Project>

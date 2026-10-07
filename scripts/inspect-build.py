@@ -114,13 +114,17 @@ for i in range(count):
     files[name] = (offset, size, compressed_size, kind)
 for name in ['EireTodo.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
              'PresentationFramework.dll', 'PresentationCore.dll', 'WindowsBase.dll',
-             'PresentationNative_cor3.dll']:
+             'PresentationNative_cor3.dll', 'PdfSharp.dll']:
     assert name in files, 'Missing bundled runtime/application file: ' + name
 
 def content(name):
     offset, size, compressed, kind = files[name]
     raw = b[offset:offset+(compressed or size)]
     return zlib.decompress(raw, -15) if compressed else raw
+
+managed_core = content('EireTodo.Core.dll')
+font = Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets/DejaVuSans.ttf'
+assert font.read_bytes() in managed_core, 'Offline PDF font not bundled in core resources'
 
 managed_app = content('EireTodo.dll')
 assert ico in managed_app, 'Window ICO not bundled in WPF resources'
@@ -143,4 +147,4 @@ assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= expor
 print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
     'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
     'dpi_awareness': 'PerMonitorV2', 'embedded_icon_sizes': embedded_icon_sizes, 'bundle_files': count,
-    'bundled_frameworks': frameworks, 'requires_installed_dotnet': False}, indent=2))
+    'bundled_frameworks': frameworks, 'offline_pdf_library_and_font': True, 'requires_installed_dotnet': False}, indent=2))

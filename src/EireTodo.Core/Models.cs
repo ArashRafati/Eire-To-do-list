@@ -33,6 +33,8 @@ public sealed class WindowSettings
     public double Height { get; set; } = 530;
     public double Opacity { get; set; } = 0.97;
     public bool AlwaysOnTop { get; set; }
+    public AppMode ActiveMode { get; set; }
+    public Guid? SelectedDiagramId { get; set; }
     public Dictionary<string, double> ColumnWidths { get; set; } = [];
 }
 
@@ -42,6 +44,7 @@ public sealed class DataDocument
     [JsonRequired] public List<Project> Projects { get; set; } = [new()];
     [JsonRequired] public List<TodoTask> Tasks { get; set; } = [];
     [JsonRequired] public List<string> Categories { get; set; } = [];
+    public List<Diagram> Diagrams { get; set; } = [];
     [JsonRequired] public WindowSettings Settings { get; set; } = new();
     public DataDocument Clone() => JsonSerializer.Deserialize<DataDocument>(JsonSerializer.Serialize(this, JsonOptions), JsonOptions)!;
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
@@ -94,6 +97,14 @@ public static class Validation
             if (!data.Projects.Any(p => p.Id == task.ProjectId)) throw new ArgumentException("A task refers to a missing project.");
             if (task.Category is null || task.Notes is null) throw new ArgumentException("A task has invalid optional text fields.");
         }
+        if (data.Diagrams is null || data.Diagrams.Any(c => c is null) || data.Diagrams.Select(c => c.Id).Distinct().Count() != data.Diagrams.Count)
+            throw new ArgumentException("Diagram IDs must be unique.");
+        foreach (var chart in data.Diagrams)
+        {
+            Charts.Validate(chart);
+            if (chart.ProjectId.HasValue && !data.Projects.Any(p => p.Id == chart.ProjectId)) throw new ArgumentException("A diagram refers to a missing project.");
+        }
+        if (!Enum.IsDefined(data.Settings.ActiveMode)) throw new ArgumentException("Invalid app mode.");
         if (data.Categories.Any(c => c is null)) throw new ArgumentException("A category is invalid.");
         var s = data.Settings;
         if (!double.IsFinite(s.Width) || !double.IsFinite(s.Height) || s.Width < 520 || s.Height < 340 ||

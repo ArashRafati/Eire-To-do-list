@@ -10,9 +10,9 @@ artifacts.mkdir(exist_ok=True)
 exe = artifacts / 'windows-x64/EireTodo.exe'
 assert exe.is_file(), 'Publish the Windows executable first.'
 with zipfile.ZipFile(artifacts / 'EireTodo-Windows-x64.zip', 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-    for file in [exe, root / 'QUICKSTART.txt', root / 'WINDOWS-VERIFICATION.md']:
+    for file in [exe, root / 'QUICKSTART.txt', root / 'WINDOWS-VERIFICATION.md', root / 'PLANNING-EXPORTS.md', root / 'THIRD-PARTY-NOTICES.txt']:
         z.write(file, 'EireTodo/' + file.name)
-source_files = [root / p for p in ['.gitignore', 'global.json', 'README.md', 'CHANGELOG.md', 'QUICKSTART.txt', 'VERIFICATION.md', 'WINDOWS-VERIFICATION.md']]
+source_files = [root / p for p in ['.gitignore', 'global.json', 'README.md', 'CHANGELOG.md', 'QUICKSTART.txt', 'VERIFICATION.md', 'WINDOWS-VERIFICATION.md', 'PLANNING-EXPORTS.md', 'THIRD-PARTY-NOTICES.txt']]
 for directory in ['src', 'tests', 'scripts']:
     source_files.extend(p for p in (root / directory).rglob('*')
         if p.is_file() and not any(part in {'bin', 'obj', '__pycache__'} for part in p.relative_to(root).parts))

@@ -1,5 +1,24 @@
 # Changes
 
+## 2.0.0 — mind maps, WBS and planning exports
+
+- Added a title dropdown for To-do, Mind map and WBS modules.
+- Added saved diagrams with sibling (Enter) and child (Insert) creation, node
+  editing, multiline notes, dates, duration, completion and parent selection.
+- Added five layouts, automatic non-overlapping subtree placement, permanent
+  node identifiers, numbering, scrolling, zoom/fit, folding and reordering.
+- Added indent/outdent, confirmed branch/diagram deletion and session undo/redo.
+- Added optional project associations and copying project tasks to diagrams.
+- Added three CSV profiles, MSPDI XML and P6 PMXML (18.8/23.12/24.12/25.12).
+- Added direct PDF chart tiling and full-text detail pages with an embedded font.
+- Added background export generation, atomic export replacement and import guides.
+- Added a header gear for window settings in every module.
+- Included diagrams and module/selection/zoom preferences in existing autosave
+  and backup/restore. Old schema-1 data loads with an empty diagram list.
+- Added chart hierarchy, layout, persistence, failure, scheduling and export
+  checks, plus optional independent CSV/XML/PDF verification.
+
+
 ## 1.2.0 — app icon
 
 - Added a custom golden-yellow tile with the black three-bar Eire mark.

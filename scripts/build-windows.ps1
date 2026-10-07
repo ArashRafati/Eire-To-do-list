@@ -43,6 +43,8 @@ try {
     Copy-Item artifacts/windows-x64/EireTodo.exe $staging
     Copy-Item QUICKSTART.txt $staging
     Copy-Item WINDOWS-VERIFICATION.md $staging
+    Copy-Item PLANNING-EXPORTS.md $staging
+    Copy-Item THIRD-PARTY-NOTICES.txt $staging
     Compress-Archive -Path "$staging/*" -DestinationPath artifacts/EireTodo-Windows-x64.zip -Force
 } finally { Remove-Item -LiteralPath $staging -Recurse -Force }
 Get-FileHash artifacts/EireTodo-Windows-x64.zip -Algorithm SHA256

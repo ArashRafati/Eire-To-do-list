@@ -25,6 +25,6 @@ fi
 export PATH="$DOTNET_ROOT:$PATH"
 mkdir -p "$NUGET_PACKAGES" "$DOTNET_CLI_HOME"
 dotnet restore tests/EireTodo.Checks/EireTodo.Checks.csproj --locked-mode
-dotnet run --project tests/EireTodo.Checks/EireTodo.Checks.csproj -c Release --no-restore
+dotnet run --project tests/EireTodo.Checks/EireTodo.Checks.csproj -c Release --no-restore -- --exports-dir artifacts/export-checks
 dotnet restore src/EireTodo.Windows/EireTodo.Windows.csproj --locked-mode
 dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-restore -o artifacts/windows-x64
