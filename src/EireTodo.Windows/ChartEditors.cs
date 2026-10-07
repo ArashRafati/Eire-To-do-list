@@ -80,7 +80,7 @@ internal sealed class ChartExportEditor : Window
     {
         Ui.ApplyWindowStyle(this); Title = "Export diagram"; Width = 560; Height = 385; MinWidth = 440; MinHeight = 320; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
-        var format = new ComboBox { ItemTemplate = Ui.DisplayTemplate("Label") }; format.ItemsSource = kind == DiagramKind.Network ? new ExportChoice[] { new("PDF · paper preview + node / lead details", ChartExportFormat.Pdf, "pdf"), new("CSV · nodes and leads", ChartExportFormat.NetworkCsv, "csv"), new("XML · Eire graph", ChartExportFormat.NetworkXml, "xml") } : new ExportChoice[] {
+        var format = new ComboBox { ItemTemplate = Ui.DisplayTemplate("Label") }; format.ItemsSource = kind == DiagramKind.Network ? new ExportChoice[] { new("PDF · paper preview + node / lead details", ChartExportFormat.Pdf, "pdf"), new("CSV · nodes and leads", ChartExportFormat.NetworkCsv, "csv"), new("XML · SUMAPP graph", ChartExportFormat.NetworkXml, "xml") } : new ExportChoice[] {
             new("PDF · paper preview + full node details",ChartExportFormat.Pdf,"pdf"),new("XML · Microsoft Project (MSPDI)",ChartExportFormat.ProjectXml,"xml"),new("XML · Primavera P6 (PMXML)",ChartExportFormat.PrimaveraXml,"xml"),
             new("CSV · complete hierarchy",ChartExportFormat.HierarchyCsv,"csv"),new("CSV · Microsoft Project mapping",ChartExportFormat.ProjectCsv,"csv"),new("CSV · P6 WBS / activity mapping material",ChartExportFormat.PrimaveraCsv,"csv")}; format.SelectedIndex = 0;
         var version = new ComboBox { ItemsSource = ChartExports.PrimaveraVersions, SelectedIndex = 0, IsEnabled = false };

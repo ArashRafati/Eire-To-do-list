@@ -327,7 +327,7 @@ public partial class MainWindow : Window
     {
         if (!chartWorkspace.FinishInlineEdit()) return;
         if (settingsDirty && !SaveWindowSettings()) return;
-        var dialog = new SaveFileDialog { Title = "Back up all projects, tasks, diagrams and window settings", Filter = "SUMAPP backup (*.json)|*.json", FileName = $"EireTodo-backup-{DateTime.Now:yyyyMMdd-HHmm}.json", AddExtension = true, DefaultExt = ".json" };
+        var dialog = new SaveFileDialog { Title = "Back up all projects, tasks, diagrams and window settings", Filter = "SUMAPP backup (*.json)|*.json", FileName = $"SUMAPP-backup-{DateTime.Now:yyyyMMdd-HHmm}.json", AddExtension = true, DefaultExt = ".json" };
         if (dialog.ShowDialog(this) == true && TryAction(() => service.Export(dialog.FileName)))
             MessageBox.Show(this, "Backup saved. It includes all projects, tasks, categories, diagrams and window settings.", "Backup complete", MessageBoxButton.OK, MessageBoxImage.Information);
     }
