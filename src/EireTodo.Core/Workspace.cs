@@ -19,8 +19,8 @@ public static class OpenWorkspace
         var boxes = scene.Boxes.ToDictionary(b => b.Id);
         foreach (var lead in chart.Leads)
         {
-            var p = LeadGeometry.Route(boxes[lead.From], boxes[lead.To], lead.Routing, obstacles: scene.Boxes);
-            points.Add((p.C1X, p.C1Y)); points.Add((p.C2X, p.C2Y));
+            var p = LeadGeometry.Route(boxes[lead.From], boxes[lead.To], lead.Routing, obstacles: scene.Boxes, fromSide: lead.FromSide, toSide: lead.ToSide);
+            foreach (var point in LeadGeometry.Vertices(p)) points.Add((point.X, point.Y));
         }
         var x = points.Min(p => p.Item1); var y = points.Min(p => p.Item2);
         return new(x, y, points.Max(p => p.Item1) - x, points.Max(p => p.Item2) - y);
@@ -55,4 +55,10 @@ public static class GraphCreation
         if (!Enum.IsDefined(direction)) throw new ArgumentException("Choose a valid lead direction.");
         return direction == LeadDirection.Incoming ? NetworkCharts.Connect(chart, target, source, routing: routing) : NetworkCharts.Connect(chart, source, target, direction == LeadDirection.Both, routing);
     }
+}
+
+public enum NodeEnterAction { Ignore, ConfirmTitle, CreateNode }
+public static class NodeInputPolicy
+{
+    public static NodeEnterAction Enter(bool editingTitle, bool repeatedKey = false) => repeatedKey ? NodeEnterAction.Ignore : editingTitle ? NodeEnterAction.ConfirmTitle : NodeEnterAction.CreateNode;
 }

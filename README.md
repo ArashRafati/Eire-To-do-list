@@ -5,6 +5,38 @@ The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Editing, lead handles and paper preview — version 3.2
+
+**Enter while editing a title confirms it and returns focus to the canvas. The
+next distinct Enter creates a sibling (or a linked Graph node).** Holding the
+key does not create a stream of nodes. Insert still creates a child/linked node.
+
+Hierarchy drags capture the mouse and show insertion bars in the gaps between
+siblings. In a top-down WBS, left/right edges mean before/after; the middle
+means child. Other layouts use top/bottom edges. You can also right-click a
+node and choose **Move before / after**. Moving `1.6.1` before `1.6` promotes it
+to `1.6`, shifts the previous `1.6` to `1.7`, and preserves IDs and descendants.
+
+Click a Graph lead to select it, then **Delete** removes it or **F2 / double-click /
+Insert → Lead label** edits its label. The two endpoint handles can be dragged to
+any node's highlighted top/right/bottom/left centre. Side attachments, labels,
+direction and routing save with the diagram and export in Graph CSV/XML/PDF.
+Task and node deletion is immediate; diagram edits support Undo.
+
+The ribbon keeps all four tabs visible, uses flat vector buttons and explanatory
+hover tips, and reserves sufficient room for the font/style controls. Nodes are
+compact and sized by level; long titles wrap fully. **Format → Diagram style**
+offers Tiered, Cards, Rounded and Minimal designs plus Eire (the original),
+Ocean, Forest, Violet, Copper and Monochrome palettes. The app chrome retains
+its original colours. Zoom uses an animated render transform with delayed
+preference saving; it does not replace or rebuild the node views.
+
+**PDF opens a paper preview before saving.** A4 landscape with fit-to-paper is
+the default; choose portrait, A3, tiled output or the full-details appendix.
+Every page can be previewed. The preview and PDF render the same vector drawing
+with bundled fonts. Print opens the normal Windows printer selection dialog;
+PDF export itself needs no printer or external viewer.
+
 ## Open workspace and organised ribbon — version 3.1
 
 The title menu now has **TO-DO**, **MIND MAP / WBS** and **GRAPH**. The combined
@@ -39,7 +71,7 @@ The existing black/slate/yellow palette is preserved. The top ribbon has
 header displays the computer's current local date/time in Australian format.
 
 - In **MIND MAP / WBS**, **Enter / Insert** creates a sibling / child with its title editable directly
-  in the cell. Enter while typing saves that title and creates the next sibling;
+  in the cell. Enter while typing confirms that title; the next Enter creates a sibling;
   Insert saves and creates a child. **F2 / double-click** edits the title;
   **Ctrl+Enter** or **right-click → Node details** opens full notes and dates.
   The cell header shows only its WBS code. Title changes autosave after a short
@@ -72,7 +104,7 @@ retain the Microsoft Project / P6 planning exports. Free-form relationships are
 not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
 portable output and preserves size, weight, italic, underline and alignment;
 Windows font families use this export fallback. All new data is included in
-JSON backup/restore. **Back up before updating and continue using version 3.1;
+JSON backup/restore. **Back up before updating and continue using version 3.2;
 older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1
@@ -150,7 +182,7 @@ require IT approval. The app does not bypass security controls.
   projects and their tasks. Archived projects cannot receive new tasks.
 - Eight-column table, sorting by every header, horizontal/vertical scrolling,
   adjustable widths, short notes previews, and a full multiline notes editor.
-- Add, edit, complete/reopen, confirm-delete tasks; optional hiding of completed
+- Add, edit, complete/reopen, delete tasks immediately; optional hiding of completed
   tasks. Description and project required; optional start/finish dates,
   reusable categories, and notes. Created date/time is recorded when saved and
   preserved when edited. Australian dates and 24-hour local times throughout.

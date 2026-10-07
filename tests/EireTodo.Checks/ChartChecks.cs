@@ -182,10 +182,10 @@ internal static class ChartChecks
                 Assert(text.Contains(chart.Nodes[2].Id.ToString())); Assert(text.Contains("Node ID"));
             }
         });
-        check("PDF opens with multiple chart/detail pages and an embedded Unicode font", () =>
+        check("Tiled PDF opens with multiple chart/detail pages and an embedded Unicode font", () =>
         {
             var chart = Fixture(); for (var i = 0; i < 16; i++) Charts.Add(chart, chart.Nodes[0].Id, true, "Long branch " + i); chart.Nodes[0].Collapsed = true;
-            var bytes = ChartExports.Export(chart, ChartExportFormat.Pdf); Assert(Encoding.ASCII.GetString(bytes.Take(5).ToArray()) == "%PDF-"); using var stream = new MemoryStream(bytes); using var pdf = PdfReader.Open(stream, PdfDocumentOpenMode.Import); Assert(pdf.PageCount >= 3); Assert(pdf.Info.Title == chart.Name);
+            var bytes = ChartExports.Pdf(chart,new PdfOptions(FitToPaper:false)); Assert(Encoding.ASCII.GetString(bytes.Take(5).ToArray()) == "%PDF-"); using var stream = new MemoryStream(bytes); using var pdf = PdfReader.Open(stream, PdfDocumentOpenMode.Import); Assert(pdf.PageCount >= 3); Assert(pdf.Info.Title == chart.Name);
             var text = Encoding.Latin1.GetString(bytes); Assert(text.Contains("/FontFile2") && text.Contains("/ToUnicode"));
             var path = Path.Combine(root, "chart.pdf"); ChartExports.Save(chart, ChartExportFormat.Pdf, path); Assert(File.ReadAllBytes(path).Take(5).SequenceEqual(bytes.Take(5)));
         });

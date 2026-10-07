@@ -1,12 +1,12 @@
 # Build and verification evidence
 
-Current delivery: version **3.1.0**, including the combined mind-map/WBS module, five layouts,
+Current delivery: version **3.2.0**, including the combined mind-map/WBS module, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a header clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.1 interface.
+Windows acceptance checks or the updated 3.2 interface.
 
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
@@ -33,7 +33,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Planning date defaults, finish-only dates, duration and summary rollup | Passed automated checks |
 | CSV quoting, BOM/UTF-8, multiline notes, all rows and parent IDs | Passed core checks and independent Python CSV parser |
 | MSPDI and P6 PMXML contents | Passed core checks and independent MPXJ 16.10.0 reads: hierarchy, permanent IDs, dates, 24-hour sample duration, 100% completion and notes; P6 namespaces 18.8/23.12/24.12/25.12 |
-| PDF tiling/detail pages, embedded font, full labels/notes and Unicode | Opened with PDFsharp, Poppler `pdfinfo` / `pdftotext`; sample chart page visually inspected |
+| PDF tiling/detail pages, embedded font, full labels/notes and Unicode | Opened with PDFsharp, Poppler `pdfinfo` / `pdftotext`; sample chart page visually inspected; new fitted landscape/portrait samples also reviewed |
 | Branch drag destinations, identity/order/code preservation and circular-drop rejection | Passed core checks; actual mouse dragging requires Windows |
 | Mixed font sizes 12–48 across all hierarchy layouts | Passed non-overlap checks |
 | Graph automatic placement, stable manual positions, multiple leads, cycles and endpoint cleanup | Passed core checks |
@@ -45,6 +45,14 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Centred initial view, open margins and viewport origin changes | Passed pure coordinate checks at multiple zooms/view sizes; actual panning requires Windows |
 | Graph linked node creation and outgoing/incoming/both/unlinked options | Passed core checks; Enter/Insert UI event dispatch requires Windows |
 | Signed graph positions and compact PDF bounds | Passed restart/backup/export checks; independent CSV/XML checks include signed positions |
+| Enter editing/creation and repeat policy | Passed core input policy; native keyboard dispatch unrun |
+| Exact 1.6.1 promotion between 1.5 and 1.6 | Passed branch/ID/descendant preservation, gap target and renumbering checks |
+| Compact levels and full title wrapping | Passed mixed-size collision checks and full title text in chart drawing |
+| Manual graph ports | Passed all top/right/bottom/left combinations for curves and orthogonal bends, with upright labels |
+| Canvas-origin routing stability | Passed signed-coordinate translation and obstacle-route invariance checks |
+| Labels, port sides, designs and palettes | Passed restart, backup/restore, CSV/XML and deletion checks |
+| PDF preview drawing and page options | Same vector plan drives preview/PDF; A4/A3, landscape/portrait, fit/tiles and detail pagination passed core checks; independent A4 dimensions checked |
+| Ribbon vector motifs, unclipped bands, endpoint mouse dragging, zoom animation and printing | Compiled; **native interaction not run** on Linux |
 | Native Microsoft Project and P6 imports | **Not run**; import guide and acceptance steps included |
 | Packaged executable's PE architecture and GUI subsystem | Inspected: Windows x64 GUI |
 | Packaged executable's embedded privilege manifest | Inspected: `asInvoker`, `uiAccess=false` |
@@ -56,7 +64,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **38 passed; 0 failed**. These are thirty-eight named groups
+The functional runner reports **45 passed; 0 failed**. These are forty-five named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 

@@ -83,7 +83,7 @@ folded branches. Choose a location outside the live app data folder.
 | Complete hierarchy CSV | Full node list, parent/node GUIDs, outline codes, original optional dates, duration, completion and multiline notes |
 | Microsoft Project CSV | Flat import material with Name, Start, Finish, Duration, % Complete and Notes; hierarchy/identifier columns for mapping |
 | P6 CSV | Rows identified as WBS or Activity, with WBS/parent codes, IDs, planned dates, duration in **hours**, status and notes for spreadsheet mapping |
-| PDF | A3 landscape chart pages tiled at readable scale, followed by portrait pages containing full labels and notes; no printer driver needed |
+| PDF | Paper preview before saving; defaults to fitted A4 landscape. Select portrait/landscape, A4/A3, optional full details or tiles. Preview and PDF share the same drawing; PDF export needs no printer driver |
 
 ### Microsoft Project
 
@@ -140,7 +140,7 @@ bundle or call MPXJ; it is only an optional developer verification tool.
 **GRAPH** uses independent nodes and directed leads. It supports cycles,
 many incoming/outgoing relationships, double arrowheads and manual positions.
 Its **CSV** has Node/Lead records, endpoint IDs, directions, routing, positions,
-notes and text-format JSON. Its **XML** uses `urn:eire:connection-diagram:1`;
+notes, text-format JSON, endpoint sides, palette and node design. Its **XML** uses `urn:eire:connection-diagram:1`;
 this is an Eire diagram interchange format, not MSPDI or PMXML. Its **PDF**
 includes direction arrows, lead descriptions and full node/lead detail pages.
 These files do not schedule dependencies or masquerade as native planning

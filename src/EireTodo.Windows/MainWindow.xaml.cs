@@ -313,11 +313,7 @@ public partial class MainWindow : Window
     private void DeleteClick(object sender, RoutedEventArgs e)
     {
         if (TaskGrid.SelectedItem is not TaskRow row) return;
-        var description = row.Description.Length > 150 ? row.Description[..150] + "…" : row.Description;
-        if (MessageBox.Show(this, $"Delete this task?\n\n{description}", "Confirm deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes)
-        {
-            if (TryAction(() => service.DeleteTask(row.Id))) { ApplyFilters(); RefreshOverdueView(); }
-        }
+        if (TryAction(() => service.DeleteTask(row.Id))) { ApplyFilters(); RefreshOverdueView(); }
     }
     private void ProjectsClick(object sender, RoutedEventArgs e)
     {

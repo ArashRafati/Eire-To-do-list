@@ -1,5 +1,17 @@
 # Changes
 
+## 3.2.0 — precise editing, graph ports, flat ribbon and paper preview
+
+- Enter confirms an active title; the next distinct Enter creates a node. Ignore key-repeat creation.
+- Capture hierarchy drags, show sibling insertion bars, interpret top-down WBS edges horizontally, and add exact Move before/after selection.
+- Select/delete graph leads, provide a focused label editor, and drag either endpoint onto any side centre. Persist/export endpoint sides; keep routes stable across canvas origin shifts.
+- Remove task/node deletion confirmations while retaining diagram Undo and restore safeguards.
+- Keep View and the other ribbon tabs visible; remove clipping, add vector motifs and hover descriptions to flat buttons.
+- Compact nodes by level, show full wrapped titles, and save four designs/six colour palettes without changing the original app chrome.
+- Animate zoom through a render transform instead of remeasuring/redrawing node content; debounce and visibly validate saved zoom preferences.
+- Preview every PDF page before saving from a shared vector drawing. Default to fitted A4 landscape; support portrait, A3, optional details, tiles and normal Windows printing.
+- Bundle preview fonts and add input, exact WBS move, port geometry, routing stability, style persistence and paper checks.
+
 ## 3.1.0 — open canvas, merged diagrams and Graph
 
 - Move the local date/time clock to the top right.

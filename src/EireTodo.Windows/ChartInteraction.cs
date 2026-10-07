@@ -51,7 +51,8 @@ internal sealed partial class ChartWorkspace
         {
             if (e.Key == Key.Escape) { titleTimer.Stop(); if (!FinishInlineEdit(true)) return; viewport.Focus(); e.Handled = true; }
             else if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control) { if (FinishInlineEdit()) EditNode(); e.Handled = true; }
-            else if ((e.Key == Key.Enter || e.Key == Key.Insert) && Keyboard.Modifiers == ModifierKeys.None) { if (FinishInlineEdit()) AddNode(e.Key == Key.Insert); e.Handled = true; }
+            else if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.None) { if (NodeInputPolicy.Enter(true,e.IsRepeat) == NodeEnterAction.ConfirmTitle && FinishInlineEdit()) { RefreshData(); viewport.Focus(); } e.Handled = true; }
+            else if (e.Key == Key.Insert && Keyboard.Modifiers == ModifierKeys.None) { if (FinishInlineEdit()) AddNode(true); e.Handled = true; }
             else if (e.Key == Key.Tab) { if (FinishInlineEdit()) viewport.Focus(); e.Handled = true; }
         };
         editor.LostKeyboardFocus += (_, _) => { if (!endingInline && ReferenceEquals(inline, editor)) FinishInlineEdit(); };
@@ -76,6 +77,7 @@ internal sealed partial class ChartWorkspace
     }
     public bool FinishInlineEdit(bool discardPending = false)
     {
+        if (!FlushZoom()) return false;
         if (inline is null || endingInline) return true;
         titleTimer.Stop(); if (!discardPending && !SaveInlineTitle()) { inline.Focus(); return false; }
         endingInline = true;
@@ -116,17 +118,17 @@ internal sealed partial class ChartWorkspace
             viewport.Focus();
             if (e.ClickCount == 2) { BeginTitle(); e.Handled = true; return; }
             pressed = e.GetPosition(viewport); original = networkMode ? new Point(Canvas.GetLeft(border) - canvasOrigin.X, Canvas.GetTop(border) - canvasOrigin.Y) : new Point(Canvas.GetLeft(border), Canvas.GetTop(border)); moved = false;
-            if (networkMode) border.CaptureMouse(); e.Handled = true;
+            border.CaptureMouse(); e.Handled = true;
         };
         border.MouseMove += (_, e) =>
         {
             if (pressed is not Point start || e.LeftButton != MouseButtonState.Pressed) return;
-            var p = e.GetPosition(viewport); var scale = Current?.Zoom ?? 1; var dx = (p.X - start.X) / scale; var dy = (p.Y - start.Y) / scale;
+            var p = e.GetPosition(viewport); var scale = displayZoom; var dx = (p.X - start.X) / scale; var dy = (p.Y - start.Y) / scale;
             if (!moved && Math.Abs(dx) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(dy) < SystemParameters.MinimumVerticalDragDistance) return;
             moved = true;
             if (!networkMode)
             {
-                pressed = null; if (Current is Diagram d) DragDrop.DoDragDrop(border, new DataObject(DragFormat, new NodeDrag(d.Id, id)), DragDropEffects.Move); Render(); return;
+                pressed = null; border.ReleaseMouseCapture(); if (Current is Diagram d) { ShowInsertionSlots(id); try { DragDrop.DoDragDrop(border, new DataObject(DragFormat, new NodeDrag(d.Id, id)), DragDropEffects.Move); } finally { ClearInsertionSlots(); } } Render(); return;
             }
             var worldX = Math.Clamp(original.X + dx, -100000, 100000); var worldY = Math.Clamp(original.Y + dy, -100000, 100000); MakeWorldPointVisible(worldX, worldY, border.Width, border.Height); var x = worldX + canvasOrigin.X; var y = worldY + canvasOrigin.Y; Canvas.SetLeft(border, x); Canvas.SetTop(border, y);
             var boxes = scene.Boxes.Select(b => b.Id == id ? b with { X = x, Y = y } : b).ToDictionary(b => b.Id);
@@ -134,12 +136,12 @@ internal sealed partial class ChartWorkspace
         };
         border.MouseLeftButtonUp += (_, e) =>
         {
-            if (networkMode && pressed.HasValue) { pressed = null; border.ReleaseMouseCapture(); if (moved) { var x = Canvas.GetLeft(border) - canvasOrigin.X; var y = Canvas.GetTop(border) - canvasOrigin.Y; Modify(c => NetworkCharts.Move(c, id, x, y)); } e.Handled = true; }
+            if (pressed.HasValue) { pressed = null; border.ReleaseMouseCapture(); if (networkMode && moved) { var x = Canvas.GetLeft(border) - canvasOrigin.X; var y = Canvas.GetTop(border) - canvasOrigin.Y; Modify(c => NetworkCharts.Move(c, id, x, y)); } e.Handled = true; }
             pressed = null;
         };
         border.LostMouseCapture += (_, _) => { if (pressed.HasValue && networkMode) { pressed = null; if (moved) Render(); } };
         border.AllowDrop = !networkMode;
-        NodeDrop Position(DragEventArgs e) { var fraction = e.GetPosition(border).Y / border.ActualHeight; return fraction < .28 ? NodeDrop.Before : fraction > .72 ? NodeDrop.After : NodeDrop.Child; }
+        NodeDrop Position(DragEventArgs e) { var point = e.GetPosition(border); var fraction = Current?.Layout == ChartLayout.TopDown ? point.X / border.ActualWidth : point.Y / border.ActualHeight; return fraction < .28 ? NodeDrop.Before : fraction > .72 ? NodeDrop.After : NodeDrop.Child; }
         border.DragOver += (_, e) =>
         {
             var drag = e.Data.GetData(DragFormat) as NodeDrag;
@@ -159,7 +161,7 @@ internal sealed partial class ChartWorkspace
         void Item(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => { Select(id); action(); }; menu.Items.Add(item); }
         Item("Node details · Ctrl+Enter", EditNode); Item("Edit title · F2", BeginTitle);
         if (networkMode) Item("Connect from this node…", StartConnection);
-        else { Item("Add sibling · Enter", () => AddNode(false)); Item("Add child · Insert", () => AddNode(true)); }
+        else { Item("Move before / after…", MoveSelected); Item("Add sibling · Enter", () => AddNode(false)); Item("Add child · Insert", () => AddNode(true)); }
         Item("Delete node", DeleteNode); border.ContextMenu = menu;
         border.PreviewMouseRightButtonDown += (_, e) => { if (!FinishInlineEdit()) e.Handled = true; else Select(id); };
     }
@@ -167,53 +169,5 @@ internal sealed partial class ChartWorkspace
     {
         for (var p = source; p is not null; p = p is Visual ? VisualTreeHelper.GetParent(p) : LogicalTreeHelper.GetParent(p)) if (p is TextBox) return true;
         return false;
-    }
-    private void DrawLeads(Diagram chart, Dictionary<Guid, NodeBox> boxes)
-    {
-        foreach (var view in leadViews) canvas.Children.Remove(view); leadViews.Clear();
-        var groups = chart.Leads.GroupBy(l => l.From.CompareTo(l.To) < 0 ? (l.From, l.To) : (l.To, l.From));
-        foreach (var group in groups)
-        {
-            var list = group.ToList();
-            for (var i = 0; i < list.Count; i++)
-            {
-                var lead = list[i]; if (!boxes.TryGetValue(lead.From, out var from) || !boxes.TryGetValue(lead.To, out var to)) continue;
-                var c = LeadGeometry.Route(from, to, lead.Routing, i - list.Count / 2, boxes.Values.ToList());
-                var geometry = new StreamGeometry(); using (var g = geometry.Open()) { g.BeginFigure(new Point(c.X1, c.Y1), false, false); if (lead.Routing == LeadRouting.Curve) g.BezierTo(new Point(c.C1X, c.C1Y), new Point(c.C2X, c.C2Y), new Point(c.X2, c.Y2), true, false); else { g.LineTo(new Point(c.C1X, c.C1Y), true, false); g.LineTo(new Point(c.C2X, c.C2Y), true, false); g.LineTo(new Point(c.X2, c.Y2), true, false); } } geometry.Freeze();
-                var hit = new System.Windows.Shapes.Path { Data = geometry, Stroke = Brushes.Transparent, StrokeThickness = 14, ToolTip = "Right-click or double-click to edit lead" };
-                void Edit() => EditLead(lead.Id);
-                hit.MouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) Edit(); e.Handled = true; };
-                var menu = new ContextMenu(); var entry = new MenuItem { Header = "Lead description / direction / shape" }; entry.Click += (_, _) => Edit(); menu.Items.Add(entry); hit.ContextMenu = menu;
-                Put(hit); Put(new System.Windows.Shapes.Path { Data = geometry, Stroke = new SolidColorBrush(Color.FromRgb(105, 133, 161)), StrokeThickness = 2, IsHitTestVisible = false });
-                Arrow(c.X2, c.Y2, c.C2X, c.C2Y); if (lead.DoubleHeaded) Arrow(c.X1, c.Y1, c.C1X, c.C1Y);
-                if (!string.IsNullOrWhiteSpace(lead.Description))
-                {
-                    var text = new TextBlock { Text = lead.Description, FontSize = 15, Foreground = Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = c.LabelWidth, ToolTip = lead.Description };
-                    var label = new Border { Child = text, Background = (Brush)Application.Current.FindResource("CanvasBrush"), Padding = new Thickness(5, 2, 5, 2), RenderTransformOrigin = new Point(.5, .5), RenderTransform = new RotateTransform(c.LabelAngle) };
-                    label.Measure(new Size(c.LabelWidth + 10, double.PositiveInfinity)); Canvas.SetLeft(label, c.LabelX - label.DesiredSize.Width / 2); Canvas.SetTop(label, c.LabelY - label.DesiredSize.Height / 2);
-                    label.MouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) Edit(); e.Handled = true; }; label.ContextMenu = menu; Put(label);
-                }
-            }
-        }
-        void Put(UIElement view) { Panel.SetZIndex(view, -1); canvas.Children.Add(view); leadViews.Add(view); }
-        void Arrow(double x, double y, double previousX, double previousY)
-        {
-            var angle = Math.Atan2(y - previousY, x - previousX); var back = angle + Math.PI;
-            Put(new Polygon { Fill = Ui.Accent, IsHitTestVisible = false, Points = [new(x, y), new(x + 13 * Math.Cos(back + .42), y + 13 * Math.Sin(back + .42)), new(x + 13 * Math.Cos(back - .42), y + 13 * Math.Sin(back - .42))] });
-        }
-    }
-    private void EditLead(Guid id)
-    {
-        if (!FinishInlineEdit() || Current is not Diagram chart) return;
-        var lead = chart.Leads.Single(l => l.Id == id); var dialog = new Window { Title = "Edit lead", Width = 570, Height = 450, MinWidth = 440, MinHeight = 350, MaxHeight = Math.Max(350, SystemParameters.WorkArea.Height - 32), Owner = OwnerWindow, WindowStartupLocation = WindowStartupLocation.CenterOwner }; Ui.ApplyWindowStyle(dialog);
-        var panel = new StackPanel { Margin = new Thickness(18) }; var description = new TextBox { Text = lead.Description, MaxLength = 500 };
-        var heads = new CheckBox { Content = "Double lead · arrows at both ends", IsChecked = lead.DoubleHeaded, Margin = new Thickness(0, 12, 0, 12) };
-        var route = new ComboBox { ItemsSource = new[] { "Curve", "Straight segments with sharp bends" }, SelectedIndex = (int)lead.Routing };
-        var reverse = new CheckBox { Content = "Reverse the lead direction", Margin = new Thickness(0, 12, 0, 12) };
-        panel.Children.Add(Ui.Label(chart.Nodes.Single(n => n.Id == lead.From).Title + " → " + chart.Nodes.Single(n => n.Id == lead.To).Title)); panel.Children.Add(Ui.Field("Optional lead description", description)); panel.Children.Add(heads); panel.Children.Add(Ui.Field("Lead shape", route)); panel.Children.Add(reverse);
-        var buttons = new WrapPanel(); RibbonBar.Action(buttons, "Save lead", () => { if (Try(() => { var candidate = chart.Clone(); var l = candidate.Leads.Single(x => x.Id == id); l.Description = description.Text.Trim(); l.DoubleHeaded = heads.IsChecked == true; l.Routing = (LeadRouting)route.SelectedIndex; if (reverse.IsChecked == true) (l.From, l.To) = (l.To, l.From); Commit(candidate); })) { dialog.DialogResult = true; RefreshData(); } }, true);
-        RibbonBar.Action(buttons, "Delete lead", () => { if (MessageBox.Show(dialog, "Delete this lead?", "Confirm deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes && Try(() => { var candidate = chart.Clone(); candidate.Leads.RemoveAll(l => l.Id == id); Commit(candidate); })) { dialog.DialogResult = true; RefreshData(); } });
-        panel.Margin = new Thickness(0); buttons.Margin = new Thickness(0, 12, 0, 0);
-        var root = new DockPanel { Margin = new Thickness(18) }; DockPanel.SetDock(buttons, Dock.Bottom); root.Children.Add(buttons); root.Children.Add(new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }); dialog.Content = root; dialog.ShowDialog();
     }
 }

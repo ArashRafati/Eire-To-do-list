@@ -104,3 +104,17 @@ for node in network['Nodes']:
 for lead in network['Leads']:
     assert lead['Description'] in result.stdout
 print('PASS independent network PDF text extraction: full labels, leads, notes and Unicode')
+
+# Paper previews and PDFs share a vector plan. Check exported page sizes independently.
+import re
+for name, landscape in [('preview-landscape.pdf', True), ('preview-portrait.pdf', False)]:
+    info = subprocess.run(['pdfinfo', str(folder / name)], check=True, capture_output=True, text=True).stdout
+    assert re.search(r'Pages:\s+1\b', info)
+    size = re.search(r'Page size:\s+([\d.]+) x ([\d.]+) pts', info)
+    assert size
+    width, height = map(float, size.groups())
+    assert (width > height) == landscape
+    assert abs(min(width, height) - 595.276) < .02 and abs(max(width, height) - 841.89) < .02
+    extracted = subprocess.run(['pdftotext', str(folder / name), '-'], check=True, capture_output=True, text=True).stdout
+    assert 'Fit to paper' in extracted and 'Delivery' in extracted and 'Feedback cycle' in extracted
+print('PASS independent PDF page checks: fitted A4 landscape / portrait, lead labels and full diagram content')

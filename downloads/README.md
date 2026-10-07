@@ -1,4 +1,4 @@
-# Windows download — version 3.1
+# Windows download — version 3.2
 
 `EireTodo-Windows-x64.zip` contains the self-contained Windows x64 executable,
 short instructions, chart/planning import guide, component notices and remaining Windows acceptance checks. Download the raw
@@ -43,3 +43,10 @@ Version 3.1 centres diagrams in an open, expanding canvas, moves the clock to th
 top right, merges Mind map/WBS, renames Connections to Graph, reorganises the
 ribbon, and connects both Enter/Insert nodes automatically. Existing data and
 layouts remain compatible. Direction can be outgoing, incoming or both.
+
+Version 3.2 adds title confirmation before node creation, exact sibling-gap
+moves, selectable/deletable Graph leads, draggable side-centre endpoints and
+focused labels. The ribbon has visible tabs, flat vector buttons and hover tips.
+Compact full-title nodes support six palettes/four designs. Zoom animates the
+existing views. PDF opens a preview with fitted A4 landscape by default,
+portrait/A3/tiles/details choices, and optional normal Windows printing.

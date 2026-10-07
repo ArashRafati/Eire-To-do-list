@@ -32,8 +32,7 @@ Back up existing app data first if you have used it before.
    `09/10/2026`, category `Work` and multiline notes. Reuse `Work` for a second
    task. Record the first task's created time, edit every editable field, and
    confirm created time stays unchanged. Complete/reopen using its checkbox.
-   Hide completed; clear filters to show them again. Cancel deletion once,
-   then confirm deletion of the disposable second task.
+   Hide completed; clear filters to show them again. Delete the disposable second task and confirm there is no confirmation prompt.
 4. **Date validation.** Blank dates must save. `31/02/2026`, `2026-10-07`, and a
    finish earlier than start must show errors and keep the editor open. Equal
    start and finish dates must save. Created times must use `dd/MM/yyyy HH:mm`
@@ -80,7 +79,7 @@ not establish native UI or Windows launch behaviour.
     press Enter for a sibling. Verify roots can also have siblings. Use Ctrl+Enter or
     right-click > Node details to edit full notes; Enter inside notes must add a line and
     Ctrl+Enter must save. Test date validation, parent moves, completion,
-    reorder, indent/outdent, branch folding, Undo/Redo and confirmed deletion.
+    reorder, indent/outdent, branch folding, Undo/Redo and immediate deletion.
     Confirm a folded parent opens when adding/moving a child into it. Try all
     five layouts with uneven-depth branches and multiple roots. Zoom, fit,
     scroll both ways and choose a WBS layout then switch back to To-do. In a compact window,
@@ -120,13 +119,13 @@ not establish native UI or Windows launch behaviour.
 14. **3.0 ribbon and direct titles.** Confirm Home/Insert/Format/View groups are
     reachable at compact size and 100%/150%/200% scaling, with unchanged colours.
     Enter/Insert must create a title field inside a cell, without a details
-    dialog. Type a title and wait: it must save; Enter continues with a sibling,
+    dialog. Type a title and wait: it must save; Enter confirms the title, the next Enter creates a sibling,
     Insert with a child. F2/double-click edits the title; Ctrl+Enter/right-click
     opens details. Only the WBS code appears in the cell header. Close, switch
     modules/diagrams and export immediately after typing to check pending text
     is saved. Restrict storage in a disposable profile and verify failed title
     saves remain visibly pending; retry successfully after restoring access.
-15. **Branch dragging.** Drag a branch onto another cell's top, bottom and centre;
+15. **Branch dragging.** Drag a branch onto a cell's edges, centre and the gaps between siblings;
     verify before/after/child destinations, preserved descendants and updated
     WBS codes. Try moving into its own descendant: it must refuse. Drag sibling
     order repeatedly, fold/unfold and Undo/Redo. Reopen to verify the order.
@@ -155,7 +154,7 @@ not establish native UI or Windows launch behaviour.
     check the PDF detail appendix preserves full labels and notes. Undo/Redo,
     delete an endpoint, restart and backup/restore must preserve the graph or
     remove its incident leads appropriately. WBS planning profiles remain in
-    WBS mode; free graph links must not become scheduling dependencies.
+    the combined Mind map / WBS module; free graph links must not become scheduling dependencies.
 
 19. **3.1 open workspace and ribbon.** On creating either diagram type, the root
     must start centred with space on every side. Drag blank space, middle-drag
@@ -177,3 +176,41 @@ not establish native UI or Windows launch behaviour.
     selection. Repeat with Incoming and Both direction choices, curves and
     sharp bends. Unlinked node must create no lead. Right-click an existing
     lead to reverse or make it double-ended; reopen to verify it persists.
+
+
+21. **3.2 Enter policy.** In both modules, create a node, type its title and press
+    Enter once: the editor must close with no extra node. Press Enter again:
+    one new node appears with its title field ready. Hold Enter and ensure no
+    repeated nodes are created. Test editing existing titles, blank title errors,
+    autosave, Insert, Ctrl+Enter, keyboard focus and save-error retry.
+22. **Exact WBS promotion.** In Top-down layout create branches 1.1–1.7 and
+    child 1.6.1. Drag 1.6.1 into the highlighted gap between 1.5 and 1.6. It must
+    become 1.6, the old 1.6 becomes 1.7, and IDs/descendants stay unchanged.
+    Test left/right cell edges and Move before/after from the context menu;
+    repeat at zooms 20%/100%/200%, undo, restart and backup/restore.
+23. **Graph leads.** Click a lead; it must highlight and expose both endpoint
+    handles. Drag each handle onto every side centre, including retargeting to
+    another node. The opposite end must stay attached. F2, double-click,
+    right-click and Insert > Lead label must open the editor with label focus.
+    Save a Unicode/multiline label; it must show on the line and survive restart.
+    Test reverse and double arrows, sharp bends without diagonal segments,
+    selection then Delete, undo, and CSV/XML/PDF endpoint-side preservation.
+24. **Ribbon and node designs.** View must always be visible at compact size.
+    In Format, font/size/B/I/U/alignment/painter/reset must not clip. Buttons
+    must use flat vector motifs and descriptive hover tips. Try all six palettes
+    and four designs; node/lead colours change while app chrome stays original.
+    Short root/branch/leaf nodes have different sizes. A long title such as
+    'DN100 Stub Pipe vent from Drain Valve - stainless steel fabrication and
+    supports' must wrap fully in every layout, including 12/48 px font sizes.
+25. **Smooth zoom.** Ctrl+wheel repeatedly around a chosen pointer point and
+    drag the slider. Existing nodes/leads must scale without blank frames or
+    content rebuilding. Pan/drag/focus during and after zoom, then restart to
+    check saved zoom. Check failed zoom saves remain visible and retryable.
+26. **PDF preview and printing.** Export PDF: preview must appear before a file
+    dialog, with fit-to-paper and A4 landscape selected. Inspect every page;
+    compare saved PDF's nodes, ports, styles, text and page layout to preview.
+    Test A4/A3 portrait/landscape, optional full details and explicit tiling.
+    Cancel preview/file dialogs; no export or data change should occur. Verify
+    errors are visible for unwritable targets. Print opens normal Windows
+    printer selection and uses the selected orientation/paper; cancel normally.
+    PDF saving must work with no printer installed or external PDF viewer.

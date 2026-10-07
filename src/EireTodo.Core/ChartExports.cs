@@ -135,101 +135,10 @@ public static class ChartExports
         return new(new XDeclaration("1.0", "utf-8", null), E("APIBusinessObjects", new object[] { E("NotebookTopic", new object[] { E("AvailableForActivity", true), E("AvailableForEPS", false), E("AvailableForProject", true), E("AvailableForWBS", true), E("Name", "Eire notes"), E("ObjectId", 1), E("SequenceNumber", 1) }), project }));
     }
 
-    public static byte[] Pdf(Diagram chart)
-    {
-        if (GlobalFontSettings.FontResolver is null) GlobalFontSettings.FontResolver = new EireFontResolver();
-        var font = new XFont("EireExport", 14); var small = new XFont("EireExport", 11); var title = new XFont("EireExport", 19);
-        using var pdf = new PdfDocument(); pdf.Info.Title = chart.Name; pdf.Info.Creator = "Eire To-do / Mind map / WBS";
-        var scene = chart.Kind == DiagramKind.Network ? OpenWorkspace.CompactGraph(chart) : ChartGeometry.Arrange(chart, true); var boxes = scene.Boxes.ToDictionary(b => b.Id); var nodes = Charts.Outline(chart).ToDictionary(o => o.Node.Id);
-        var accent = XColor.FromArgb(255, 204, 51); var pen = new XPen(XColor.FromArgb(65, 83, 105), 1.4);
-        const double width = 1190, height = 842, margin = 35, top = 75;
-        var scale = chart.Kind == DiagramKind.Network ? Math.Min(.75, Math.Min((width - 2 * margin) / scene.Width, (height - top - margin) / scene.Height)) : .75;
-        var tileWidth = (width - 2 * margin) / scale; var tileHeight = (height - top - margin) / scale;
-        var columns = Math.Max(1, (int)Math.Ceiling(scene.Width / (tileWidth - 30))); var rows = Math.Max(1, (int)Math.Ceiling(scene.Height / (tileHeight - 30)));
-        for (var row = 0; row < rows; row++) for (var col = 0; col < columns; col++)
-        {
-            var page = pdf.AddPage(); page.Width = XUnit.FromPoint(width); page.Height = XUnit.FromPoint(height);
-            using var g = XGraphics.FromPdfPage(page);
-            g.DrawString(chart.Name, title, XBrushes.Black, new XPoint(margin, 33));
-            g.DrawString($"{Charts.LayoutName(chart.Layout)}  |  Tile {row + 1}/{rows}, {col + 1}/{columns}  |  All nodes (including collapsed branches)", small, XBrushes.Black, new XPoint(margin, 55));
-            var state = g.Save(); g.IntersectClip(new XRect(margin, top, width - 2 * margin, height - top - margin));
-            g.TranslateTransform(margin - col * (tileWidth - 30) * scale, top - row * (tileHeight - 30) * scale); g.ScaleTransform(scale);
-            foreach (var box in scene.Boxes)
-            {
-                var n = nodes[box.Id];
-                if (n.Node.ParentId is Guid parent && boxes.TryGetValue(parent, out var p))
-                { var c = ChartGeometry.Connector(p, box, chart.Layout); g.DrawLine(pen, c.X1, c.Y1, c.X2, c.Y2); }
-            }
-            if (chart.Kind == DiagramKind.Network) DrawPdfLeads(g, chart, boxes, small, pen);
-            foreach (var box in scene.Boxes)
-            {
-                var n = nodes[box.Id]; g.DrawRectangle(new XSolidBrush(XColor.FromArgb(247, 249, 252)), box.X, box.Y, box.Width, box.Height); g.DrawRectangle(pen, box.X, box.Y, box.Width, box.Height);
-                g.DrawRectangle(new XSolidBrush(accent), box.X, box.Y, 5, box.Height);
-                g.DrawString(n.Code, small, XBrushes.Black, new XPoint(box.X + 13, box.Y + 19));
-                var f = n.Node.Format; var style = (f.Bold ? XFontStyleEx.Bold : XFontStyleEx.Regular) | (f.Italic ? XFontStyleEx.Italic : XFontStyleEx.Regular) | (f.Underline ? XFontStyleEx.Underline : XFontStyleEx.Regular);
-                var nodeFont = new XFont("EireExport", f.Size, style);
-                var colour = Overdue.IsDue(n.Node.FinishDate, n.Node.Completed) ? new XSolidBrush(XColor.FromArgb(208, 35, 35)) : XBrushes.Black;
-                var lines = Wrap(g, n.Node.Title, nodeFont, box.Width - 26).Take(2).ToList();
-                for (var i = 0; i < lines.Count; i++)
-                {
-                    var measured = g.MeasureString(lines[i], nodeFont).Width;
-                    var x = f.Alignment == TextJustification.Centre ? box.X + (box.Width - measured) / 2 : f.Alignment == TextJustification.Right ? box.X + box.Width - 13 - measured : box.X + 13;
-                    g.DrawString(lines[i], nodeFont, colour, new XPoint(x, box.Y + 30 + f.Size + i * f.Size * 1.25));
-                }
-            }
-            g.Restore(state); g.DrawString($"Eire  |  Page {pdf.PageCount}", small, XBrushes.Black, new XPoint(margin, height - 14));
-        }
-        // A text appendix preserves long labels and multiline notes beyond chart previews.
-        XGraphics? text = null; double y = 0; PdfPage? textPage = null;
-        void NewTextPage()
-        {
-            text?.Dispose(); textPage = pdf.AddPage(); textPage.Width = XUnit.FromPoint(842); textPage.Height = XUnit.FromPoint(1190); text = XGraphics.FromPdfPage(textPage); y = 60;
-            text.DrawString(chart.Name + " · node details", title, XBrushes.Black, new XPoint(35, 35));
-        }
-        NewTextPage();
-        foreach (var o in Charts.Outline(chart))
-        {
-            var n = o.Node; var detail = $"{o.Code}  {n.Title}\nID {n.ActivityId} | Start {AustralianDates.Format(n.StartDate)} | Finish {AustralianDates.Format(n.FinishDate)} | Duration {n.DurationDays} days | {(n.Completed ? "Completed" : "To do")}\n{n.Notes}";
-            foreach (var line in Wrap(text!, detail, font, 772))
-            { if (y > 1140) NewTextPage(); text!.DrawString(line, font, XBrushes.Black, new XPoint(35, y)); y += 20; }
-            y += 14;
-        }
-        foreach (var lead in chart.Leads)
-        {
-            var description = $"Lead: {chart.Nodes.Single(n => n.Id == lead.From).Title} {(lead.DoubleHeaded ? "↔" : "→")} {chart.Nodes.Single(n => n.Id == lead.To).Title} · {lead.Routing}\n{lead.Description}";
-            foreach (var line in Wrap(text!, description, font, 772)) { if (y > 1140) NewTextPage(); text!.DrawString(line, font, XBrushes.Black, new XPoint(35, y)); y += 20; } y += 14;
-        }
-        text?.Dispose(); using var stream = new MemoryStream(); pdf.Save(stream, false); return stream.ToArray();
-    }
-    private static void DrawPdfLeads(XGraphics g, Diagram chart, Dictionary<Guid, NodeBox> boxes, XFont font, XPen pen)
-    {
-        foreach (var group in chart.Leads.GroupBy(l => l.From.CompareTo(l.To) < 0 ? (l.From, l.To) : (l.To, l.From)))
-        {
-            var leads = group.ToList();
-            for (var i = 0; i < leads.Count; i++)
-            {
-                var lead = leads[i]; var c = LeadGeometry.Route(boxes[lead.From], boxes[lead.To], lead.Routing, i - leads.Count / 2, boxes.Values.ToList());
-                if (lead.Routing == LeadRouting.Curve) { var path = new XGraphicsPath(); path.AddBezier(c.X1, c.Y1, c.C1X, c.C1Y, c.C2X, c.C2Y, c.X2, c.Y2); g.DrawPath(pen, path); }
-                else { g.DrawLine(pen, c.X1, c.Y1, c.C1X, c.C1Y); g.DrawLine(pen, c.C1X, c.C1Y, c.C2X, c.C2Y); g.DrawLine(pen, c.C2X, c.C2Y, c.X2, c.Y2); }
-                Arrow(c.X2, c.Y2, c.C2X, c.C2Y); if (lead.DoubleHeaded) Arrow(c.X1, c.Y1, c.C1X, c.C1Y);
-                if (lead.Description.Length > 0)
-                {
-                    var state = g.Save(); g.TranslateTransform(c.LabelX, c.LabelY); g.RotateTransform(c.LabelAngle);
-                    var preview = lead.Description;
-                    while (preview.Length > 1 && g.MeasureString(preview + "…", font).Width > c.LabelWidth) preview = preview[..^1];
-                    if (preview.Length < lead.Description.Length) preview += "…";
-                    var width = g.MeasureString(preview, font).Width; g.DrawRectangle(XBrushes.White, -width / 2 - 3, -10, width + 6, 20);
-                    g.DrawString(preview, font, XBrushes.Black, new XPoint(-width / 2, 4)); g.Restore(state);
-                }
-            }
-        }
-        void Arrow(double x, double y, double px, double py)
-        {
-            var angle = Math.Atan2(y - py, x - px) + Math.PI;
-            g.DrawPolygon(XBrushes.Black, new[] { new XPoint(x, y), new XPoint(x + 13 * Math.Cos(angle + .42), y + 13 * Math.Sin(angle + .42)), new XPoint(x + 13 * Math.Cos(angle - .42), y + 13 * Math.Sin(angle - .42)) }, XFillMode.Winding);
-        }
-    }
-    private static IEnumerable<string> Wrap(XGraphics graphics, string text, XFont font, double width)
+    public static byte[] Pdf(Diagram chart, PdfOptions? options = null) => DiagramPdf.Write(DiagramPdf.Compose(chart,options));
+    private static readonly object FontLock = new();
+    internal static void EnsureFonts() { lock (FontLock) { if (GlobalFontSettings.FontResolver is null) GlobalFontSettings.FontResolver = new EireFontResolver(); } }
+    internal static IEnumerable<string> Wrap(XGraphics graphics, string text, XFont font, double width)
     {
         foreach (var paragraph in text.Replace("\r", "").Split('\n'))
         {

@@ -127,6 +127,8 @@ for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').g
     assert font.read_bytes() in managed_core, 'Offline PDF font not bundled: ' + font.name
 
 managed_app = content('EireTodo.dll')
+for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').glob('*.ttf'):
+    assert font.read_bytes() in managed_app, 'Offline preview font not bundled: ' + font.name
 assert ico in managed_app, 'Window ICO not bundled in WPF resources'
 header_artwork = source_icon.with_suffix('.png').read_bytes()
 assert header_artwork in managed_app, 'Header PNG not bundled in WPF resources'

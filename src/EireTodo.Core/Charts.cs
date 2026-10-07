@@ -35,6 +35,8 @@ public sealed class Diagram
     public DiagramKind Kind { get; set; }
     public List<DiagramLead> Leads { get; set; } = [];
     public ChartLayout Layout { get; set; } = ChartLayout.MindMap;
+    public DiagramPalette Palette { get; set; }
+    public NodeDesign Design { get; set; }
     public DateOnly ScheduleStart { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public double Zoom { get; set; } = 1;
     public int NextNumber { get; set; } = 1;
@@ -65,7 +67,7 @@ public static class Charts
     public static void Validate(Diagram chart)
     {
         if (chart is null || chart.Id == Guid.Empty || string.IsNullOrWhiteSpace(chart.Name) || chart.Name.Length > 100 ||
-            !Enum.IsDefined(chart.Layout) || chart.Nodes is null || chart.Nodes.Count > MaxNodes ||
+            !Enum.IsDefined(chart.Layout) || !Enum.IsDefined(chart.Palette) || !Enum.IsDefined(chart.Design) || chart.Nodes is null || chart.Nodes.Count > MaxNodes ||
             chart.ScheduleStart.Year < 1900 || chart.ScheduleStart.Year > 2090 || !double.IsFinite(chart.Zoom) || chart.Zoom < .2 || chart.Zoom > 2)
             throw new ArgumentException("Invalid diagram: use a name up to 100 characters and no more than 1,000 nodes.");
         if (chart.Nodes.Any(n => n is null || n.Id == Guid.Empty || n.Number < 1 || n.Number > 1000000 || n.Order < 0 ||
@@ -85,7 +87,7 @@ public static class Charts
             if (n.X.HasValue != n.Y.HasValue || n.X.HasValue && (!double.IsFinite(n.X.Value) || !double.IsFinite(n.Y!.Value) || n.X < -100000 || n.Y < -100000 || n.X > 100000 || n.Y > 100000) ||
                 chart.Kind == DiagramKind.Network && (n.ParentId.HasValue || !n.X.HasValue)) throw new ArgumentException("Invalid free node position.");
         }
-        if (chart.Leads.Any(l => l is null || l.Id == Guid.Empty || l.From == l.To || !chart.Nodes.Any(n => n.Id == l.From) || !chart.Nodes.Any(n => n.Id == l.To) || !Enum.IsDefined(l.Routing) || l.Description is null || l.Description.Length > 500) || chart.Leads.Select(l => l.Id).Distinct().Count() != chart.Leads.Count)
+        if (chart.Leads.Any(l => l is null || l.Id == Guid.Empty || l.From == l.To || !chart.Nodes.Any(n => n.Id == l.From) || !chart.Nodes.Any(n => n.Id == l.To) || !Enum.IsDefined(l.Routing) || !Enum.IsDefined(l.FromSide) || !Enum.IsDefined(l.ToSide) || l.Description is null || l.Description.Length > 500) || chart.Leads.Select(l => l.Id).Distinct().Count() != chart.Leads.Count)
             throw new ArgumentException("Leads need valid endpoints and descriptions up to 500 characters.");
         var index = chart.Nodes.ToDictionary(n => n.Id);
         foreach (var node in chart.Nodes)
@@ -200,39 +202,48 @@ public sealed record ChartScene(List<NodeBox> Boxes, double Width, double Height
 
 public static class ChartGeometry
 {
-    public const double NodeWidth = 260, NodeHeight = 118, Gap = 28, LevelGap = 74, Margin = 40;
-    public static (double Width, double Height) Measure(ChartNode node) => (Math.Max(NodeWidth, node.Format.Size * 8 + 32), Math.Max(NodeHeight, node.Format.Size * 2.6 + 68));
+    public const double NodeWidth = 220, NodeHeight = 72, Gap = 28, LevelGap = 66, Margin = 40;
+    public static (double Width, double Height) Measure(ChartNode node, int level = 1)
+    {
+        var width = Math.Max(level == 1 ? 220 : level == 2 ? 200 : 180, node.Format.Size * 6 + 28);
+        var lines = DiagramAppearance.TitleLines(node.Title, node.Format.Size, width - 24);
+        var meta = !string.IsNullOrWhiteSpace(node.Notes) || node.StartDate.HasValue || node.FinishDate.HasValue ? 23 : 0;
+        return (width, Math.Max(level == 1 ? 80 : level == 2 ? 72 : 66, 38 + lines * node.Format.Size * 1.35 + meta));
+    }
     // Subtree spans reserve space for every leaf; siblings cannot overlap even at uneven depths.
     public static ChartScene Arrange(Diagram chart, bool includeCollapsed = false)
     {
         if (chart.Kind == DiagramKind.Network)
         {
             Charts.Validate(chart);
-            var free = chart.Nodes.Select(n => { var s = Measure(n); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height); }).ToList();
+            var levels = DiagramAppearance.Levels(chart);
+            var free = chart.Nodes.Select(n => { var s = Measure(n, levels[n.Id]); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height); }).ToList();
             var index = free.ToDictionary(b => b.Id);
-            var routes = chart.Leads.Select(l => LeadGeometry.Route(index[l.From], index[l.To], l.Routing, obstacles: free)).ToList();
+            var routes = chart.Leads.Select(l => LeadGeometry.Route(index[l.From], index[l.To], l.Routing, obstacles: free, fromSide: l.FromSide, toSide: l.ToSide)).ToList();
             return new(free, Math.Max(500, free.Select(b => b.X + b.Width + Margin).Concat(routes.Select(p => Math.Max(p.C1X, p.C2X) + Margin)).DefaultIfEmpty(0).Max()), Math.Max(300, free.Select(b => b.Y + b.Height + Margin).Concat(routes.Select(p => Math.Max(p.C1Y, p.C2Y) + Margin)).DefaultIfEmpty(0).Max()));
         }
         var outline = Charts.Outline(chart, !includeCollapsed); var visible = outline.Select(o => o.Node.Id).ToHashSet();
         var boxes = new List<NodeBox>();
+        var hierarchyLevels = outline.ToDictionary(o => o.Node.Id, o => o.Level);
+        (double Width, double Height) Size(ChartNode node) => Measure(node, hierarchyLevels[node.Id]);
         var childIndex = chart.Nodes.Where(n => visible.Contains(n.Id)).GroupBy(n => n.ParentId ?? Guid.Empty)
             .ToDictionary(g => g.Key, g => g.OrderBy(n => n.Order).ThenBy(n => n.Number).ToList());
         List<ChartNode> Kids(Guid? id) => childIndex.GetValueOrDefault(id ?? Guid.Empty) ?? [];
-        var widths = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Measure(o.Node).Width));
-        var heights = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Measure(o.Node).Height));
+        var widths = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Size(o.Node).Width));
+        var heights = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Size(o.Node).Height));
         double Band(Dictionary<int, double> bands, int depth) => Enumerable.Range(0, depth).Sum(i => bands.GetValueOrDefault(i, NodeWidth) + LevelGap);
         var spans = new Dictionary<(Guid Id, bool Vertical), double>();
         double Span(ChartNode node, bool vertical)
         {
             var key = (node.Id, vertical);
             if (spans.TryGetValue(key, out var cached)) return cached;
-            var size = Math.Max(vertical ? Measure(node).Width : Measure(node).Height, Kids(node.Id).Sum(n => Span(n, vertical) + Gap) - Gap);
+            var size = Math.Max(vertical ? Size(node).Width : Size(node).Height, Kids(node.Id).Sum(n => Span(n, vertical) + Gap) - Gap);
             spans[key] = size; return size;
         }
         void Tree(ChartNode node, int depth, double offset, bool vertical, int side)
         {
             var span = Span(node, vertical);
-            var size = Measure(node);
+            var size = Size(node);
             var x = vertical ? offset + (span - size.Width) / 2 : side > 0 ? Band(widths, depth) : widths[0] - Band(widths, depth + 1) + LevelGap + widths[depth] - size.Width;
             var y = vertical ? Band(heights, depth) : offset + (span - size.Height) / 2;
             boxes.Add(new(node.Id, x, y, size.Width, size.Height));
@@ -241,7 +252,7 @@ public static class ChartGeometry
         if (chart.Layout == ChartLayout.Outline)
         {
             double y = 0;
-            foreach (var item in outline) { var size = Measure(item.Node); boxes.Add(new(item.Node.Id, (item.Level - 1) * 36, y, size.Width + 160, size.Height)); y += size.Height + 16; }
+            foreach (var item in outline) { var size = Size(item.Node); boxes.Add(new(item.Node.Id, (item.Level - 1) * 36, y, size.Width + 160, size.Height)); y += size.Height + 16; }
         }
         else if (chart.Layout == ChartLayout.MindMap)
         {
@@ -252,9 +263,9 @@ public static class ChartGeometry
                 var children = Kids(root.Id);
                 var left = children.Where(n => sides[n.Id] == MindMapBranchSide.Left).ToList();
                 var right = children.Where(n => sides[n.Id] == MindMapBranchSide.Right).ToList();
-                double SideSpan(List<ChartNode> list) => Math.Max(Measure(root).Height, list.Sum(n => Span(n, false) + Gap) - Gap);
+                double SideSpan(List<ChartNode> list) => Math.Max(Size(root).Height, list.Sum(n => Span(n, false) + Gap) - Gap);
                 var height = Math.Max(SideSpan(left), SideSpan(right));
-                boxes.Add(new(root.Id, 0, forestOffset + (height - Measure(root).Height) / 2, Measure(root).Width, Measure(root).Height));
+                boxes.Add(new(root.Id, 0, forestOffset + (height - Size(root).Height) / 2, Size(root).Width, Size(root).Height));
                 void Side(List<ChartNode> list, int sign)
                 {
                     var offset = forestOffset + (height - SideSpan(list)) / 2;

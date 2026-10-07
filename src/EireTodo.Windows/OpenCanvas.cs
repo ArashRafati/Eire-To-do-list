@@ -39,13 +39,13 @@ internal sealed partial class ChartWorkspace
     }
     private Point PanTo(double x, double y)
     {
-        var scale = Current?.Zoom ?? 1; double dx = 0, dy = 0;
+        var scale = displayZoom; double dx = 0, dy = 0;
         if (x < 512 * scale) dx = OpenWorkspace.Padding;
         if (y < 512 * scale) dy = OpenWorkspace.Padding;
         if (dx > 0 || dy > 0) { ShiftCanvasOrigin(dx, dy); x += dx * scale; y += dy * scale; }
         canvas.Width = Math.Max(canvas.Width, (x + viewport.ViewportWidth) / scale + OpenWorkspace.Padding);
         canvas.Height = Math.Max(canvas.Height, (y + viewport.ViewportHeight) / scale + OpenWorkspace.Padding);
-        canvas.UpdateLayout(); viewport.ScrollToHorizontalOffset(x); viewport.ScrollToVerticalOffset(y);
+        UpdateCanvasExtent(); zoomSurface.UpdateLayout(); viewport.ScrollToHorizontalOffset(x); viewport.ScrollToVerticalOffset(y);
         return new(dx * scale, dy * scale);
     }
     private void ShiftCanvasOrigin(double dx, double dy)
@@ -63,13 +63,13 @@ internal sealed partial class ChartWorkspace
     }
     private void MakeWorldPointVisible(double x, double y, double width, double height)
     {
-        var oldOffset = new Point(viewport.HorizontalOffset, viewport.VerticalOffset); var scale = Current?.Zoom ?? 1;
+        var oldOffset = new Point(viewport.HorizontalOffset, viewport.VerticalOffset); var scale = displayZoom;
         var dx = x + canvasOrigin.X < 512 ? OpenWorkspace.Padding + 512 - x - canvasOrigin.X : 0;
         var dy = y + canvasOrigin.Y < 512 ? OpenWorkspace.Padding + 512 - y - canvasOrigin.Y : 0;
         if (dx > 0 || dy > 0) ShiftCanvasOrigin(dx, dy);
         canvas.Width = Math.Max(canvas.Width, x + canvasOrigin.X + width + OpenWorkspace.Padding);
         canvas.Height = Math.Max(canvas.Height, y + canvasOrigin.Y + height + OpenWorkspace.Padding);
-        if (dx > 0 || dy > 0) { canvas.UpdateLayout(); viewport.ScrollToHorizontalOffset(oldOffset.X + dx * scale); viewport.ScrollToVerticalOffset(oldOffset.Y + dy * scale); }
+        if (dx > 0 || dy > 0) { UpdateCanvasExtent(); zoomSurface.UpdateLayout(); viewport.ScrollToHorizontalOffset(oldOffset.X + dx * scale); viewport.ScrollToVerticalOffset(oldOffset.Y + dy * scale); }
     }
     private void PrepareOpenScene(Diagram chart, bool opening)
     {
@@ -80,7 +80,7 @@ internal sealed partial class ChartWorkspace
         if (!opening && (dx > 0 || dy > 0))
         {
             canvasOrigin = new(canvasOrigin.X + dx, canvasOrigin.Y + dy);
-            var scale = chart.Zoom;
+            var scale = displayZoom;
             var x = viewport.HorizontalOffset + dx * scale; var y = viewport.VerticalOffset + dy * scale;
             Dispatcher.InvokeAsync(() => { viewport.ScrollToHorizontalOffset(x); viewport.ScrollToVerticalOffset(y); }, DispatcherPriority.Loaded);
         }
@@ -92,7 +92,7 @@ internal sealed partial class ChartWorkspace
         Dispatcher.InvokeAsync(() =>
         {
             if (version != renderVersion || Current is not Diagram chart) return;
-            var offsets = OpenWorkspace.Centre(documentBounds, canvasOrigin.X, canvasOrigin.Y, chart.Zoom, viewport.ViewportWidth, viewport.ViewportHeight);
+            var offsets = OpenWorkspace.Centre(documentBounds, canvasOrigin.X, canvasOrigin.Y, displayZoom, viewport.ViewportWidth, viewport.ViewportHeight);
             viewport.ScrollToHorizontalOffset(offsets.X); viewport.ScrollToVerticalOffset(offsets.Y); centring = false;
         }, DispatcherPriority.Loaded);
     }
@@ -100,6 +100,6 @@ internal sealed partial class ChartWorkspace
     {
         if (Current is null || !FinishInlineEdit()) return;
         zoom.Value = Math.Clamp(Math.Min((viewport.ViewportWidth - 48) / Math.Max(1, documentBounds.Width), (viewport.ViewportHeight - 48) / Math.Max(1, documentBounds.Height)), .2, 2);
-        centring = true; CentreCanvas(); viewport.Focus();
+        if (!FlushZoom()) return; StopZoomAnimation(); SetZoomVisual(zoom.Value); centring = true; CentreCanvas(); viewport.Focus();
     }
 }
