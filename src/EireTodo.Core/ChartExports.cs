@@ -140,7 +140,7 @@ public static class ChartExports
         if (GlobalFontSettings.FontResolver is null) GlobalFontSettings.FontResolver = new EireFontResolver();
         var font = new XFont("EireExport", 14); var small = new XFont("EireExport", 11); var title = new XFont("EireExport", 19);
         using var pdf = new PdfDocument(); pdf.Info.Title = chart.Name; pdf.Info.Creator = "Eire To-do / Mind map / WBS";
-        var scene = ChartGeometry.Arrange(chart, true); var boxes = scene.Boxes.ToDictionary(b => b.Id); var nodes = Charts.Outline(chart).ToDictionary(o => o.Node.Id);
+        var scene = chart.Kind == DiagramKind.Network ? OpenWorkspace.CompactGraph(chart) : ChartGeometry.Arrange(chart, true); var boxes = scene.Boxes.ToDictionary(b => b.Id); var nodes = Charts.Outline(chart).ToDictionary(o => o.Node.Id);
         var accent = XColor.FromArgb(255, 204, 51); var pen = new XPen(XColor.FromArgb(65, 83, 105), 1.4);
         const double width = 1190, height = 842, margin = 35, top = 75;
         var scale = chart.Kind == DiagramKind.Network ? Math.Min(.75, Math.Min((width - 2 * margin) / scene.Width, (height - top - margin) / scene.Height)) : .75;

@@ -99,9 +99,9 @@ internal static class UpdateChecks
         {
             var store = new DataStore(Path.Combine(directory, "update-persistence")); var service = new TodoService(store, store.Load()); var chart = GraphFixture(); service.SaveDiagram(chart);
             var task = new TodoTask { Description = "Formatted overdue", ProjectId = service.Data.Projects[0].Id, FinishDate = DateOnly.FromDateTime(DateTime.Today).AddDays(-1), Format = new() { Family = "Consolas", Size = 28, Bold = true, Italic = true, Underline = true, Alignment = TextJustification.Right } }; service.SaveTask(task);
-            service.Change(d => { d.Settings.ActiveMode = AppMode.Connections; d.Settings.SelectedNetworkId = chart.Id; d.Settings.ShowOverdueLog = true; });
+            service.Change(d => { d.Settings.ActiveMode = AppMode.Graph; d.Settings.SelectedNetworkId = chart.Id; d.Settings.ShowOverdueLog = true; });
             var restart = store.Load(); Assert(restart.Tasks[0].Format.Size == 28 && restart.Tasks[0].Format.Italic && restart.Tasks[0].Format.Underline); Assert(restart.Diagrams[0].Leads.Count == chart.Leads.Count && restart.Diagrams[0].Nodes[1].X == chart.Nodes[1].X);
-            Assert(restart.Settings.ShowOverdueLog && restart.Settings.ActiveMode == AppMode.Connections && restart.Settings.SelectedNetworkId == chart.Id && restart.OverdueLog.Count > 0);
+            Assert(restart.Settings.ShowOverdueLog && restart.Settings.ActiveMode == AppMode.Graph && restart.Settings.SelectedNetworkId == chart.Id && restart.OverdueLog.Count > 0);
             var backup = Path.Combine(directory, "update-backup.json"); service.Export(backup); service.DeleteTask(task.Id); service.DeleteDiagram(chart.Id); service.Restore(backup); Assert(JsonSerializer.Serialize(service.Data) == JsonSerializer.Serialize(restart));
             var legacy = JsonSerializer.SerializeToNode(new DataDocument(), DataDocument.JsonOptions)!.AsObject(); legacy.Remove("OverdueLog"); legacy.Remove("Diagrams"); var loaded = legacy.Deserialize<DataDocument>(DataDocument.JsonOptions)!; Validation.Document(loaded); Assert(loaded.OverdueLog.Count == 0);
         });
@@ -124,7 +124,7 @@ internal static class UpdateChecks
     {
         var chart = NetworkCharts.Create("Connection café Ω"); var a = chart.Nodes[0]; a.Format = new() { Size = 28, Bold = true, Italic = true, Underline = true, Alignment = TextJustification.Centre };
         var b = NetworkCharts.Add(chart, a.Id, false, "Review \"steel\", café Ω"); b.Notes = "First line, quoted\nSecond line Ω"; b.FinishDate = new(2026, 10, 6); b.Format.Alignment = TextJustification.Right;
-        var c = NetworkCharts.Add(chart, b.Id, false, "Delivery"); NetworkCharts.Connect(chart, a.Id, b.Id, false, LeadRouting.Curve, "Design → review café Ω"); NetworkCharts.Connect(chart, b.Id, c.Id, true, LeadRouting.SharpBends, "Review ↔ delivery"); NetworkCharts.Connect(chart, c.Id, a.Id, false, LeadRouting.Curve, "Feedback cycle"); return chart;
+        var c = NetworkCharts.Add(chart, b.Id, false, "Delivery"); NetworkCharts.Connect(chart, a.Id, b.Id, false, LeadRouting.Curve, "Design → review café Ω"); NetworkCharts.Connect(chart, b.Id, c.Id, true, LeadRouting.SharpBends, "Review ↔ delivery"); NetworkCharts.Connect(chart, c.Id, a.Id, false, LeadRouting.Curve, "Feedback cycle"); NetworkCharts.Move(chart, a.Id, -650, -420); NetworkCharts.Move(chart, b.Id, -150, -240); NetworkCharts.Move(chart, c.Id, 380, 100); return chart;
     }
     internal static void WriteFixtures(string directory)
     {

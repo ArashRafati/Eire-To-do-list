@@ -83,11 +83,16 @@ public partial class MainWindow : Window
         overdueView = new OverdueView(service, ToggleOverdue); OverdueHost.Content = overdueView;
         chartWorkspace = new ChartWorkspace(service, dataDirectory, painter, ToggleOverdue, RefreshOverdueView);
         var ribbon = new RibbonBar();
-        var legacy = LegacyActionsCard.Child; LegacyActionsCard.Child = null; LegacyActionsCard.Visibility = Visibility.Collapsed;
-        ribbon.Group("Home", "Tasks / projects / window").Children.Add(legacy);
-        RibbonBar.Action(ribbon.Group("Insert", "Task"), "+ Add task", () => AddClick(this, new()), true);
+        var legacy = (WrapPanel)LegacyActionsCard.Child; LegacyActionsCard.Child = null; LegacyActionsCard.Visibility = Visibility.Collapsed;
+        var commands = legacy.Children.Cast<UIElement>().ToList(); legacy.Children.Clear();
+        var taskCommands = ribbon.Group("Home", "Tasks");
+        foreach (var command in commands.Take(3)) { if (command is Control control) RibbonBar.Prepare(control); taskCommands.Children.Add(command); }
+        var projects = ribbon.Group("Home", "Projects"); RibbonBar.Prepare((Control)commands[3]); projects.Children.Add(commands[3]);
+        RibbonBar.Action(ribbon.Group("Insert", "New task"), "Add task", () => AddClick(this, new()), true);
         taskFormatTools = new FormattingTools(() => (TaskGrid.SelectedItem as TaskRow)?.Task.Format, ApplyTaskFormat, painter); ribbon.Group("Format", "Text").Children.Add(taskFormatTools);
-        var view = ribbon.Group("View", "Data / window"); RibbonBar.Action(view, "Overdue log", ToggleOverdue); RibbonBar.Action(view, "Window settings", () => WindowOptionsClick(this, new())); RibbonBar.Action(view, "Clear filters", () => ClearFiltersClick(this, new()));
+        var window = ribbon.Group("View", "Window"); var windowControls = (StackPanel)commands[4]; windowControls.Children.Remove(TopToggle); TopToggle.MinHeight = 34; TopToggle.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(TopToggle); windowControls.Height = 34; windowControls.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(windowControls);
+        var view = ribbon.Group("View", "Data"); RibbonBar.Action(view, "Overdue log", ToggleOverdue); RibbonBar.Action(view, "Clear filters", () => ClearFiltersClick(this, new()));
+        var settings = ribbon.Group("View", "Settings"); RibbonBar.Action(settings, "Window settings", () => WindowOptionsClick(this, new()));
         TaskRibbonHost.Content = ribbon;
         TaskGrid.PreviewMouseLeftButtonUp += PaintTask;
         clockTimer.Tick += (_, _) => ClockTick(); ClockTick(); clockTimer.Start();
@@ -123,7 +128,7 @@ public partial class MainWindow : Window
     private void ApplyWindowSettings()
     {
         var s = service.Data.Settings;
-        ModeSelector.SelectedIndex = (int)s.ActiveMode;
+        ModeSelector.SelectedIndex = AppModules.SelectorIndex(s.ActiveMode);
         var virtualWidth = SystemParameters.VirtualScreenWidth;
         var virtualHeight = SystemParameters.VirtualScreenHeight;
         Width = Math.Clamp(s.Width, MinWidth, Math.Max(MinWidth, virtualWidth));
@@ -378,16 +383,16 @@ public partial class MainWindow : Window
     private void ModeChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!initialized) return;
-        if (!chartWorkspace.FinishInlineEdit()) { initialized = false; ModeSelector.SelectedIndex = (int)service.Data.Settings.ActiveMode; initialized = true; return; }
+        if (!chartWorkspace.FinishInlineEdit()) { initialized = false; ModeSelector.SelectedIndex = AppModules.SelectorIndex(service.Data.Settings.ActiveMode); initialized = true; return; }
         ApplyMode(true); QueueSettings();
     }
     private void ApplyMode(bool changeLayout)
     {
-        var mode = (AppMode)Math.Max(0, ModeSelector.SelectedIndex);
+        var mode = AppModules.FromSelector(ModeSelector.SelectedIndex);
         var todo = mode == AppMode.Todo;
         ControlsScroll.Visibility = TodoTablePanel.Visibility = TaskCount.Visibility = todo ? Visibility.Visible : Visibility.Collapsed;
         ChartHost.Visibility = todo ? Visibility.Collapsed : Visibility.Visible;
-        Title = mode == AppMode.Todo ? "Eire To-do" : mode == AppMode.MindMap ? "Eire Mind map" : mode == AppMode.Wbs ? "Eire WBS chart" : "Eire Connections";
+        Title = mode == AppMode.Todo ? "Eire To-do" : mode == AppMode.Diagram ? "Eire Mind map / WBS" : "Eire Graph";
         if (!todo) chartWorkspace.SetMode(mode, changeLayout);
         UpdateControlsViewport();
     }
@@ -434,7 +439,7 @@ public partial class MainWindow : Window
         {
             Left = bounds.Left, Top = bounds.Top, Width = Math.Max(MinWidth, bounds.Width), Height = Math.Max(MinHeight, bounds.Height),
             Opacity = OpacitySlider.Value, AlwaysOnTop = TopToggle.IsChecked == true,
-            ActiveMode = (AppMode)Math.Max(0, ModeSelector.SelectedIndex), SelectedDiagramId = service.Data.Settings.SelectedDiagramId, SelectedNetworkId = service.Data.Settings.SelectedNetworkId, ShowOverdueLog = service.Data.Settings.ShowOverdueLog,
+            ActiveMode = AppModules.FromSelector(ModeSelector.SelectedIndex), SelectedDiagramId = service.Data.Settings.SelectedDiagramId, SelectedNetworkId = service.Data.Settings.SelectedNetworkId, ShowOverdueLog = service.Data.Settings.ShowOverdueLog,
             ColumnWidths = TaskGrid.Columns.ToDictionary(c => c.SortMemberPath, c => Math.Clamp(c.ActualWidth, 35, 3000))
         };
         try

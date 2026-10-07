@@ -1,2 +1,2 @@
-7a8456a05bc9c819d62423de089a7ec0c9bd325f4d2f0a3cb7bd7ddaca3a794c  EireTodo-Windows-x64.zip
-13fda80426c8fa43ca82f3f203f8b6169d828114595e252649c7eb5fd6d503b7  EireTodo-Source.zip
+a0e01b6e6177ad67ea11c2180afb9f777dc1c06139e60b1f1c53e31d64881bc7  EireTodo-Windows-x64.zip
+0995f528ad832a6c013117e9e06fd84f5fadcb2c671a774ceb1c2dc658dc4e75  EireTodo-Source.zip

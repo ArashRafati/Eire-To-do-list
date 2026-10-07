@@ -134,10 +134,10 @@ internal static class ChartChecks
         check("Diagrams, module, selection, zoom and node edits persist and restore", () =>
         {
             var store = new DataStore(Path.Combine(root, "charts")); var service = new TodoService(store, store.Load()); var chart = Fixture(); chart.ProjectId = service.Data.Projects[0].Id; chart.Zoom = .8;
-            service.SaveDiagram(chart); service.Change(d => { d.Settings.ActiveMode = AppMode.Wbs; d.Settings.SelectedDiagramId = chart.Id; });
+            service.SaveDiagram(chart); service.Change(d => { d.Settings.ActiveMode = AppMode.LegacyWbs; d.Settings.SelectedDiagramId = chart.Id; });
             var candidate = service.Data.Diagrams[0].Clone(); candidate.Nodes[2].Title = "Edited"; service.SaveDiagram(candidate);
             var restart = new TodoService(store, store.Load()); Assert(restart.Data.Diagrams[0].Nodes[2].Title == "Edited"); Assert(restart.Data.Diagrams[0].Nodes[2].Id == chart.Nodes[2].Id);
-            Assert(restart.Data.Settings.ActiveMode == AppMode.Wbs && restart.Data.Settings.SelectedDiagramId == chart.Id && restart.Data.Diagrams[0].Zoom == .8);
+            Assert(restart.Data.Settings.ActiveMode == AppMode.LegacyWbs && restart.Data.Settings.SelectedDiagramId == chart.Id && restart.Data.Diagrams[0].Zoom == .8);
             var backup = Path.Combine(root, "charts-backup.json"); restart.Export(backup); restart.DeleteDiagram(chart.Id); Assert(restart.Data.Diagrams.Count == 0); restart.Restore(backup); Assert(restart.Data.Diagrams.Single().Nodes.Count == chart.Nodes.Count);
             var json = JsonSerializer.Serialize(restart.Data, DataDocument.JsonOptions); using var old = JsonDocument.Parse(json); var fields = old.RootElement.EnumerateObject().Where(p => p.Name != "Diagrams").ToDictionary(p => p.Name, p => p.Value.Clone());
             var legacy = JsonSerializer.Deserialize<DataDocument>(JsonSerializer.Serialize(fields), DataDocument.JsonOptions)!; Validation.Document(legacy); Assert(legacy.Diagrams.Count == 0 && legacy.Tasks.Count == restart.Data.Tasks.Count);

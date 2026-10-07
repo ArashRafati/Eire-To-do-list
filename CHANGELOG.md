@@ -1,5 +1,15 @@
 # Changes
 
+## 3.1.0 — open canvas, merged diagrams and Graph
+
+- Move the local date/time clock to the top right.
+- Merge Mind map and WBS into one module without changing saved layouts; rename Connections to Graph and preserve old mode values/backups.
+- Centre diagrams in an expanding workspace with blank-space/middle/Space dragging, wheel panning and pointer-anchored zoom.
+- Permit signed Graph positions and keep camera movement separate from saved node coordinates; compact PDF exports exclude workspace margins.
+- Organise ribbon groups into a consistent-height band with horizontal scrolling, compact labels and collapse/expand controls.
+- Make Enter and Insert both create a linked Graph node from the selection; provide outgoing/incoming/both direction choices and explicit unlinked creation.
+- Add mode compatibility, centred workspace, linked creation, signed position/persistence and compact export verification.
+
 ## 3.0.0 — ribbon, direct editing and connection diagrams
 
 - Preserve the existing dark/yellow palette; add Home/Insert/Format/View ribbon tabs.

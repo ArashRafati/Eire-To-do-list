@@ -1,8 +1,8 @@
 # Mind maps, WBS and planning exports
 
-Use the yellow title dropdown to select **TO-DO**, **MIND MAP** or **WBS CHART**.
-The latter two share saved diagrams and nodes. Switching between them selects
-a suitable layout; you can choose any of the five layouts in the chart toolbar:
+Use the yellow title dropdown to select **TO-DO**, **MIND MAP / WBS** or **GRAPH**.
+The combined Mind map / WBS module shares saved diagrams and nodes. Module
+switching preserves their layout; choose any of the five in View → Diagram layout:
 two-sided mind map, right tree, top-down WBS, left-to-right WBS or numbered outline.
 Changing layout keeps the same hierarchy and node IDs.
 
@@ -135,9 +135,9 @@ The XML field conventions were checked against MPXJ's schema-derived readers
 and writer implementation: https://github.com/joniles/mpxj . The app does not
 bundle or call MPXJ; it is only an optional developer verification tool.
 
-## Connection module and text formatting (3.0)
+## Graph module and text formatting
 
-**CONNECTIONS** uses independent nodes and directed leads. It supports cycles,
+**GRAPH** uses independent nodes and directed leads. It supports cycles,
 many incoming/outgoing relationships, double arrowheads and manual positions.
 Its **CSV** has Node/Lead records, endpoint IDs, directions, routing, positions,
 notes and text-format JSON. Its **XML** uses `urn:eire:connection-diagram:1`;
@@ -157,3 +157,19 @@ Overdue uses explicitly entered finish dates and the computer's local date.
 Summary rollup dates and undated-node scheduling defaults in planning exports
 do not create overdue entries. Red chart/task styling and the persistent log
 are app features; planning tools apply their own overdue formatting rules.
+
+## Open workspace and graph creation (3.1)
+
+All diagrams start centred in a pannable workspace that extends as you navigate.
+Drag empty space / middle-drag / Space+drag, use wheel / Shift+wheel to pan,
+or Ctrl+wheel to zoom. Fit / centre is in the View ribbon. Graph positions may
+be negative; CSV/XML retain their world coordinates while PDF shifts the full
+diagram into a compact page area without exporting empty workspace margins.
+Panning itself does not move nodes or alter exports.
+
+Enter and Insert in Graph both create a lead from the selected cell to the new
+cell. Insert → New lead style changes new leads to incoming or both directions,
+and selects curve or sharp bends. Unlinked node creates a separate cell. Existing
+lead direction/shape/description remains editable by right-click/double-click.
+Old numeric mode settings and Connections data remain compatible; existing WBS
+layouts stay WBS layouts when opened in the merged module.

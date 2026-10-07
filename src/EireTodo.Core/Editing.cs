@@ -39,7 +39,7 @@ public static class NetworkCharts
         var chart = new Diagram { Name = name, Kind = DiagramKind.Network, Layout = ChartLayout.Freeform };
         Add(chart, null, false, name); return chart;
     }
-    public static ChartNode Add(Diagram chart, Guid? anchor, bool connected, string title = "New node", bool doubleHeaded = false, LeadRouting routing = LeadRouting.Curve, TextFormat? format = null)
+    public static ChartNode Add(Diagram chart, Guid? anchor, bool connected, string title = "New node", bool doubleHeaded = false, LeadRouting routing = LeadRouting.Curve, TextFormat? format = null, bool preferLeft = false)
     {
         if (chart.Kind != DiagramKind.Network || chart.Nodes.Count >= Charts.MaxNodes) throw new ArgumentException("Cannot add a network node to this diagram.");
         var node = new ChartNode { Number = chart.NextNumber++, Order = chart.Nodes.Count, Title = title, Format = format?.Clone() ?? new() };
@@ -51,14 +51,17 @@ public static class NetworkCharts
         // Search outward from the selected node; reserve a full cell plus a readable gap.
         bool found = false;
         for (var radius = 0; radius <= 64 && !found; radius++)
-            for (var dy = -radius; dy <= radius && !found; dy++)
-                for (var dx = -radius; dx <= radius && !found; dx++)
-                {
-                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != radius) continue;
-                    var px = x + dx * (size.Width + 74); var py = y + dy * (size.Height + 74);
-                    if (px < 40 || py < 40 || !Free(px, py)) continue;
-                    node.X = px; node.Y = py; found = true;
-                }
+        {
+            var directions = new List<(int X, int Y)> { (preferLeft ? -radius : radius, 0), (0, radius), (preferLeft ? radius : -radius, 0), (0, -radius) };
+            for (var dy = -radius; dy <= radius; dy++) for (var dx = -radius; dx <= radius; dx++)
+                if (Math.Max(Math.Abs(dx), Math.Abs(dy)) == radius) directions.Add((dx, dy));
+            foreach (var (dx, dy) in directions.Distinct())
+            {
+                var px = x + dx * (size.Width + 74); var py = y + dy * (size.Height + 74);
+                if (Math.Abs(px) > 100000 || Math.Abs(py) > 100000 || !Free(px, py)) continue;
+                node.X = px; node.Y = py; found = true; break;
+            }
+        }
         if (!found) throw new ArgumentException("No free position was found. Move existing nodes to make space.");
         chart.Nodes.Add(node);
         if (connected && anchor.HasValue) Connect(chart, anchor.Value, node.Id, doubleHeaded, routing);
@@ -74,7 +77,7 @@ public static class NetworkCharts
     }
     public static void Move(Diagram chart, Guid id, double x, double y)
     {
-        var node = chart.Nodes.Single(n => n.Id == id); node.X = Math.Clamp(x, 40, 100000); node.Y = Math.Clamp(y, 40, 100000); Charts.Validate(chart);
+        var node = chart.Nodes.Single(n => n.Id == id); node.X = Math.Clamp(x, -100000, 100000); node.Y = Math.Clamp(y, -100000, 100000); Charts.Validate(chart);
     }
 }
 

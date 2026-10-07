@@ -13,11 +13,12 @@ internal sealed partial class ChartWorkspace
     private readonly FormatPainter painter;
     private readonly Action changed;
     private bool networkMode;
-    private WrapPanel hierarchyControls = null!, leadControls = null!;
+    private WrapPanel hierarchyControls = null!, leadControls = null!, unlinkedControls = null!, leadOptions = null!, layoutControls = null!;
     private Button siblingButton = null!, childButton = null!, fromTodoButton = null!;
     private FormattingTools formatTools = null!;
-    private readonly CheckBox twoHeads = new() { Content = "Double lead", Margin = new Thickness(4, 0, 12, 0), VerticalAlignment = VerticalAlignment.Center };
-    private readonly ComboBox leadRouting = new() { ItemsSource = new[] { "Curve", "Sharp bends" }, SelectedIndex = 0, Width = 150 };
+    private readonly ComboBox leadDirection = new() { ItemsSource = new[] { "Outgoing →", "Incoming ←", "Both ↔" }, SelectedIndex = 0, Width = 150, MinHeight = 34, FontSize = 15, Margin = new Thickness(0, 0, 6, 2), ToolTip = "Direction for new leads and connected nodes" };
+    private LeadDirection Direction => (LeadDirection)Math.Max(0, leadDirection.SelectedIndex);
+    private readonly ComboBox leadRouting = new() { ItemsSource = new[] { "Curve", "Sharp bends" }, SelectedIndex = 0, Width = 150, MinHeight = 34, FontSize = 15, Margin = new Thickness(0, 0, 6, 4) };
     private LeadRouting Routing => leadRouting.SelectedIndex == 1 ? LeadRouting.SharpBends : LeadRouting.Curve;
     private Guid? connectFrom;
     private readonly Dictionary<Guid, (Grid Grid, TextBlock Label)> titleViews = [];
@@ -44,7 +45,7 @@ internal sealed partial class ChartWorkspace
         inline = new TextBox { Text = node.Title, MaxLength = 100, FontFamily = new FontFamily(node.Format.Family), FontSize = node.Format.Size, FontWeight = node.Format.Bold ? FontWeights.Bold : FontWeights.Normal, FontStyle = node.Format.Italic ? FontStyles.Italic : FontStyles.Normal, TextAlignment = node.Format.Alignment == TextJustification.Centre ? TextAlignment.Center : node.Format.Alignment == TextJustification.Right ? TextAlignment.Right : TextAlignment.Left, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false, Padding = new Thickness(2), VerticalAlignment = VerticalAlignment.Top };
         view.Label.Visibility = Visibility.Collapsed; Grid.SetRow(inline, 1); view.Grid.Children.Add(inline);
         var editor = inline;
-        editor.TextChanged += (_, _) => { status.Text = "Saving title… · Enter: sibling · Insert: child · Ctrl+Enter: details"; titleTimer.Stop(); titleTimer.Start(); };
+        editor.TextChanged += (_, _) => { status.Text = "Saving title…"; titleTimer.Stop(); titleTimer.Start(); };
         titleTimer.Tick -= SaveTitleTick; titleTimer.Tick += SaveTitleTick;
         editor.PreviewKeyDown += (_, e) =>
         {
@@ -69,7 +70,7 @@ internal sealed partial class ChartWorkspace
         {
             var candidate = chart.Clone(); candidate.Nodes.Single(n => n.Id == id).Title = text; service.SaveDiagram(candidate);
             if (!inlineSaved && inlineBefore is not null) { undo.Push(inlineBefore); redo.Clear(); LimitHistory(); inlineSaved = true; }
-            inline.BorderBrush = Ui.Accent; changed(); status.Text = "Title saved · Enter: sibling · Insert: child · Ctrl+Enter: details"; return true;
+            inline.BorderBrush = Ui.Accent; changed(); status.Text = networkMode ? "Title saved · Enter / Insert: linked node · Ctrl+Enter: details" : "Title saved · Enter: sibling · Insert: child · Ctrl+Enter: details"; return true;
         }
         catch (Exception ex) { status.Text = "Title NOT saved. Keep this field open and retry: " + ex.Message; inline.BorderBrush = OverdueBrush; return false; }
     }
@@ -87,7 +88,7 @@ internal sealed partial class ChartWorkspace
     private void StartConnection()
     {
         if (!FinishInlineEdit() || !networkMode || selectedId is not Guid id) { status.Text = "Select the source node first."; return; }
-        connectFrom = id; status.Text = "Click a target node to connect. Double lead and routing use the ribbon choices.";
+        connectFrom = id; status.Text = "Click a target node to connect. Direction and routing use the ribbon choices.";
     }
     private bool ClickNode(Guid id)
     {
@@ -95,7 +96,7 @@ internal sealed partial class ChartWorkspace
         if (networkMode && connectFrom is Guid from)
         {
             if (id == from) { status.Text = "Choose a different target node."; return false; }
-            Modify(c => NetworkCharts.Connect(c, from, id, twoHeads.IsChecked == true, Routing), false); connectFrom = null; Select(id); return false;
+            Modify(c => GraphCreation.Connect(c, from, id, Direction, Routing), false); connectFrom = null; Select(id); return false;
         }
         Select(id);
         if (painter.Copied is TextFormat format)
@@ -114,26 +115,26 @@ internal sealed partial class ChartWorkspace
             if (!ClickNode(id)) { e.Handled = true; return; }
             viewport.Focus();
             if (e.ClickCount == 2) { BeginTitle(); e.Handled = true; return; }
-            pressed = e.GetPosition(canvas); original = new Point(Canvas.GetLeft(border), Canvas.GetTop(border)); moved = false;
+            pressed = e.GetPosition(viewport); original = networkMode ? new Point(Canvas.GetLeft(border) - canvasOrigin.X, Canvas.GetTop(border) - canvasOrigin.Y) : new Point(Canvas.GetLeft(border), Canvas.GetTop(border)); moved = false;
             if (networkMode) border.CaptureMouse(); e.Handled = true;
         };
         border.MouseMove += (_, e) =>
         {
             if (pressed is not Point start || e.LeftButton != MouseButtonState.Pressed) return;
-            var p = e.GetPosition(canvas); var dx = p.X - start.X; var dy = p.Y - start.Y;
+            var p = e.GetPosition(viewport); var scale = Current?.Zoom ?? 1; var dx = (p.X - start.X) / scale; var dy = (p.Y - start.Y) / scale;
             if (!moved && Math.Abs(dx) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(dy) < SystemParameters.MinimumVerticalDragDistance) return;
             moved = true;
             if (!networkMode)
             {
                 pressed = null; if (Current is Diagram d) DragDrop.DoDragDrop(border, new DataObject(DragFormat, new NodeDrag(d.Id, id)), DragDropEffects.Move); Render(); return;
             }
-            var x = Math.Clamp(original.X + dx, 40, 100000); var y = Math.Clamp(original.Y + dy, 40, 100000); Canvas.SetLeft(border, x); Canvas.SetTop(border, y);
+            var worldX = Math.Clamp(original.X + dx, -100000, 100000); var worldY = Math.Clamp(original.Y + dy, -100000, 100000); MakeWorldPointVisible(worldX, worldY, border.Width, border.Height); var x = worldX + canvasOrigin.X; var y = worldY + canvasOrigin.Y; Canvas.SetLeft(border, x); Canvas.SetTop(border, y);
             var boxes = scene.Boxes.Select(b => b.Id == id ? b with { X = x, Y = y } : b).ToDictionary(b => b.Id);
-            if (Current is Diagram chart) DrawLeads(chart, boxes); canvas.Width = Math.Max(scene.Width, x + border.Width + 40); canvas.Height = Math.Max(scene.Height, y + border.Height + 40);
+            if (Current is Diagram chart) DrawLeads(chart, boxes); canvas.Width = Math.Max(canvas.Width, x + border.Width + OpenWorkspace.Padding); canvas.Height = Math.Max(canvas.Height, y + border.Height + OpenWorkspace.Padding);
         };
         border.MouseLeftButtonUp += (_, e) =>
         {
-            if (networkMode && pressed.HasValue) { pressed = null; border.ReleaseMouseCapture(); if (moved) { var x = Canvas.GetLeft(border); var y = Canvas.GetTop(border); Modify(c => NetworkCharts.Move(c, id, x, y)); } e.Handled = true; }
+            if (networkMode && pressed.HasValue) { pressed = null; border.ReleaseMouseCapture(); if (moved) { var x = Canvas.GetLeft(border) - canvasOrigin.X; var y = Canvas.GetTop(border) - canvasOrigin.Y; Modify(c => NetworkCharts.Move(c, id, x, y)); } e.Handled = true; }
             pressed = null;
         };
         border.LostMouseCapture += (_, _) => { if (pressed.HasValue && networkMode) { pressed = null; if (moved) Render(); } };

@@ -1,4 +1,4 @@
-# Windows download — version 3.0
+# Windows download — version 3.1
 
 `EireTodo-Windows-x64.zip` contains the self-contained Windows x64 executable,
 short instructions, chart/planning import guide, component notices and remaining Windows acceptance checks. Download the raw
@@ -38,3 +38,8 @@ Version 3.0 adds the tabbed ribbon, inline titles, branch drag/drop, saved text
 formatting and format painter, local clock, red overdue items/history, and a
 separate Connections module with movable nodes and labelled directional leads.
 The black/slate/yellow palette is preserved. See QUICKSTART.txt in the ZIP.
+
+Version 3.1 centres diagrams in an open, expanding canvas, moves the clock to the
+top right, merges Mind map/WBS, renames Connections to Graph, reorganises the
+ribbon, and connects both Enter/Insert nodes automatically. Existing data and
+layouts remain compatible. Direction can be outgoing, incoming or both.

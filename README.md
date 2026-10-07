@@ -1,17 +1,44 @@
 # Eire To-do
 
-A portable, offline Windows desktop to-do, mind-map, WBS and connection-diagram widget built with WPF and .NET 10.
+A portable, offline Windows desktop to-do, mind-map/WBS and graph widget built with WPF and .NET 10.
 The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
-## Ribbon and connection diagrams — version 3.0
+## Open workspace and organised ribbon — version 3.1
+
+The title menu now has **TO-DO**, **MIND MAP / WBS** and **GRAPH**. The combined
+hierarchy module retains all five layouts under **View → Diagram layout**;
+switching modules no longer converts a saved layout. Existing WBS, mind-map
+and Connections profiles/backups open through the new menu automatically.
+
+The clock is in the **top right**. Each ribbon tab has a consistent command
+band, named groups and compact labels; groups scroll horizontally rather than
+stacking over the canvas. Double-click a tab or use its arrow to collapse or
+expand it. The chart ribbon starts collapsed in a very small workspace.
+
+Diagrams open **centred in an open canvas**, with space on every side. Drag empty
+space, middle-drag, or hold Space and drag to pan; wheel pans vertically and
+Shift+wheel horizontally. Ctrl+wheel zooms around the pointer. View → Fit / centre
+fits and centres the diagram. The workspace expands as you pan, and Graph
+nodes can cross either side of their original position, including negative
+coordinates. Panning affects the camera rather than saved node positions.
+PDF export includes the diagram, not the large virtual workspace margins.
+
+In **GRAPH**, both **Enter and Insert** create a new node with an outgoing lead
+from the selection, then enable its inline title. **Insert → New lead style**
+lets you choose outgoing, incoming or both directions and curved/sharp-bend
+routing. Existing leads remain editable by right-click/double-click. **Unlinked
+node** explicitly creates an independent cell; with no selection a new cell is
+also unlinked. The existing black/slate/yellow palette remains unchanged.
+
+## Editing and graphs
 
 The existing black/slate/yellow palette is preserved. The top ribbon has
 **Home**, **Insert**, **Format** and **View** tabs with grouped commands. The
 header displays the computer's current local date/time in Australian format.
 
-- **Enter / Insert** creates a sibling / child with its title editable directly
+- In **MIND MAP / WBS**, **Enter / Insert** creates a sibling / child with its title editable directly
   in the cell. Enter while typing saves that title and creates the next sibling;
   Insert saves and creates a child. **F2 / double-click** edits the title;
   **Ctrl+Enter** or **right-click → Node details** opens full notes and dates.
@@ -31,11 +58,11 @@ header displays the computer's current local date/time in Australian format.
   finish dates are not overdue. The log retains resolved episodes after
   completion, deletion or deadline changes, and notices newly overdue items
   on restart and each minute while the app is open. Its visibility persists.
-- **CONNECTIONS** is a separate module. Enter adds a free node; Insert creates an
+- **GRAPH** is a separate module. Enter or Insert creates an
   automatically positioned node connected from the selection. Choose **Insert
   → Connect nodes**, then click the target to add more leads. Any cell may have
   multiple incoming/outgoing leads, including cycles. Drag cells freely; their
-  leads follow. Choose curved or sharp-bend leads and one or two arrowheads.
+  leads follow. Choose curved or sharp-bend leads and outgoing, incoming or both directions.
   Right-click/double-click a lead to describe, reverse, reshape or delete it.
   Long leads route around intervening cells; labels follow the lead direction
   and show a shortened preview with full text in the tooltip and PDF appendix.
@@ -45,7 +72,7 @@ retain the Microsoft Project / P6 planning exports. Free-form relationships are
 not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
 portable output and preserves size, weight, italic, underline and alignment;
 Windows font families use this export fallback. All new data is included in
-JSON backup/restore. **Back up before updating and continue using version 3.0;
+JSON backup/restore. **Back up before updating and continue using version 3.1;
 older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1
@@ -64,8 +91,8 @@ creation to the 1,000-node limit and verify all five layouts remain collision-fr
 
 ## Mind maps and WBS — version 2.0
 
-The yellow **TO-DO** title is now a module dropdown: switch to **MIND MAP** or
-**WBS CHART**. Create saved diagrams, select cells and press **Enter** for a sibling
+The yellow **TO-DO** title is a module dropdown: choose **MIND MAP / WBS**
+for either hierarchy style. Create saved diagrams, select cells and press **Enter** for a sibling
 or **Insert** for a child. Five layouts are available: two-sided mind map, right
 tree, top-down WBS, left-to-right WBS and numbered outline. Edit full notes,
 parent, dates, duration and completion; reorder, indent/outdent, fold, zoom,

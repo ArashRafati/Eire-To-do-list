@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace EireTodo.Core;
 
-public enum AppMode { Todo, MindMap, Wbs, Connections }
+public enum AppMode { Todo = 0, Diagram = 1, LegacyWbs = 2, Graph = 3 }
 public enum ChartLayout { MindMap, RightTree, TopDown, LeftToRight, Outline, Freeform }
 public enum MindMapBranchSide { Auto, Right, Left }
 
@@ -54,7 +54,7 @@ public static class Charts
         ChartLayout.RightTree => "Mind map · right tree",
         ChartLayout.TopDown => "WBS · top down",
         ChartLayout.LeftToRight => "WBS · left to right",
-        ChartLayout.Freeform => "Connections · free placement",
+        ChartLayout.Freeform => "Graph · free placement",
         _ => "Numbered outline"
     };
     public static Diagram Create(string name, ChartLayout layout, Guid? projectId = null)
@@ -82,7 +82,7 @@ public static class Charts
         foreach (var n in chart.Nodes)
         {
             if (n.Format is null) throw new ArgumentException("Node formatting is missing."); n.Format.Validate();
-            if (n.X.HasValue != n.Y.HasValue || n.X.HasValue && (!double.IsFinite(n.X.Value) || !double.IsFinite(n.Y!.Value) || n.X < 0 || n.Y < 0 || n.X > 100000 || n.Y > 100000) ||
+            if (n.X.HasValue != n.Y.HasValue || n.X.HasValue && (!double.IsFinite(n.X.Value) || !double.IsFinite(n.Y!.Value) || n.X < -100000 || n.Y < -100000 || n.X > 100000 || n.Y > 100000) ||
                 chart.Kind == DiagramKind.Network && (n.ParentId.HasValue || !n.X.HasValue)) throw new ArgumentException("Invalid free node position.");
         }
         if (chart.Leads.Any(l => l is null || l.Id == Guid.Empty || l.From == l.To || !chart.Nodes.Any(n => n.Id == l.From) || !chart.Nodes.Any(n => n.Id == l.To) || !Enum.IsDefined(l.Routing) || l.Description is null || l.Description.Length > 500) || chart.Leads.Select(l => l.Id).Distinct().Count() != chart.Leads.Count)

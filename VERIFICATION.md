@@ -1,12 +1,12 @@
 # Build and verification evidence
 
-Current delivery: version **3.0.0**, including mind-map/WBS modules, five layouts,
+Current delivery: version **3.1.0**, including the combined mind-map/WBS module, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
-text formatting, overdue history, a header clock and the Connections module, the custom Windows app icon,
+text formatting, overdue history, a header clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.0 interface.
+Windows acceptance checks or the updated 3.1 interface.
 
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
@@ -41,6 +41,10 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Overdue local-date rules, resolved episodes, restart and backup/restore | Passed core checks |
 | New text formats, graph data, module/log preferences and failed-save rollback | Passed core checks |
 | Connection CSV/XML/PDF | Passed independent Python parsers and Poppler text extraction, preserving node/lead data, positions, directions, formats, full Unicode notes and labels |
+| Legacy WBS/Mind map/Connections modes and saved layouts | Passed numeric compatibility and restart checks |
+| Centred initial view, open margins and viewport origin changes | Passed pure coordinate checks at multiple zooms/view sizes; actual panning requires Windows |
+| Graph linked node creation and outgoing/incoming/both/unlinked options | Passed core checks; Enter/Insert UI event dispatch requires Windows |
+| Signed graph positions and compact PDF bounds | Passed restart/backup/export checks; independent CSV/XML checks include signed positions |
 | Native Microsoft Project and P6 imports | **Not run**; import guide and acceptance steps included |
 | Packaged executable's PE architecture and GUI subsystem | Inspected: Windows x64 GUI |
 | Packaged executable's embedded privilege manifest | Inspected: `asInvoker`, `uiAccess=false` |
@@ -52,7 +56,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **33 passed; 0 failed**. These are thirty-three named groups
+The functional runner reports **38 passed; 0 failed**. These are thirty-eight named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 

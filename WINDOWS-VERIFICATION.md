@@ -76,15 +76,15 @@ settings serialization, corruption recovery and failed-save rollback; they do
 not establish native UI or Windows launch behaviour.
 
 10. **2.0 module switcher and chart editing.** Open the TO-DO dropdown, select
-    MIND MAP and create a diagram. Click its root, press Insert and name a child;
+    MIND MAP / WBS and create a diagram. Click its root, press Insert and name a child;
     press Enter for a sibling. Verify roots can also have siblings. Use Ctrl+Enter or
     right-click > Node details to edit full notes; Enter inside notes must add a line and
     Ctrl+Enter must save. Test date validation, parent moves, completion,
     reorder, indent/outdent, branch folding, Undo/Redo and confirmed deletion.
     Confirm a folded parent opens when adding/moving a child into it. Try all
     five layouts with uneven-depth branches and multiple roots. Zoom, fit,
-    scroll both ways and switch to WBS then back to To-do. In a compact window,
-    scroll the chart toolbar and ensure all controls stay reachable. The title
+    scroll both ways and choose a WBS layout then switch back to To-do. In a compact window,
+    scroll the ribbon horizontally / expand its compact band and ensure all controls stay reachable. The title
     dropdown/gear must work without dragging the window accidentally.
 11. **Chart persistence/recovery.** Associate a diagram with a project, set its
     scheduling start, layout and zoom, then close/reopen. Check module, selected
@@ -143,8 +143,9 @@ not establish native UI or Windows launch behaviour.
     show/hide. The header clock must follow the local computer's date/time.
     Leave open through local midnight or restart the next day to verify newly
     overdue items are recorded. Check a log save failure produces a retry banner.
-18. **Connections.** Create a separate CONNECTIONS diagram. Enter adds a free
-    cell, Insert a linked cell, both with direct title editing. Add multiple
+18. **Graph.** Create a separate GRAPH diagram. Enter and Insert both add a
+    linked cell from the selection, with direct title editing. Unlinked node
+    creates an independent cell. Add multiple
     incoming/outgoing leads and a cycle; choose Curve and Sharp bends, single
     and double arrows. Drag cells freely at multiple zooms: leads should follow
     and the saved position should survive restart. Check automatic new cells
@@ -155,3 +156,24 @@ not establish native UI or Windows launch behaviour.
     delete an endpoint, restart and backup/restore must preserve the graph or
     remove its incident leads appropriately. WBS planning profiles remain in
     WBS mode; free graph links must not become scheduling dependencies.
+
+19. **3.1 open workspace and ribbon.** On creating either diagram type, the root
+    must start centred with space on every side. Drag blank space, middle-drag
+    and Space+drag in all directions, repeatedly passing beyond the original
+    top/left region; no visible page boundary should stop panning. Hierarchy
+    connectors must follow during canvas expansion. Wheel/Shift+wheel pan and
+    Ctrl+wheel zooms around the pointer. Fit / centre recentres content. Pan
+    while a title is pending and verify it saves first. Drag Graph cells into
+    areas above/left of the original root, reopen/restore and check positions.
+    Export signed positions: PDF must include all nodes without large empty
+    workspace margins. Check the clock in the top-right corner at compact,
+    maximised and mixed-DPI sizes. Ribbon groups must keep consistent heights,
+    scroll sideways and collapse/expand via the arrow or double-clicked tab.
+20. **3.1 merged modules and automatic leads.** The menu must contain To-do,
+    Mind map / WBS and Graph. Open a backup last saved in old WBS mode: it must
+    open the combined module with its top-down layout intact. Do the same for
+    old Mind map and Connections data. Select a Graph node, press Enter, type
+    its new title, then Insert: both new cells must have a lead from the prior
+    selection. Repeat with Incoming and Both direction choices, curves and
+    sharp bends. Unlinked node must create no lead. Right-click an existing
+    lead to reverse or make it double-ended; reopen to verify it persists.
