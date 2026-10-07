@@ -5,6 +5,20 @@ The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Dynamic placement — version 2.1
+
+Mind maps now place new main branches on the less crowded side using the space
+occupied by their full subtrees. Existing branches keep their side when siblings
+are inserted or reordered. Child nodes follow their parent branch; the chart
+recalculates subtree spacing and centres parents as branches grow, move, fold
+or are deleted. **Balance branches** can redistribute existing two-sided branches
+by size. Side choices are saved with the diagram and included in backups.
+
+The viewport retains its context during rearrangement, and new cells scroll into
+view after WPF finishes layout. Cached subtree measurements keep rearrangement
+practical as charts grow. Automated checks exercise successive sibling/child
+creation to the 1,000-node limit and verify all five layouts remain collision-free.
+
 ## Mind maps and WBS — version 2.0
 
 The yellow **TO-DO** title is now a module dropdown: switch to **MIND MAP** or

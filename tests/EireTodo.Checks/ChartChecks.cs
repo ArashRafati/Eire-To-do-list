@@ -53,6 +53,84 @@ internal static class ChartChecks
             }
             chart.Nodes[0].Collapsed = true; Assert(ChartGeometry.Arrange(chart).Boxes.Count == 2); Assert(ChartGeometry.Arrange(chart, true).Boxes.Count == chart.Nodes.Count);
         });
+        check("New mind-map branches use free space and existing branches keep their side", () =>
+        {
+            var chart = Charts.Create("Dynamic", ChartLayout.MindMap); var rootNode = chart.Nodes[0];
+            var heavy = Charts.Add(chart, rootNode.Id, true, "Heavy branch");
+            for (var i = 0; i < 12; i++) Charts.Add(chart, heavy.Id, true, "Heavy child " + i);
+            var opposite = Charts.Add(chart, heavy.Id, false, "Opposite branch");
+            Assert(heavy.MindMapSide == MindMapBranchSide.Right && opposite.MindMapSide == MindMapBranchSide.Left);
+            var inserted = Charts.Add(chart, heavy.Id, false, "Insert before existing sibling");
+            Assert(inserted.MindMapSide == MindMapBranchSide.Left && opposite.MindMapSide == MindMapBranchSide.Left);
+            var positions = ChartGeometry.Arrange(chart).Boxes.ToDictionary(b => b.Id);
+            Assert(positions[heavy.Id].X > positions[rootNode.Id].X && positions[opposite.Id].X < positions[rootNode.Id].X);
+            var previousHeight = ChartGeometry.Arrange(chart).Height;
+            for (var i = 0; i < 20; i++) Charts.Add(chart, opposite.Id, true, "Growing left " + i);
+            Assert(ChartGeometry.Arrange(chart).Height > previousHeight);
+            Assert(heavy.MindMapSide == MindMapBranchSide.Right && opposite.MindMapSide == MindMapBranchSide.Left);
+            var next = Charts.Add(chart, opposite.Id, false, "Next free side");
+            Assert(next.MindMapSide == MindMapBranchSide.Right);
+            var child = Charts.Add(chart, opposite.Id, true, "Child on parent's side");
+            positions = ChartGeometry.Arrange(chart).Boxes.ToDictionary(b => b.Id);
+            Assert(positions[child.Id].X < positions[opposite.Id].X);
+            Charts.Reorder(chart, opposite.Id, -1); Assert(opposite.MindMapSide == MindMapBranchSide.Left);
+            var side = inserted.MindMapSide; Charts.Delete(chart, next.Id); Assert(inserted.MindMapSide == side);
+        });
+        check("Branch side preferences survive restart, folding and chart backup/restore", () =>
+        {
+            var chart = Charts.Create("Side persistence", ChartLayout.MindMap); var rootNode = chart.Nodes[0];
+            var a = Charts.Add(chart, rootNode.Id, true, "A"); var b = Charts.Add(chart, rootNode.Id, true, "B");
+            for (var i = 0; i < 9; i++) Charts.Add(chart, a.Id, true);
+            var sides = MindMapPlacement.ResolveSides(chart); a.Collapsed = true;
+            Assert(MindMapPlacement.ResolveSides(chart).OrderBy(p => p.Key).SequenceEqual(sides.OrderBy(p => p.Key)));
+            var store = new DataStore(Path.Combine(root, "branch-sides")); var service = new TodoService(store, store.Load());
+            service.SaveDiagram(chart); var backup = Path.Combine(root, "branch-sides.json"); service.Export(backup);
+            var restart = store.Load().Diagrams.Single(); Assert(restart.Nodes.Single(n => n.Id == a.Id).MindMapSide == a.MindMapSide);
+            Assert(MindMapPlacement.ResolveSides(restart).OrderBy(p => p.Key).SequenceEqual(sides.OrderBy(p => p.Key)));
+            service.DeleteDiagram(chart.Id); service.Restore(backup);
+            Assert(service.Data.Diagrams.Single().Nodes.Single(n => n.Id == b.Id).MindMapSide == b.MindMapSide);
+            var legacy = chart.Clone(); legacy.Nodes.ForEach(n => n.MindMapSide = MindMapBranchSide.Auto);
+            var original = JsonSerializer.Serialize(legacy, DataDocument.JsonOptions); _ = ChartGeometry.Arrange(legacy);
+            Assert(JsonSerializer.Serialize(legacy, DataDocument.JsonOptions) == original); // Drawing/export never changes saved data.
+            service.SaveDiagram(legacy); Assert(service.Data.Diagrams.Single().Nodes.Where(n => n.ParentId == rootNode.Id).All(n => n.MindMapSide != MindMapBranchSide.Auto));
+        });
+        check("Rebalancing and parent changes account for whole subtree footprints", () =>
+        {
+            var chart = Charts.Create("Balance", ChartLayout.MindMap); var rootNode = chart.Nodes[0];
+            var a = Charts.Add(chart, rootNode.Id, true, "A"); var b = Charts.Add(chart, rootNode.Id, true, "B"); var c = Charts.Add(chart, rootNode.Id, true, "C");
+            foreach (var branch in new[] { a, b }) for (var i = 0; i < 10; i++) Charts.Add(chart, branch.Id, true);
+            b.MindMapSide = a.MindMapSide;
+            var height = ChartGeometry.Arrange(chart).Height; MindMapPlacement.Rebalance(chart);
+            Assert(a.MindMapSide != b.MindMapSide && ChartGeometry.Arrange(chart).Height < height);
+            var ids = chart.Nodes.ToDictionary(n => n.Id, n => n.Number); var moved = chart.Nodes.First(n => n.ParentId == a.Id);
+            Charts.Move(chart, moved.Id, rootNode.Id); Assert(moved.MindMapSide != MindMapBranchSide.Auto);
+            Assert(chart.Nodes.All(n => ids[n.Id] == n.Number));
+            var invalid = chart.Clone(); invalid.Nodes[0].MindMapSide = (MindMapBranchSide)99; Reject(() => Charts.Validate(invalid));
+        });
+        check("Continuous sibling/child insertion stays deterministic and collision-free up to 1,000 nodes", () =>
+        {
+            var random = new Random(731); var chart = Charts.Create("Growing map", ChartLayout.MindMap);
+            for (var i = 1; i < Charts.MaxNodes; i++)
+            {
+                var selected = chart.Nodes[random.Next(chart.Nodes.Count)];
+                Charts.Add(chart, selected.Id, i % 3 != 0, "Node " + i);
+                if (i % 25 == 0 || i == Charts.MaxNodes - 1)
+                {
+                    var scene = ChartGeometry.Arrange(chart); NoOverlap(scene); Assert(scene.Boxes.Count == chart.Nodes.Count);
+                    Assert(scene == ChartGeometry.Arrange(chart) || scene.Boxes.SequenceEqual(ChartGeometry.Arrange(chart).Boxes));
+                    foreach (var rootNode in chart.Nodes.Where(n => n.ParentId is null))
+                    {
+                        var index = scene.Boxes.ToDictionary(b => b.Id);
+                        foreach (var branch in Charts.Children(chart, rootNode.Id))
+                        {
+                            var sign = branch.MindMapSide == MindMapBranchSide.Left ? -1 : 1;
+                            foreach (var id in Charts.Descendants(chart, branch.Id)) Assert((index[id].X - index[rootNode.Id].X) * sign > 0);
+                        }
+                    }
+                }
+            }
+            foreach (var layout in Enum.GetValues<ChartLayout>()) { chart.Layout = layout; NoOverlap(ChartGeometry.Arrange(chart)); }
+        });
         check("Diagrams, module, selection, zoom and node edits persist and restore", () =>
         {
             var store = new DataStore(Path.Combine(root, "charts")); var service = new TodoService(store, store.Load()); var chart = Fixture(); chart.ProjectId = service.Data.Projects[0].Id; chart.Zoom = .8;
@@ -111,6 +189,13 @@ internal static class ChartChecks
             var text = Encoding.Latin1.GetString(bytes); Assert(text.Contains("/FontFile2") && text.Contains("/ToUnicode"));
             var path = Path.Combine(root, "chart.pdf"); ChartExports.Save(chart, ChartExportFormat.Pdf, path); Assert(File.ReadAllBytes(path).Take(5).SequenceEqual(bytes.Take(5)));
         });
+    }
+    private static void NoOverlap(ChartScene scene)
+    {
+        Assert(scene.Boxes.All(b => double.IsFinite(b.X) && double.IsFinite(b.Y) && b.X >= 0 && b.Y >= 0 && b.X + b.Width <= scene.Width && b.Y + b.Height <= scene.Height));
+        var boxes = scene.Boxes.OrderBy(b => b.X).ToList();
+        for (var i = 0; i < boxes.Count; i++) for (var j = i + 1; j < boxes.Count && boxes[j].X < boxes[i].X + boxes[i].Width; j++)
+            Assert(boxes[i].Y + boxes[i].Height <= boxes[j].Y || boxes[j].Y + boxes[j].Height <= boxes[i].Y);
     }
     internal static void WriteFixtures(string directory)
     {

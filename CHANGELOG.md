@@ -1,5 +1,19 @@
 # Changes
 
+## 2.1.0 — dynamic mind-map placement
+
+- Place new main branches according to available space on each side, using
+  full subtree footprints rather than alternating branch counts.
+- Preserve existing branch sides across insertion, reorder, fold and restart.
+- Recalculate node positions and parent centring after hierarchy changes;
+  cache subtree measurements to avoid repeated traversal during layout.
+- Add an undoable Balance branches action for existing two-sided mind maps.
+- Keep viewport context during reflow and bring new cells into view after
+  WPF layout has finished; avoid duplicate redraws during node creation.
+- Include side preferences in autosave and backup/restore; accept old diagrams.
+- Add dynamic growth, balancing, side persistence and 1,000-node checks.
+
+
 ## 2.0.0 — mind maps, WBS and planning exports
 
 - Added a title dropdown for To-do, Mind map and WBS modules.

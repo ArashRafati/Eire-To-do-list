@@ -6,6 +6,15 @@ a suitable layout; you can choose any of the five layouts in the chart toolbar:
 two-sided mind map, right tree, top-down WBS, left-to-right WBS or numbered outline.
 Changing layout keeps the same hierarchy and node IDs.
 
+Placement updates automatically when siblings/children are added, moved or
+deleted. Two-sided maps assign new main branches to the side with less occupied
+subtree space. Existing branches keep their side, and children grow outward on
+their parent branch. Spacing expands and parents remain centred over their
+subtrees. Folding changes spacing without flipping branches. **Balance branches**
+redistributes existing main branches by size if you want to compact the map;
+Undo can restore the previous arrangement. Saved side choices survive restart
+and backup/restore. Drawing and exporting do not modify the diagram.
+
 ## Editing
 
 Create a diagram, select a cell, then:

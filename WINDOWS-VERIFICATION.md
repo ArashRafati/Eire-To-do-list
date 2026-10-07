@@ -104,3 +104,15 @@ not establish native UI or Windows launch behaviour.
     notebook notes. Record the tool versions and any import log warnings.
     For CSV, test the Project task mapping and the P6-exported XLSX template
     workflow described in the guide; do not treat P6 CSV as a direct import.
+
+13. **2.1 dynamic placement.** In a two-sided map, add many children to a main
+    branch, then add several siblings. New main branches should use the less
+    crowded side; existing branches must not flip sides when inserting a sibling
+    in the middle. Grow branches on both sides and check children extend outward,
+    parents stay centred, and nodes/notes previews do not overlap. Reorder, move
+    a branch to a different parent, fold/unfold and delete disposable branches.
+    Check geometry adjusts after each operation. Balance branches should improve
+    an uneven map; Undo restores prior sides. Reopen and restore a backup to check
+    sides persist. At a scrolled/zoomed location, add a child and verify its cell
+    comes into view after rearrangement. Interactive viewport behaviour remains
+    untested in Linux even though geometry/persistence checks pass.

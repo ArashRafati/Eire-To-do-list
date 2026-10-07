@@ -1,4 +1,4 @@
-EIRE TO-DO / MIND MAP / WBS 2.0 — PORTABLE WINDOWS WIDGET
+EIRE TO-DO / MIND MAP / WBS 2.1 — PORTABLE WINDOWS WIDGET
 
 1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
@@ -53,6 +53,9 @@ Create a diagram, select a cell and press Enter to create a same-level sibling
 or Insert to create a child. F2/double-click edits the label and full notes.
 New cells save immediately and open an editor. Cancel keeps the placeholder;
 Undo removes it. Enter in a notes field makes a new line; Ctrl+Enter saves.
+New siblings and children automatically reposition the chart with space for
+their branches. New main branches use the less crowded side; existing branches
+keep their side. Balance branches redistributes an existing two-sided map.
 Choose among five layouts; reorder/indent/outdent, fold/unfold, undo/redo,
 zoom with the slider or Ctrl+wheel, and use Fit chart. Use scrollbars for large
 charts. Deleting a node confirms removal of its whole branch. Diagram settings
@@ -64,7 +67,7 @@ Microsoft Project XML, native P6 XML and PDF chart + full node details.
 XML carries hierarchy directly. P6's CSV needs mapping into a P6-exported XLSX
 template; it is not a direct P6 CSV import. The guide PLANNING-EXPORTS.md included
 with this app provides the exact routes and scheduling/calendar conventions.
-Backups/restores include all diagrams. Continue using version 2.0 after making
+Backups/restores include all diagrams. Continue using version 2.1 after making
 charts; older versions cannot preserve the new diagram fields when saving.
 
 DATA

@@ -1,4 +1,4 @@
-# Windows download — version 2.0
+# Windows download — version 2.1
 
 `EireTodo-Windows-x64.zip` contains the self-contained Windows x64 executable,
 short instructions, chart/planning import guide, component notices and remaining Windows acceptance checks. Download the raw
@@ -28,3 +28,8 @@ Version 2.0 adds To-do / Mind map / WBS switching, Enter/Insert node creation,
 five chart layouts, local autosave/backup, and CSV/XML/PDF exports. Native
 MSP/P6 import remains a Windows acceptance check; P6 CSV requires mapping into
 its exported XLSX template. Use PLANNING-EXPORTS.md from the ZIP for details.
+
+Version 2.1 improves dynamic placement: new main branches use the less crowded
+side, existing sides remain stable, and subtree spacing recalculates as cells
+are added/moved/deleted. It adds Balance branches and improved viewport handling.
+Twenty-three automated check groups pass, including 1,000-node growth checks.

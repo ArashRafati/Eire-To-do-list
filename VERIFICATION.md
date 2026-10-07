@@ -1,11 +1,11 @@
 # Build and verification evidence
 
-Current delivery: version **2.0.0**, including mind-map/WBS modules, five layouts,
+Current delivery: version **2.1.0**, including mind-map/WBS modules, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, saved charts, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 2.0 interface.
+Windows acceptance checks or the updated 2.1 interface.
 
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
@@ -25,6 +25,8 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Chart creation, sibling/child order, permanent IDs, moves, indent/outdent and branch deletion | Passed automated core checks |
 | Circular/missing parents, duplicate IDs, invalid chart dates and depth | Rejected by automated validation checks |
 | Five layouts, uneven subtrees, multiple roots and folded/full views | Passed automated geometry and non-overlap checks |
+| Dynamic branch placement, stable sides, folding, side persistence and manual rebalancing | Passed automated checks |
+| Successive sibling/child additions to 1,000 nodes | Passed deterministic placement and collision checks; all five layouts checked at the limit |
 | Chart edits, module, selected diagram, zoom and backup/restore after restart | Passed automated core checks |
 | Invalid/failed chart commits and invalid restores | Passed rollback and preservation checks |
 | Planning date defaults, finish-only dates, duration and summary rollup | Passed automated checks |
@@ -42,7 +44,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **19 passed; 0 failed**. These are nineteen named groups
+The functional runner reports **23 passed; 0 failed**. These are twenty-three named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 

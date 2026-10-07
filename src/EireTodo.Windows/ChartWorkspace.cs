@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using EireTodo.Core;
 
@@ -25,12 +26,14 @@ internal sealed class ChartWorkspace : UserControl
     private readonly TextBlock zoomLabel = new() { Text = "100%", FontFamily = new FontFamily("Consolas"), VerticalAlignment = VerticalAlignment.Center, FontSize = 15, Margin = new Thickness(0, 0, 8, 6) };
     private readonly Stack<Diagram> undo = new(), redo = new();
     private readonly List<Button> nodeActions = [];
-    private Button undoButton = null!, redoButton = null!;
+    private Button undoButton = null!, redoButton = null!, balanceButton = null!;
     private Guid? chartId, selectedId;
     private ChartLayout defaultLayout = ChartLayout.MindMap;
     private bool refreshing;
     private ChartScene scene = new([], 500, 300);
     private Dictionary<Guid, Border> nodeViews = [];
+    private Guid? renderedChartId;
+    private int renderVersion;
     private Diagram? Current => service.Data.Diagrams.FirstOrDefault(d => d.Id == chartId);
     private Window OwnerWindow => Window.GetWindow(this);
 
@@ -43,7 +46,8 @@ internal sealed class ChartWorkspace : UserControl
         var second = new WrapPanel(); second.Children.Add(layouts); Add(second, "+ Sibling · Enter", () => AddNode(false), true); Add(second, "+ Child · Insert", () => AddNode(true), true); NodeAction(second, "Edit / notes · F2", EditNode); NodeAction(second, "Delete node", DeleteNode);
         var third = new WrapPanel(); NodeAction(third, "↑ Move up", () => Modify(c => Charts.Reorder(c, selectedId!.Value, -1))); NodeAction(third, "↓ Move down", () => Modify(c => Charts.Reorder(c, selectedId!.Value, 1))); NodeAction(third, "Indent", () => Modify(c => Charts.Indent(c, selectedId!.Value))); NodeAction(third, "Outdent", () => Modify(c => Charts.Outdent(c, selectedId!.Value))); NodeAction(third, "Fold / unfold", ToggleFold);
         undoButton = Add(third, "Undo", Undo); redoButton = Add(third, "Redo", Redo); Add(third, "Unfold all", () => Modify(c => c.Nodes.ForEach(n => n.Collapsed = false)));
-        var fourth = new WrapPanel(); Add(fourth, "Export CSV / XML / PDF", Export, true); fourth.Children.Add(new TextBlock { Text = "Zoom", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 6), FontSize = 15 }); fourth.Children.Add(zoom); fourth.Children.Add(zoomLabel); Add(fourth, "Fit chart", Fit);
+        var fourth = new WrapPanel(); Add(fourth, "Export CSV / XML / PDF", Export, true); fourth.Children.Add(new TextBlock { Text = "Zoom", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 6), FontSize = 15 }); fourth.Children.Add(zoom); fourth.Children.Add(zoomLabel); Add(fourth, "Fit chart", Fit); balanceButton = Add(fourth, "Balance branches", () => Modify(MindMapPlacement.Rebalance));
+        balanceButton.ToolTip = "Redistribute two-sided mind-map branches by subtree size. Existing sides otherwise stay fixed.";
         toolbars.Children.Add(first); toolbars.Children.Add(second); toolbars.Children.Add(third); toolbars.Children.Add(fourth);
         var card = new Border { Background = (Brush)Application.Current.FindResource("PanelBrush"), BorderBrush = new SolidColorBrush(Color.FromRgb(51, 70, 93)), BorderThickness = new Thickness(1), Padding = new Thickness(10), Child = toolbars, Margin = new Thickness(0, 0, 0, 10) };
         controls.Content = card; root.Children.Add(controls);
@@ -166,8 +170,9 @@ internal sealed class ChartWorkspace : UserControl
     {
         if (Current is not Diagram chart) { NewDiagram(); return; }
         if (child && !selectedId.HasValue) { MessageBox.Show(OwnerWindow, "Select a parent node first.", "Add child"); return; }
-        Guid? added = null; Modify(c => added = Charts.Add(c, selectedId, child).Id);
-        if (added.HasValue && Current?.Nodes.Any(n => n.Id == added) == true) { selectedId = added; Render(); ScrollToSelection(); EditNode(); }
+        Guid? added = null;
+        if (!Try(() => { var candidate = chart.Clone(); added = Charts.Add(candidate, selectedId, child).Id; Commit(candidate); })) return;
+        selectedId = added; RefreshData(); viewport.Focus(); ScrollToSelection(); EditNode();
     }
     private void EditNode()
     {
@@ -215,8 +220,12 @@ internal sealed class ChartWorkspace : UserControl
     }
     private void Render()
     {
+        var oldScene = scene;
+        var oldOffset = new Point(viewport.HorizontalOffset, viewport.VerticalOffset);
+        var oldChartId = renderedChartId;
+        var version = ++renderVersion;
         canvas.Children.Clear(); nodeViews.Clear();
-        var chart = Current; empty.Visibility = chart is null || chart.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var chart = Current; renderedChartId = chart?.Id; balanceButton.IsEnabled = chart?.Layout == ChartLayout.MindMap; empty.Visibility = chart is null || chart.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         foreach (var button in nodeActions) button.IsEnabled = selectedId.HasValue && chart?.Nodes.Any(n => n.Id == selectedId) == true;
         undoButton.IsEnabled = undo.Count > 0; redoButton.IsEnabled = redo.Count > 0;
         if (chart is null) { canvas.Width = 500; canvas.Height = 300; status.Text = "Offline · diagrams save with your tasks and backups."; return; }
@@ -256,6 +265,23 @@ internal sealed class ChartWorkspace : UserControl
         }
         canvas.Width = scene.Width; canvas.Height = scene.Height; canvas.LayoutTransform = new ScaleTransform(chart.Zoom, chart.Zoom); zoomLabel.Text = $"{chart.Zoom:P0}"; Select(selectedId);
         status.Text = $"{chart.Name} · {chart.Nodes.Count} nodes · {outlines.Count} visible · Enter: sibling · Insert: child · F2: edit · Ctrl+Z/Y: undo/redo";
+        // Retain the selected node/nearest existing ancestor in the viewport as the chart reflows.
+        if (oldChartId == chart.Id)
+        {
+            var anchor = chart.Nodes.FirstOrDefault(n => n.Id == selectedId);
+            while (anchor is not null && !oldScene.Boxes.Any(b => b.Id == anchor.Id))
+                anchor = anchor.ParentId.HasValue ? chart.Nodes.First(n => n.Id == anchor.ParentId) : null;
+            var before = oldScene.Boxes.FirstOrDefault(b => b.Id == anchor?.Id);
+            var after = scene.Boxes.FirstOrDefault(b => b.Id == anchor?.Id);
+            if (before is not null && after is not null)
+                Dispatcher.InvokeAsync(() =>
+                {
+                    if (version != renderVersion) return;
+                    viewport.ScrollToHorizontalOffset(Math.Max(0, oldOffset.X + (after.X - before.X) * chart.Zoom));
+                    viewport.ScrollToVerticalOffset(Math.Max(0, oldOffset.Y + (after.Y - before.Y) * chart.Zoom));
+                }, DispatcherPriority.Loaded);
+        }
+
     }
     private void Select(Guid? id)
     {
@@ -265,7 +291,12 @@ internal sealed class ChartWorkspace : UserControl
     }
     private void ScrollToSelection()
     {
-        if (selectedId is Guid id && nodeViews.TryGetValue(id, out var view)) view.BringIntoView();
+        var id = selectedId;
+        // New cells need a completed WPF measure/arrange pass before BringIntoView has real bounds.
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (id == selectedId && id is Guid selected && nodeViews.TryGetValue(selected, out var view)) view.BringIntoView();
+        }, DispatcherPriority.Loaded);
     }
     private void KeyDownChart(object sender, KeyEventArgs e)
     {
