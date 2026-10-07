@@ -136,3 +136,9 @@ check is not a native launch. The Windows capture command now checks default
 ICO and both PNGs from an empty working folder before applying a chosen logo.
 That command has compiled but remains unrun on Linux. No data schema, data
 folder or task/project/diagram logic changes in this hotfix.
+
+The 3.5.1 build also bundles the authoritative GitHub PNG. The source PNG and both
+SUMAPP resource PNGs are byte-identical (SHA256 recorded in BRANDING.md). The PE
+inspection checks all nine embedded icon frames against the ICO derived from it
+and verifies the managed resource payloads. These are binary/packaging checks;
+Windows rendering and shell icon caching remain native acceptance checks.

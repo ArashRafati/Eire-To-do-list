@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Inspect the actual PE manifest and .NET bundle, without executing Windows code."""
 import json
+import hashlib
 import struct
 import sys
 import xml.etree.ElementTree as ET
@@ -146,6 +147,9 @@ header_artwork = source_icon.with_suffix('.png').read_bytes()
 assert header_artwork in managed_app, 'Header PNG not bundled in WPF resources'
 sumapp_artwork = source_icon.with_name('SumappLogo.png').read_bytes()
 assert sumapp_artwork in managed_app, 'SUMAPP logo not bundled in WPF resources'
+original_artwork = (Path(__file__).resolve().parents[1] / 'assets/teal-folded-hexagon.png').read_bytes()
+assert header_artwork == sumapp_artwork == original_artwork, 'SUMAPP PNG resources do not preserve the supplied original'
+original_logo_sha256 = hashlib.sha256(original_artwork).hexdigest()
 eire_artwork = source_icon.with_name('EireLogo.png')
 assert eire_artwork.read_bytes() in managed_app, 'Eire logo not bundled in WPF resources'
 
@@ -164,5 +168,5 @@ for i in range(export_count):
 assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
 print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
     'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
-    'dpi_awareness': 'PerMonitorV2', 'compiled_absolute_pack_resource_loader': True, 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'bundle_files': count,
+    'dpi_awareness': 'PerMonitorV2', 'compiled_absolute_pack_resource_loader': True, 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'original_sumapp_png_sha256': original_logo_sha256, 'bundle_files': count,
     'bundled_frameworks': frameworks, 'offline_pdf_library_and_font': True, 'requires_installed_dotnet': False}, indent=2))

@@ -253,9 +253,10 @@ not establish native UI or Windows launch behaviour.
     copy remains a snapshot and profile changes persist. Restore the saved copy,
     confirm replacement and check the safety backup. Cancel dialogs and try an
     unwritable target: error must be visible and live data preserved.
-25. **Original PNG pending.** After installing an accessible authoritative PNG
-    with package-brand.py and rebuilding, compare the header/icon resources to
-    its SHA256 and verify executable/window/taskbar/shortcut icons on Windows.
+25. **Authoritative original PNG.** Compare bundled PNG resources with
+    assets/teal-folded-hexagon.png and its SHA256 recorded in BRANDING.md. Verify
+    proportional rendering and transparency in the header and executable/window/
+    taskbar/shortcut icons on Windows. All nine ICO frames derive from this PNG.
 
 26. **Desktop logo picker.** Home → Brand → Choose logo PNG: select the supplied
     transparent desktop file. Verify original proportions in the header, icon

@@ -202,12 +202,13 @@ Nearby nodes make room. Release saves; Esc cancels; Undo restores the arrangemen
 Turn Free move off for structural branch dragging. Reset positions restores layout.
 Home → Files → Save a copy writes a complete .sumapp snapshot to a chosen folder.
 Profile autosave continues. Open saved copy restores after confirmation and backup.
-Latest symbol-only logo pending: share-page download was blocked. This build uses
-the previous SUMAPP artwork. See BRANDING.md for original-PNG packaging steps.
+The supplied GitHub symbol-only PNG is embedded unchanged in the header resources
+and used to derive all nine executable icon sizes. See BRANDING.md for provenance.
 
 Home → Brand → Choose logo PNG lets you select your original desktop image.
 It updates the header and window/taskbar icons and is preserved in data/backups.
-The embedded Explorer executable icon still needs an original-PNG source rebuild.
+The default embedded Explorer icon already uses the supplied GitHub PNG. A custom
+logo selected later changes window icons; changing the Explorer icon needs a rebuild.
 
 3.5.1 STARTUP FIX
 Bundled artwork loads from executable resources rather than Windows file paths.

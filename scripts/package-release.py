@@ -15,7 +15,7 @@ with zipfile.ZipFile(artifacts / 'SUMAPP-Windows-x64.zip', 'w', compression=zipf
     for file in (root / 'previews').glob('*.png'):
         z.write(file, 'SUMAPP/previews/' + file.name)
 source_files = [root / p for p in ['.gitignore', 'global.json', 'README.md', 'CHANGELOG.md', 'BRANDING.md', 'QUICKSTART.txt', 'VERIFICATION.md', 'WINDOWS-VERIFICATION.md', 'PLANNING-EXPORTS.md', 'THIRD-PARTY-NOTICES.txt']]
-for directory in ['src', 'tests', 'scripts', 'previews']:
+for directory in ['assets', 'src', 'tests', 'scripts', 'previews']:
     source_files.extend(p for p in (root / directory).rglob('*')
         if p.is_file() and not any(part in {'bin', 'obj', '__pycache__'} for part in p.relative_to(root).parts))
 with zipfile.ZipFile(artifacts / 'SUMAPP-Source.zip', 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:

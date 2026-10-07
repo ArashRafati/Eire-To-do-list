@@ -45,12 +45,11 @@ remain on the desktop after selection. The chooser validates the PNG before
 saving, preserves proportions and updates open dialog icons through a shared
 resource. The executable's embedded Explorer icon requires a source rebuild.
 
-**Embedded logo update pending:** the latest symbol-only PNG is visible in the chat but its
-original bytes are unavailable. The provided ChatGPT share page returned a network
-policy denial. This build retains the previous SUMAPP artwork. When the original
-PNG is accessible, run `python3 scripts/package-brand.py /path/to/logo.png` and
-rebuild; the script preserves the supplied PNG unchanged in both resources and
-encodes nine proportional executable-icon sizes. It does not generate a new logo.
+**Bundled original logo — version 3.5.1:** the supplied GitHub PNG is now used
+unchanged in the header resources and as the source of all nine executable icon
+sizes. Its transparency, colours and proportions are preserved. The original is
+included at `assets/teal-folded-hexagon.png` in the source ZIP. See
+[BRANDING.md](BRANDING.md) for the original URL, SHA256 and regeneration command.
 
 ## Visual diagram galleries — version 3.4
 
@@ -80,9 +79,8 @@ Existing enum values, node IDs, numbering, data and graph positions are retained
 
 ## SUMAPP branding, project deletion and measured nodes
 
-The supplied SAMAP wordmark was changed to **SUMAPP**, as requested, preserving
-its teal ribbon symbol. The corrected transparent artwork is used in the header
-and nine-resolution executable/window icon. The header has a small neutral logo
+The supplied original teal folded-hexagon PNG is used consistently in the header
+and nine-resolution executable/window icon, alongside the **SUMAPP** name. The header has a small neutral logo
 backing, a black background, thin Eire yellow top strip and bottom-right local clock.
 Shared component resources use the requested neutral/teal palette with readable
 ink text, dark-teal primary actions and restrained yellow priority badges.

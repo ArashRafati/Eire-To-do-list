@@ -1,20 +1,20 @@
 # SUMAPP brand assets and verification
 
-**Version 3.5 logo limitation:** the latest transparent symbol-only PNG is not yet
-available as original bytes. The ChatGPT share URL returned a proxy policy denial
-(403). Home → Brand → Choose logo PNG lets users select their desktop original for
-header and window/taskbar icons, persisting its unchanged bytes with their data.
-Executable assets below are retained provisionally; they are not the newly
-attached symbol-only PNG. Supply an accessible original PNG and run
-`python3 scripts/package-brand.py /path/to/logo.png`, then rebuild. The PNG is
-copied byte-for-byte into header/window resources, while the ICO is encoded in
-nine sizes with uniform scaling and transparent clear space. No artwork is
-recreated or recoloured.
+**Version 3.5.1 authoritative SUMAPP artwork:** the supplied original is
+[`assets/teal-folded-hexagon.png`](assets/teal-folded-hexagon.png), downloaded from
+https://raw.githubusercontent.com/ArashRafati/Eire-To-do-list/delivery/windows-v1/assets/teal-folded-hexagon.png.
+It is a 1254 × 1254 RGBA PNG with transparency. SHA256:
+`d7ebbc8aacb3917b1eb3dbfda95e0b4b36bc4a00494533e1a13a62d1e2091ff0`.
 
-The user authorised changing the supplied **SAMAP** wordmark to **SUMAPP**.
-`Assets/SumappLogo.png` is the resulting transparent logo, prepared from that
-reference using the image editing tool. Its teal ribbon symbol and colours are
-retained. No replacement Eire company logo has been invented.
+`Assets/SumappLogo.png` and `Assets/AppIcon.png` preserve those exact bytes.
+The nine-frame `Assets/AppIcon.ico` derives only proportional icon-size conversions
+from that PNG. The original artwork is not recreated, recoloured or retouched.
+Run `python3 scripts/package-brand.py assets/teal-folded-hexagon.png` before a
+source rebuild to regenerate icon frames. These assets are already embedded in
+the delivered executable; no external logo file is needed when running it.
+Default window/header artwork loads through absolute WPF pack resource streams,
+so launch does not depend on the current folder. Home → Brand → Choose logo PNG
+remains available for a user-selected override stored with their data.
 
 SUMAPP is the application name, executable/product name, left header brand and
 window/taskbar/shortcut icon source. The nine-resolution ICO contains 16, 20,
