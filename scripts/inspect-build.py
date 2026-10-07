@@ -127,6 +127,18 @@ for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').g
     assert font.read_bytes() in managed_core, 'Offline PDF font not bundled: ' + font.name
 
 managed_app = content('SUMAPP.dll')
+# Static packaging guard: a BitmapImage constructed from an unbased relative URI
+# can interpret the resource address as C:\SUMAPP;component\Assets\AppIcon.ico.
+# Native decoding/startup is separately checked by --capture-previews on Windows.
+pack_prefix = 'pack://application:,,,/SUMAPP;component/Assets/'
+assert pack_prefix.encode('utf-16-le') in managed_app, 'Absolute bundled-image resource loader missing'
+windows_source = Path(__file__).resolve().parents[1] / 'src/EireTodo.Windows'
+for xaml in windows_source.glob('*.xaml'):
+    for element in ET.parse(xaml).iter():
+        for value in element.attrib.values():
+            if ';component/Assets/' in value:
+                assert value.startswith('pack://application:,,,/'), 'Relative image address in ' + xaml.name
+
 for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').glob('*.ttf'):
     assert font.read_bytes() in managed_app, 'Offline preview font not bundled: ' + font.name
 assert ico in managed_app, 'Window ICO not bundled in WPF resources'
@@ -152,5 +164,5 @@ for i in range(export_count):
 assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
 print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
     'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
-    'dpi_awareness': 'PerMonitorV2', 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'bundle_files': count,
+    'dpi_awareness': 'PerMonitorV2', 'compiled_absolute_pack_resource_loader': True, 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'bundle_files': count,
     'bundled_frameworks': frameworks, 'offline_pdf_library_and_font': True, 'requires_installed_dotnet': False}, indent=2))

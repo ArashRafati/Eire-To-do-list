@@ -1,4 +1,4 @@
-# SUMAPP Windows download — version 3.5
+# SUMAPP Windows download — version 3.5.1
 
 Download `SUMAPP-Windows-x64.zip`, unzip it into a writable folder and double-click
 `SUMAPP.exe`. Runtime and SUMAPP artwork/icon are bundled; no installation,
@@ -29,3 +29,6 @@ unrun in Linux.
 
 Use Home → Brand → Choose logo PNG to select your original desktop file for
 header/window/taskbar branding. Its original bytes are saved in data and backups.
+
+3.5.1 fixes the reported startup icon-path error. Re-extract the updated ZIP
+and launch its executable. Keep your existing profile folder unchanged.

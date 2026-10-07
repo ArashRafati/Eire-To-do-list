@@ -262,3 +262,12 @@ not establish native UI or Windows launch behaviour.
     updates on the window/taskbar/open dialogs, and restart/backup/copy/restore.
     Cancel and damaged/oversized image selection must preserve the previous logo
     and task data. The Explorer executable icon is unchanged until a rebuild.
+
+27. **3.5.1 startup repair.** Unzip the new portable build under a normal account.
+    Launch from Explorer in its extracted folder and from PowerShell while the
+    current folder is an empty directory outside the app folder. The bundled
+    default icon, SUMAPP and Eire logos must render without accessing any
+    C:\SUMAPP;component path or requiring an external Assets folder. Repeat
+    using the existing profile and custom desktop logo. Run --capture-previews
+    to check decoded default branding before the temporary chosen-PNG step.
+    Existing projects/tasks/diagrams and saved window settings must remain.

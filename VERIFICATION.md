@@ -1,6 +1,6 @@
 # Build and verification evidence
 
-Current delivery: version **3.5.0**, including the combined mind-map/WBS module, five layouts,
+Current delivery: version **3.5.1**, including the combined mind-map/WBS module, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a bottom-right clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
@@ -125,3 +125,14 @@ The sixth new group verifies PNG-byte persistence across live data/restart/copy/
 restore, legacy documents without a logo, and rejection of damaged/oversized PNGs
 without data mutation. The desktop PNG picker and dynamic WPF icon resource
 compile; native decoder/rendering/taskbar checks have not executed on Linux.
+
+3.5.1 addresses the user-reported native startup failure. The screenshot shows
+3.5 treating the bundled ICO resource address as a Windows file path; 3.5 launch
+is therefore confirmed broken on that machine. The repair removes unbased image
+URIs and decodes embedded artwork through absolute pack resource streams. The
+Windows source build and PE/resource checks pass, and the packaging inspector
+checks the compiled absolute loader plus XAML resource addresses. This static
+check is not a native launch. The Windows capture command now checks default
+ICO and both PNGs from an empty working folder before applying a chosen logo.
+That command has compiled but remains unrun on Linux. No data schema, data
+folder or task/project/diagram logic changes in this hotfix.

@@ -5,6 +5,17 @@ The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Startup repair — version 3.5.1
+
+The 3.5 startup error referring to `C:\SUMAPP;component\Assets\AppIcon.ico`
+was caused by a relative BitmapImage URI, even though the ICO was bundled.
+Default branding now uses absolute WPF pack resource streams, eager decoding and
+frozen bitmap frames. No Assets folder is needed beside the executable or in
+the working folder. This update preserves the existing profile and custom PNG.
+The Windows capture command checks the default icon/logos from an empty working
+folder before applying a chosen logo. Native Windows execution remains unrun
+in this Linux workspace.
+
 ## Compact ribbon and free placement — version 3.5
 
 The header is 48 px tall, with caption controls at the far right. The module

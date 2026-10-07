@@ -1,4 +1,4 @@
-SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.5 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.5.1 — PORTABLE WINDOWS WIDGET
 
 1. Unzip SUMAPP-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
@@ -208,3 +208,8 @@ the previous SUMAPP artwork. See BRANDING.md for original-PNG packaging steps.
 Home → Brand → Choose logo PNG lets you select your original desktop image.
 It updates the header and window/taskbar icons and is preserved in data/backups.
 The embedded Explorer executable icon still needs an original-PNG source rebuild.
+
+3.5.1 STARTUP FIX
+Bundled artwork loads from executable resources rather than Windows file paths.
+Close the failed 3.5 launch, unzip this updated build and run its SUMAPP.exe.
+Keep %LOCALAPPDATA%\EireTodo unchanged; your tasks and diagrams use that folder.

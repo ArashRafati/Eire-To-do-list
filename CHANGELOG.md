@@ -1,5 +1,12 @@
 # Changes
 
+## 3.5.1 — repair bundled icon startup
+
+- Remove the relative BitmapImage resource address that could resolve to C:\SUMAPP;component\Assets\AppIcon.ico and prevent launch.
+- Load the default icon, SUMAPP logo and Eire logo from explicit application pack resource streams; decode and freeze them before disposing streams.
+- Keep the original desktop-PNG chooser and dynamic window icons, without changing profile data or settings.
+- Add a compiled-resource packaging guard and extend Windows capture checks to decode default branding from an empty working folder before applying a chosen PNG.
+
 ## 3.5.0 — compact shared ribbon, free hierarchy placement and PC copies
 
 - Move module selection into Home, caption controls to the far right, and the 1.2× clock to the bottom right.

@@ -15,6 +15,7 @@ internal static class VisualCapture
     {
         destination = Path.GetFullPath(destination); Directory.CreateDirectory(destination);
         var directory = Path.Combine(Path.GetTempPath(), "SUMAPP-visual-checks-" + Guid.NewGuid().ToString("N"));
+        var previousDirectory = Directory.GetCurrentDirectory();
         MainWindow? window = null;
         try
         {
@@ -28,8 +29,13 @@ internal static class VisualCapture
             foreach (var title in titles.Skip(1)) Charts.Add(chart, fabrication.Id, true, title);
             Charts.Add(chart, procurement.Id, true, titles[0]); service.SaveDiagram(chart);
             var settings = service.Data.Settings; settings.Width = 1280; settings.Height = 850; settings.Opacity = 1; settings.SelectedDiagramId = chart.Id; service.SaveSettings(settings);
+            // Exercise resource loading without any Assets folder beside the working directory.
+            Directory.SetCurrentDirectory(directory);
             window = new MainWindow(service, directory); Application.Current.MainWindow = window; window.Show();
-            var logo = Application.GetResourceStream(new Uri("/SUMAPP;component/Assets/SumappLogo.png",UriKind.Relative))!;
+            Assert(window.Icon is BitmapSource icon && icon.PixelWidth > 0 && icon.PixelHeight > 0,"Bundled startup icon failed to decode");
+            Assert(((Image)window.FindName("SumappLogo")).Source is BitmapSource brand && brand.PixelWidth > 0,"Bundled startup logo failed to decode");
+            Assert(((Image)window.FindName("EireLogo")).Source is BitmapSource company && company.PixelWidth > 0,"Bundled Eire logo failed to decode");
+            var logo = Application.GetResourceStream(Branding.BundledUri("SumappLogo.png"))!;
             using (logo.Stream) using (var original = new MemoryStream()) { logo.Stream.CopyTo(original); window.CaptureLogo(original.ToArray()); }
             Assert(ReferenceEquals(((Image)window.FindName("SumappLogo")).Source,window.Icon),"Chosen logo and window icon differ");
             await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-to-do.png"));
@@ -38,7 +44,7 @@ internal static class VisualCapture
             Assert(Descendants<DiagramThumbnail>(window).Count(t => t.IsVisible && t.ActualWidth > 0 && t.ActualHeight > 0) >= 6, "Diagram gallery previews missing");
             workspace.CaptureRibbon("View"); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-layout-gallery.png"));
             var eire = (Image)window.FindName("EireLogo"); Assert(eire.Source is not null && eire.IsVisible, "Eire header artwork missing");
-            var results = new List<string> { "Native Windows WPF captures; isolated sample data; current user account.", "To-do, mind-map, Format gallery and View layout images captured at 1280 × 850 logical pixels.", "PASS visible gallery thumbnails and bundled Eire header logo." };
+            var results = new List<string> { "Native Windows WPF captures; isolated sample data; current user account.", "To-do, mind-map, Format gallery and View layout images captured at 1280 × 850 logical pixels.", "PASS startup and decoded bundled ICO / SUMAPP / Eire artwork from an empty working folder before selecting a custom logo.", "PASS visible gallery thumbnails and bundled Eire header logo." };
             foreach (var size in new[] { new Size(520, 400), new Size(940, 620), new Size(1440, 900) })
             {
                 window.Width = size.Width; window.Height = size.Height; await Settle(window);
@@ -61,7 +67,7 @@ internal static class VisualCapture
             results.Add("PASS long-title sizing at 12–48 px, bold, metadata, Segoe UI / Arial / Consolas.");
             File.WriteAllLines(Path.Combine(destination, "visual-checks.txt"), results);
         }
-        finally { window?.Close(); if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+        finally { window?.Close(); Directory.SetCurrentDirectory(previousDirectory); if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
     }
     private static void Assert(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
     private static async Task Settle(Window window) { await Task.Delay(350); await window.Dispatcher.InvokeAsync(() => window.UpdateLayout(), DispatcherPriority.ApplicationIdle); }

@@ -28,7 +28,6 @@
     <Thickness x:Key="ButtonPadding">13,8</Thickness>
     <BooleanToVisibilityConverter x:Key="BooleanVisibility"/>
 
-    <BitmapImage x:Key="ProgramIcon" UriSource="/SUMAPP;component/Assets/AppIcon.ico"/>
     <!-- Derived Window classes require this explicit style; an implicit Window style does not reach them. -->
     <Style x:Key="AppWindow" TargetType="Window">
       <Setter Property="Icon" Value="{DynamicResource ProgramIcon}"/>

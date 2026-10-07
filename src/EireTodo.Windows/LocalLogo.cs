@@ -16,16 +16,14 @@ public partial class MainWindow
     }
     private void ApplyChosenLogo()
     {
+        // Set bundled defaults from streams before applying an optional user image.
+        SumappLogo.Source = Branding.LoadBundledImage("SumappLogo.png");
+        Application.Current.Resources["ProgramIcon"] = Branding.LoadBundledImage("AppIcon.ico");
         try
         {
             if (service.Data.BrandLogoPng.Length > 0)
             {
                 var bitmap = DecodeLogo(service.Data.BrandLogoPng); SumappLogo.Source = bitmap; Application.Current.Resources["ProgramIcon"] = bitmap;
-            }
-            else
-            {
-                SumappLogo.Source = new BitmapImage(new Uri("/SUMAPP;component/Assets/SumappLogo.png",UriKind.Relative));
-                Application.Current.Resources["ProgramIcon"] = new BitmapImage(new Uri("/SUMAPP;component/Assets/AppIcon.ico",UriKind.Relative));
             }
         }
         catch (Exception ex) { MessageBox.Show(this,"The saved logo could not be displayed. Your tasks remain available. Choose a valid PNG to replace it.\n\n" + ex.Message,"Logo unavailable",MessageBoxButton.OK,MessageBoxImage.Warning); }
