@@ -10,8 +10,6 @@ internal sealed partial class ChartWorkspace
 {
     private readonly List<Border> insertionSlots = [];
     private static Brush Colour(string value) => new SolidColorBrush((Color)ColorConverter.ConvertFromString(value));
-    private readonly ComboBox palettes = new() { Width = 190, FontSize = 15, MinHeight = 34, ItemsSource = Enum.GetValues<DiagramPalette>().Select(p => DiagramAppearance.Colours(p).Name).ToArray(), ToolTip = "Apply a saved colour palette to this diagram's nodes and leads", Margin = new Thickness(0,0,6,4) };
-    private readonly ComboBox designs = new() { Width = 190, FontSize = 15, MinHeight = 34, ItemsSource = Enum.GetNames<NodeDesign>(), ToolTip = "Node design: tiered levels, cards, rounded or minimal", Margin = new Thickness(0,0,6,4) };
     private void ShowInsertionSlots(Guid moving)
     {
         ClearInsertionSlots(); if (Current is not Diagram chart) return;

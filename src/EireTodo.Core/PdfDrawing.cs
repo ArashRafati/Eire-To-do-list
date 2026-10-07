@@ -71,7 +71,10 @@ public static class DiagramPdf
         foreach(var box in scene.Boxes)
         {
             var o=outline[box.Id]; var node=o.Node; var due=Overdue.IsDue(node.FinishDate,node.Completed); var level=levels[node.Id];
-            chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,DiagramAppearance.Fill(diagram,node,level),due?BrandTheme.Error:colours.Border,DiagramAppearance.Radius(diagram.Design,level)));
+            var surface = DiagramAppearance.Surface(diagram,node,level);
+            if(surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar) chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,surface.Fill,surface.Decoration == NodeDecoration.Box ? surface.Stroke : "",Math.Min(surface.Radius, Math.Min(box.Width,box.Height)/2)));
+            if(surface.Decoration == NodeDecoration.Underline) chartMarks.Add(new PdfLine([new(box.X,box.Y+box.Height-1),new(box.X+box.Width,box.Y+box.Height-1)],surface.Stroke,2));
+            if(surface.Decoration == NodeDecoration.AccentBar) chartMarks.Add(new PdfLine([new(box.X+2,box.Y),new(box.X+2,box.Y+box.Height)],surface.Stroke,4));
             chartMarks.Add(new PdfText(box.X+11,box.Y+19,o.Code,12,DiagramAppearance.Text(diagram,node,level)));
             var format=node.Format; var font=Font(format.Size,format.Bold,format.Italic,format.Underline); var lines=ChartExports.Wrap(graphics,node.Title,font,box.Width-28).ToList();
             for(var i=0;i<lines.Count;i++)

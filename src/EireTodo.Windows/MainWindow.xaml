@@ -13,7 +13,7 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
             <Border Background="{StaticResource WhiteBrush}" CornerRadius="4" Padding="6,3" Margin="0,0,12,0">
-              <Grid><Image x:Name="EireLogo" Height="28" MaxWidth="140" Stretch="Uniform" Visibility="Collapsed"/><TextBlock x:Name="EireLogoPending" Text="Eire · logo pending" FontSize="13" Foreground="{StaticResource Ink}" VerticalAlignment="Center"/></Grid>
+              <StackPanel Orientation="Horizontal"><Image x:Name="EireLogo" Height="28" Width="28" Stretch="Uniform" Visibility="Collapsed"/><TextBlock x:Name="EireLogoPending" Text="Eire" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource Ink}" Margin="8,0,2,0" VerticalAlignment="Center"/></StackPanel>
             </Border>
             <Button Style="{StaticResource HeaderButton}" Content="—" Width="32" MinHeight="28" Padding="0" Click="MinimizeClick" ToolTip="Minimise" AutomationProperties.Name="Minimise"/>
             <Button Style="{StaticResource HeaderButton}" Content="□" Width="32" MinHeight="28" Padding="0" Margin="4,0" Click="MaximizeClick" ToolTip="Maximise / restore" AutomationProperties.Name="Maximise or restore"/>

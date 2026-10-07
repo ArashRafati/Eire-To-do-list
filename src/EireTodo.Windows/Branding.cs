@@ -6,7 +6,7 @@ namespace EireTodo.Windows;
 
 internal static class Branding
 {
-    // Do not silently substitute recreated artwork for the supplied company logo.
+    // Compact emblem prepared from the supplied inline artwork; the workspace label is UI text.
     internal static void ApplyEireLogo(Image logo, TextBlock pending)
     {
         var uri = new Uri("/SUMAPP;component/Assets/EireLogo.png", UriKind.Relative);
@@ -14,8 +14,8 @@ internal static class Branding
         {
             if (Application.GetResourceStream(uri) is null) return;
             logo.Source = new BitmapImage(uri); logo.Visibility = Visibility.Visible;
-            pending.Visibility = Visibility.Collapsed;
+            pending.Text = "Eire";
         }
-        catch (System.IO.IOException) { /* Awaiting the authoritative logo asset. */ }
+        catch (System.IO.IOException) { pending.Text = "Eire · logo unavailable"; }
     }
 }

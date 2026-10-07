@@ -9,7 +9,7 @@ Back up existing app data first if you have used it before.
 0. **3.3 branding and readability.** Check SUMAPP in the header and executable,
    editor title bars, taskbar, Alt+Tab and a normal shortcut. The icon has nine
    sizes. Header SUMAPP uses its original proportions on a neutral backing; Eire
-   is on the right and explicitly pending until its authoritative asset arrives.
+   is on the right using the supplied compact emblem beside the Eire label.
    Verify black/yellow header, neutral surfaces, ink text, teal focus/selection,
    dark-teal/white primary buttons and black text on yellow priority badges.
    Check hover, keyboard focus, selected/disabled controls and red overdue/error
@@ -29,7 +29,7 @@ Back up existing app data first if you have used it before.
    must not remove projects or reassign tasks partially.
 0. **Native sample screenshots.** From the extracted app folder in PowerShell:
    `.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"`.
-   Inspect both PNGs and `visual-checks.txt`. The command uses isolated sample data
+   Inspect all four PNGs and `visual-checks.txt`. The command uses isolated sample data
    and checks header/View visibility at 520×400, 940×620 and 1440×900, and long
    title sizing across three fonts at 12–48 px. Actual user data is not touched.
 1. **Portable launch and offline use.** Unzip the release in Documents. On a PC
@@ -211,8 +211,17 @@ not establish native UI or Windows launch behaviour.
     selection then Delete, undo, and CSV/XML/PDF endpoint-side preservation.
 24. **Ribbon and node designs.** View must always be visible at compact size.
     In Format, font/size/B/I/U/alignment/painter/reset must not clip. Buttons
-    must use flat vector motifs and descriptive hover tips. Try all six palettes
-    and four designs; node/lead colours change while app chrome stays original.
+    must use flat vector motifs and descriptive hover tips. Try all sixteen colour
+    packs and ten designs; node/lead colours change while app chrome stays consistent.
+    Format shows miniature shape and colour previews; the down-arrow opens all
+    choices. Confirm the selected option is marked and hover tips describe it.
+    Tab to a tile and apply with Enter/Space; dismiss the popup with Escape or
+    an outside click. Check scrolling in compact windows at 100/150/200% DPI.
+    Flat nodes have no box; underlined nodes have only a bottom rule. Mixed uses
+    box roots, underlined branches and flat leaves. Verify priorities/overdue stay
+    distinct, leads follow each colour pack and selection never changes wrapping.
+    Check all five layout previews in View. Change palette/style, Undo/Redo,
+    restart and backup/restore; titles, WBS codes, graph positions and leads stay intact.
     Short root/branch/leaf nodes have different sizes. A long title such as
     'DN100 Stub Pipe vent from Drain Valve - stainless steel fabrication and
     supports' must wrap fully in every layout, including 12/48 px font sizes.

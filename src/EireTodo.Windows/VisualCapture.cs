@@ -31,7 +31,11 @@ internal static class VisualCapture
             window = new MainWindow(service, directory); Application.Current.MainWindow = window; window.Show();
             await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-to-do.png"));
             window.CaptureMode(AppMode.Diagram); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-mind-map.png"));
-            var results = new List<string> { "Native Windows WPF captures; isolated sample data; current user account.", "To-do and mind-map images captured at 1280 × 850 logical pixels." };
+            var workspace = Descendants<ChartWorkspace>(window).Single(); workspace.CaptureRibbon("Format"); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-diagram-gallery.png"));
+            Assert(Descendants<DiagramThumbnail>(window).Count(t => t.IsVisible && t.ActualWidth > 0 && t.ActualHeight > 0) >= 6, "Diagram gallery previews missing");
+            workspace.CaptureRibbon("View"); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-layout-gallery.png"));
+            var eire = (Image)window.FindName("EireLogo"); Assert(eire.Source is not null && eire.IsVisible, "Eire header artwork missing");
+            var results = new List<string> { "Native Windows WPF captures; isolated sample data; current user account.", "To-do, mind-map, Format gallery and View layout images captured at 1280 × 850 logical pixels.", "PASS visible gallery thumbnails and bundled Eire header logo." };
             foreach (var size in new[] { new Size(520, 400), new Size(940, 620), new Size(1440, 900) })
             {
                 window.Width = size.Width; window.Height = size.Height; await Settle(window);

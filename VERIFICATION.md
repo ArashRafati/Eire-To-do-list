@@ -1,25 +1,31 @@
 # Build and verification evidence
 
-Current delivery: version **3.3.0**, including the combined mind-map/WBS module, five layouts,
+Current delivery: version **3.4.0**, including the combined mind-map/WBS module, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a header clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.3 interface.
+Windows acceptance checks or the updated 3.4 interface.
 
 Version 3.3 also adds the corrected SUMAPP wordmark/icon, exact shared brand
 palette, light surfaces, priority states, project deletion and real font-based
-node sizing. The Eire logo remains explicitly pending its source asset. The
+node sizing. The Eire header now uses a compact prepared rendition of the supplied emblem. The
 provided design previews are SVG renders of shared Core geometry/theme tokens;
 they are not native WPF captures. Windows hover/focus/resizing/logo rendering,
 Explorer/taskbar/shortcut icon behaviour and non-elevated launch remain unrun.
+
+Version 3.4 adds visual galleries and ten new colour packs, compatibility/backup
+checks, flat/underline PDF decoration checks and style-independent layout checks.
+An independent PyMuPDF reader opened all ten node-design PDFs and confirmed
+the full sample titles and fitted A4 landscape pages. All CSV/MSPDI/P6 and graph
+exports were also rechecked with the independent parsers documented below.
 
 New executed checks cover atomic project deletion/reassignment, empty-project
 removal, save-failure rollback, glyph widths, font sizing, metadata allowance,
 renderer-supplied geometry, all node-state contrasts and priority persistence.
 All normal node states meet 4.5:1 text contrast, including root, child, priority
-and overdue surfaces, across all six saved palette variants.
+and overdue surfaces, across all sixteen palette variants and ten node designs.
 
 The Windows build embeds the SUMAPP artwork, the matching nine ICO frames,
 standard-user manifest and self-contained runtime. `--capture-previews` provides
@@ -82,7 +88,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **52 passed; 0 failed**. These are fifty-two named groups
+The functional runner reports **55 passed; 0 failed**. These are fifty-five named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 

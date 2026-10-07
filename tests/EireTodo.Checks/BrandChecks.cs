@@ -61,9 +61,9 @@ internal static class BrandChecks
         {
             Assert(Contrast(BrandTheme.Ink, BrandTheme.Surface) >= 4.5 && Contrast(BrandTheme.White, BrandTheme.DarkTeal) >= 4.5);
             var chart = Charts.Create("SUMAPP", ChartLayout.MindMap); var node = chart.Nodes[0];
-            foreach (var palette in Enum.GetValues<DiagramPalette>()) foreach (var level in new[] { 1, 2, 3 }) foreach (var priority in new[] { false, true }) foreach (var due in new[] { false, true })
+            foreach (var palette in Enum.GetValues<DiagramPalette>()) foreach (var design in Enum.GetValues<NodeDesign>()) foreach (var level in new[] { 1, 2, 3 }) foreach (var priority in new[] { false, true }) foreach (var due in new[] { false, true })
             {
-                chart.Palette = palette; node.Priority = priority; node.FinishDate = due ? DateOnly.FromDateTime(DateTime.Today.AddDays(-1)) : null;
+                chart.Palette = palette; chart.Design = design; node.Priority = priority; node.FinishDate = due ? DateOnly.FromDateTime(DateTime.Today.AddDays(-1)) : null;
                 Assert(Contrast(DiagramAppearance.Text(chart, node, level), DiagramAppearance.Fill(chart, node, level)) >= 4.5);
             }
         });
@@ -75,6 +75,59 @@ internal static class BrandChecks
             var chart = Charts.Create("Priority diagram", ChartLayout.MindMap); chart.Nodes[0].Priority = true; s.SaveDiagram(chart);
             var backup = Path.Combine(root, "priority-backup.json"); s.Export(backup); s.DeleteTask(task.Id); s.DeleteDiagram(chart.Id); s.Restore(backup);
             Assert(store.Load().Tasks.Single().Priority && store.Load().Diagrams.Single().Nodes[0].Priority);
+        });
+        check("New diagram packs and designs preserve old values, hierarchy, graph positions and backup data", () =>
+        {
+            Assert(Enum.GetValues<DiagramPalette>().Length == 16 && Enum.GetValues<NodeDesign>().Length == 10);
+            Assert((int)DiagramPalette.Monochrome == 5 && (int)NodeDesign.Minimal == 3);
+            var store = new DataStore(Path.Combine(root, "gallery-persistence")); var service = new TodoService(store, store.Load());
+            foreach (var kind in Enum.GetValues<DiagramKind>()) foreach (var palette in Enum.GetValues<DiagramPalette>())
+            {
+                var chart = kind == DiagramKind.Network ? NetworkCharts.Create("Graph pack") : DiagramSamples.Create(ChartLayout.MindMap, palette, NodeDesign.Tiered);
+                chart.Palette = palette; chart.Design = (NodeDesign)((int)palette % 10);
+                if (kind == DiagramKind.Network) { chart.Nodes[0].X = -271; chart.Nodes[0].Y = 129; }
+                service.SaveDiagram(chart);
+            }
+            var before = JsonSerializer.Serialize(service.Data.Diagrams, DataDocument.JsonOptions);
+            var backup = Path.Combine(root, "gallery-backup.json"); service.Export(backup); service.DeleteDiagram(service.Data.Diagrams[0].Id); service.Restore(backup);
+            Assert(JsonSerializer.Serialize(store.Load().Diagrams, DataDocument.JsonOptions) == before);
+            var invalid = service.Data.Diagrams[0].Clone(); invalid.Design = (NodeDesign)999; Reject(() => service.SaveDiagram(invalid)); invalid.Design = NodeDesign.Flat; invalid.Palette = (DiagramPalette)999; Reject(() => service.SaveDiagram(invalid));
+        });
+        check("Flat, underlined and mixed nodes export their real decoration without enclosing boxes", () =>
+        {
+            foreach (var design in Enum.GetValues<NodeDesign>())
+            {
+                var chart = DiagramSamples.Create(ChartLayout.TopDown, DiagramPalette.Plum, design);
+                var levels = DiagramAppearance.Levels(chart); var scene = ChartGeometry.Arrange(chart, true);
+                var drawing = DiagramPdf.Compose(chart, new(IncludeDetails: false)); var marks = drawing.Pages[0].Layers[1].Marks;
+                foreach (var box in scene.Boxes)
+                {
+                    var surface = DiagramAppearance.Surface(chart, chart.Nodes.Single(n => n.Id == box.Id), levels[box.Id]);
+                    if (surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar)
+                    {
+                        var rectangle = marks.OfType<PdfBox>().Single(b => b.X == box.X && b.Y == box.Y);
+                        Assert(rectangle.Fill == surface.Fill && rectangle.Stroke == (surface.Decoration == NodeDecoration.Box ? surface.Stroke : ""));
+                    }
+                    else Assert(!marks.OfType<PdfBox>().Any(b => b.X == box.X && b.Y == box.Y));
+                    if (surface.Decoration == NodeDecoration.Underline) Assert(marks.OfType<PdfLine>().Any(l => l.Points.Count == 2 && l.Points[0] == new LeadPoint(box.X, box.Y + box.Height - 1) && l.Points[1] == new LeadPoint(box.X + box.Width, box.Y + box.Height - 1)));
+                    if (surface.Decoration == NodeDecoration.Flat) Assert(surface.Fill == BrandTheme.Surface && surface.Stroke == "");
+                }
+                Assert(DiagramPdf.Write(drawing).Length > 1000);
+            }
+        });
+        check("All gallery layouts remain collision-free and style changes retain identity and numbering", () =>
+        {
+            foreach (var layout in Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform))
+            {
+                var chart = DiagramSamples.Create(layout, DiagramPalette.Cobalt, NodeDesign.Mixed);
+                var codes = Charts.Outline(chart).Select(n => (n.Node.Id, n.Code)).ToList();
+                foreach (var design in Enum.GetValues<NodeDesign>())
+                {
+                    chart.Design = design; var scene = ChartGeometry.Arrange(chart);
+                    Assert(Charts.Outline(chart).Select(n => (n.Node.Id, n.Code)).SequenceEqual(codes));
+                    for (var i = 0; i < scene.Boxes.Count; i++) for (var j = i + 1; j < scene.Boxes.Count; j++) { var a = scene.Boxes[i]; var b = scene.Boxes[j]; Assert(a.X + a.Width <= b.X || b.X + b.Width <= a.X || a.Y + a.Height <= b.Y || b.Y + b.Height <= a.Y); }
+                }
+            }
         });
     }
     private static double Contrast(string a, string b)
@@ -94,5 +147,17 @@ internal static class BrandChecks
         File.WriteAllBytes(Path.Combine(directory, "SUMAPP-mind-map.pdf"), DiagramPdf.Write(drawing));
         var preview = new { Scene = ChartGeometry.Arrange(chart), Chart = chart, Marks = drawing.Pages[0].Layers[1].Marks.Select(m => new { Kind = m.GetType().Name, Data = (object)m }), Theme = new { BrandTheme.Primary, BrandTheme.DarkTeal, BrandTheme.Accent, BrandTheme.Ink, BrandTheme.Surface, BrandTheme.Yellow, BrandTheme.Black, BrandTheme.SoftTeal } };
         File.WriteAllText(Path.Combine(directory, "SUMAPP-design.json"), JsonSerializer.Serialize(preview, DataDocument.JsonOptions));
+        object Example(Diagram sample)
+        {
+            var drawing = DiagramPdf.Compose(sample, new(IncludeDetails: false));
+            return new { Scene = ChartGeometry.Arrange(sample), Palette = sample.Palette, Design = sample.Design, Layout = sample.Layout, Marks = drawing.Pages[0].Layers[1].Marks.Select(m => new { Kind = m.GetType().Name, Data = (object)m }) };
+        }
+        var gallery = new {
+            Colours = Enum.GetValues<DiagramPalette>().Select(p => new { Name = DiagramAppearance.Colours(p).Name, Example = Example(DiagramSamples.Create(ChartLayout.TopDown, p, NodeDesign.Tiered)) }),
+            Styles = Enum.GetValues<NodeDesign>().Select(d => new { Name = DiagramAppearance.DesignName(d), Example = Example(DiagramSamples.Create(ChartLayout.TopDown, DiagramPalette.Eire, d)) }),
+            Layouts = Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform).Select(l => new { Name = Charts.LayoutName(l), Example = Example(DiagramSamples.Create(l, DiagramPalette.Eire, NodeDesign.Tiered)) })
+        };
+        File.WriteAllText(Path.Combine(directory, "SUMAPP-gallery.json"), JsonSerializer.Serialize(gallery, DataDocument.JsonOptions));
+        foreach (var design in Enum.GetValues<NodeDesign>()) File.WriteAllBytes(Path.Combine(directory, "SUMAPP-style-" + design + ".pdf"), DiagramPdf.Write(DiagramPdf.Compose(DiagramSamples.Create(ChartLayout.TopDown, DiagramPalette.Cobalt, design), new(IncludeDetails: false))));
     }
 }

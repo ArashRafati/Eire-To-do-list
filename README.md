@@ -5,7 +5,33 @@ The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
-## SUMAPP branding, project deletion and measured nodes — version 3.3
+## Visual diagram galleries — version 3.4
+
+The ribbon now shows SmartArt-style thumbnails rather than style dropdowns.
+**Format → Node designs / Colour combinations** shows the selected option and
+two alternatives; the ▾ button opens the complete gallery. Hover for descriptions;
+Tab reaches the tiles, Enter/Space applies one and Escape dismisses the gallery.
+**View → Diagram layout** previews all five existing layouts. Galleries scroll
+with the command band in narrow windows and disable when no diagram is selected.
+
+There are **16 colour combinations**, including ten new packs: Blueprint,
+Navy & ice, Cobalt & lime, Emerald & mint, Forest & sage, Amber & charcoal,
+Sunset & peach, Coral & slate, Rose & blush, and Plum & lavender. They affect
+diagram nodes and connections; the application's neutral/teal chrome stays
+consistent. Priority remains yellow/black and overdue remains red.
+
+There are **10 node designs**: tiered boxes, box cards, rounded boxes, square
+boxes, flat, flat with underline, outline boxes, side accent, mixed levels and
+pill nodes. Mixed uses a boxed root, underlined branches and flat leaves.
+Selection outlines reserve constant space so changing selection never alters
+wrapping. Shapes are shared by the ribbon previews, diagram canvas and PDF.
+Changes autosave per diagram, support Undo/Redo and survive backup/restore.
+Existing enum values, node IDs, numbering, data and graph positions are retained.
+
+[All styles, colours and layouts](previews/SUMAPP-diagram-gallery-design.png)
+(labelled design preview, not a native Windows screenshot).
+
+## SUMAPP branding, project deletion and measured nodes
 
 The supplied SAMAP wordmark was changed to **SUMAPP**, as requested, preserving
 its teal ribbon symbol. The corrected transparent artwork is used in the header
@@ -14,10 +40,9 @@ backing, a black background, thin Eire yellow top strip and top-right local cloc
 Shared component resources use the requested neutral/teal palette with readable
 ink text, dark-teal primary actions and restrained yellow priority badges.
 
-**Eire branding is pending:** the inline Eire logo's source bytes are not accessible
-in the workspace. The right-hand header labels the missing asset explicitly;
-no recreated Eire logo is substituted. Supply its original PNG/SVG before
-finalising the brand. See [BRANDING.md](BRANDING.md).
+The right header now displays a compact Eire emblem prepared from the supplied
+inline artwork, with an Eire workspace label and a small neutral backing.
+See [BRANDING.md](BRANDING.md) for asset provenance.
 
 Projects now have **Delete**. Empty projects are removed immediately; for projects
 with tasks, choose an active destination or create one. Deletion and reassignment
@@ -69,10 +94,10 @@ Task and node deletion is immediate; diagram edits support Undo.
 
 The ribbon keeps all four tabs visible, uses flat vector buttons and explanatory
 hover tips, and reserves sufficient room for the font/style controls. Nodes are
-compact and sized by level; long titles wrap fully. **Format → Diagram style**
-offers Tiered, Cards, Rounded and Minimal designs plus Eire (the original),
-Ocean, Forest, Violet, Copper and Monochrome palettes. The app chrome retains
-its original colours. Zoom uses an animated render transform with delayed
+compact and sized by level; long titles wrap fully. **Format → Node designs /
+Colour combinations** previews the ten designs and sixteen packs documented
+above. The application chrome uses neutral surfaces and teal actions.
+Zoom uses an animated render transform with delayed
 preference saving; it does not replace or rebuild the node views.
 
 **PDF opens a paper preview before saving.** A4 landscape with fit-to-paper is
@@ -106,11 +131,11 @@ from the selection, then enable its inline title. **Insert → New lead style**
 lets you choose outgoing, incoming or both directions and curved/sharp-bend
 routing. Existing leads remain editable by right-click/double-click. **Unlinked
 node** explicitly creates an independent cell; with no selection a new cell is
-also unlinked. The existing black/slate/yellow palette remains unchanged.
+also unlinked. Diagram colour choices do not change the neutral/teal application chrome.
 
 ## Editing and graphs
 
-The existing black/slate/yellow palette is preserved. The top ribbon has
+The shared neutral/teal application chrome is preserved. The top ribbon has
 **Home**, **Insert**, **Format** and **View** tabs with grouped commands. The
 header displays the computer's current local date/time in Australian format.
 
@@ -148,7 +173,7 @@ retain the Microsoft Project / P6 planning exports. Free-form relationships are
 not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
 portable output and preserves size, weight, italic, underline and alignment;
 Windows font families use this export fallback. All new data is included in
-JSON backup/restore. **Back up before updating and continue using version 3.3;
+JSON backup/restore. **Back up before updating and continue using version 3.4;
 older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1
@@ -239,7 +264,7 @@ require IT approval. The app does not bypass security controls.
 
 The header and application icon use the corrected SUMAPP artwork. Logo and
 multi-resolution ICO assets are included under `src/EireTodo.Windows/Assets`.
-The company logo remains pending its accessible original source asset.
+The supplied Eire emblem is displayed in the right header.
 
 ## Build on Windows (no administrator privileges)
 

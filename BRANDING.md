@@ -12,25 +12,32 @@ and uniform scaling, preserving logo proportions and clear space. Internal
 namespace/export identifiers and the `%LOCALAPPDATA%\EireTodo` data directory
 remain compatible with existing saved tasks and diagrams.
 
-**Pending Eire asset:** its inline preview is visible in the conversation but
-its original image bytes are not present in the execution workspace. Please
-provide its original PNG or SVG file to finalise that branding. Until then,
-the right header says “Eire · logo pending”. `Branding.ApplyEireLogo` displays
-the authoritative PNG once `src/EireTodo.Windows/Assets/EireLogo.png` is present
-and the app is rebuilt; it preserves proportions on a neutral backing. If an
-SVG is supplied, preserve its original and render a proportional PNG for WPF.
+**Eire header asset:** the compact yellow-square/three-black-bars emblem was
+prepared from the user's attached inline reference with the image editing tool,
+cropping the empty right section. It is bundled as `Assets/EireLogo.png`, scaled
+uniformly at 28 px on a small neutral backing, alongside the ordinary UI label
+“Eire”. No new company lettering or symbol was invented. The original attachment
+binary was not exposed to the workspace; this prepared PNG rendition is not a
+byte-identical archival copy. A later accessible original can replace this asset.
 
 Exact brand colours live in `BrandTheme.cs` for geometry/export rendering and
 the semantic resources at the start of `App.xaml` for WPF components. Typography,
 field/button padding, minimum control height and corner radius are grouped
 with those resources. Errors/overdue states use a separate red palette.
-Node text/background contrasts across every palette, depth, priority and overdue
+Version 3.4 adds ten diagram colour packs (sixteen total) without changing the
+application chrome. Palette definitions and all ten node-design surfaces live in
+`DiagramAppearance`; real nodes, gallery thumbnails and PDF output share them.
+Flat nodes have no surrounding frame; underlined nodes have a bottom rule.
+Mixed levels use a boxed root, underlined branches and flat leaves. Selection
+outlines reserve constant space, and capsule corners are capped to protect titles.
+Node text/background contrasts across every palette, design, depth, priority and overdue
 combination are tested against 4.5:1. Logo rendering and hover/focus/selected
 states need the native Windows checklist; compilation cannot establish them.
 
 `previews/SUMAPP-to-do-design.png` and `previews/SUMAPP-mind-map-design.png` are
 clearly labelled **design previews**, rendered from the shared Core geometry and
-brand tokens. They show sample data and pending Eire branding. They are not WPF
+brand tokens. `SUMAPP-diagram-gallery-design.png` shows all sixteen colour packs,
+ten designs and five layouts. They show sample data and Eire branding. They are not WPF
 screenshots. Run `bash scripts/setup-cloud.sh` and then
 `python3 scripts/design-previews.py` to regenerate them (optional PyMuPDF needed).
 
@@ -43,7 +50,9 @@ window, from its folder:
 
 This opens the real WPF app with disposable sample data, captures both views,
 checks the header and View tab at three window sizes and measures long titles
-in Segoe UI/Arial/Consolas at 12–48 px. It saves two PNGs and `visual-checks.txt`.
+in Segoe UI/Arial/Consolas at 12–48 px. It also captures the Format and View
+galleries and checks the Eire resource and thumbnail visibility. It saves four
+PNGs and `visual-checks.txt`.
 It never opens the normal profile. This command has compiled but cannot execute
 in the Linux environment. See `WINDOWS-VERIFICATION.md` for interactive checks.
 

@@ -12,6 +12,8 @@ root = Path(__file__).resolve().parents[1]
 fixture = json.loads((root / 'artifacts/export-checks/SUMAPP-design.json').read_text())
 T = fixture['Theme']
 logo = base64.b64encode((root / 'src/EireTodo.Windows/Assets/SumappLogo.png').read_bytes()).decode()
+eire = base64.b64encode((root / 'src/EireTodo.Windows/Assets/EireLogo.png').read_bytes()).decode()
+gallery = json.loads((root / 'artifacts/export-checks/SUMAPP-gallery.json').read_text())
 out = root / 'previews'
 out.mkdir(exist_ok=True)
 W, H = 1600, 900
@@ -22,12 +24,12 @@ def text(x, y, value, colour=None, size=17, bold=False):
 def rect(x, y, w, h, fill, stroke='', radius=4):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="{fill}" stroke="{stroke or "none"}" stroke-width="1"/>'
 
-def frame(module):
-    s = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{W}" height="{H}">', rect(0,0,W,H,T['Surface']),rect(0,0,W,104,T['Black'],radius=0),rect(0,0,W,3,T['Yellow'],radius=0),rect(12,10,44,44,'#FFFFFF'), f'<image x="14" y="12" width="40" height="40" xlink:href="data:image/png;base64,{logo}"/>',text(68,40,'SUMAPP','#FFFFFF',22,True),rect(W-370,18,180,28,'#FFFFFF'),text(W-360,38,'Eire · logo pending',size=13)]
+def frame(module, active_tab='Home'):
+    s = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{W}" height="{H}">', rect(0,0,W,H,T['Surface']),rect(0,0,W,104,T['Black'],radius=0),rect(0,0,W,3,T['Yellow'],radius=0),rect(12,10,44,44,'#FFFFFF'), f'<image x="14" y="12" width="40" height="40" xlink:href="data:image/png;base64,{logo}"/>',text(68,40,'SUMAPP','#FFFFFF',22,True),rect(W-288,16,104,34,'#FFFFFF'),f'<image x="{W-282}" y="19" width="28" height="28" xlink:href="data:image/png;base64,{eire}"/>',text(W-246,40,'Eire',size=17,bold=True)]
     for x, label in [(W-166,'−'),(W-119,'□'),(W-72,'×')]: s += [rect(x,18,36,28,T['Black'],T['DarkTeal']),text(x+10,39,label,'#FFFFFF',17)]
     s += [rect(12,64,210,32,T['DarkTeal']),text(24,86,module,'#FFFFFF',16,True),text(196,86,'⌄','#FFFFFF',16),text(W-315,85,'OFFLINE','#FFFFFF',12),text(W-200,85,'07/10/2026 14:30','#FFFFFF',13)]
     for x, label in [(12,'Home'),(90,'Insert'),(162,'Format'),(249,'View')]:
-        s += [rect(x,112,72,34,T['DarkTeal'] if label=='Home' else T['Surface']),text(x+10,135,label,'#FFFFFF' if label=='Home' else T['Ink'],15,True)]
+        s += [rect(x,112,72,34,T['DarkTeal'] if label==active_tab else T['Surface']),text(x+10,135,label,'#FFFFFF' if label==active_tab else T['Ink'],15,True)]
     s += [rect(12,151,W-24,102,'#FFFFFF')]
     return s
 
@@ -42,7 +44,7 @@ def action(s, x, y, label, primary=False, icon='plus'):
     s.append(text(x+28,y,label,colour,14))
 
 def save(name, parts):
-    parts += [text(16,H-20,'DESIGN PREVIEW · Native Windows screenshot not captured · Eire source logo pending',T['Ink'],13),'</svg>']
+    parts += [text(16,H-20,'DESIGN PREVIEW · Shared Core styles and geometry · Native Windows screenshot not captured',T['Ink'],13),'</svg>']
     svg = ''.join(parts).encode()
     (out / (name+'.svg')).write_bytes(svg)
     document=fitz.open(stream=svg,filetype='svg'); pdf=fitz.open(stream=document.convert_to_pdf(),filetype='pdf')
@@ -63,7 +65,7 @@ for i,(title,category,finish,done,priority) in enumerate(rows):
     s += [rect(x+10,y+21,22,22,T['DarkTeal'] if done else '#FFFFFF',T['DarkTeal']),text(x+12,y+39,'✓' if done else '','#FFFFFF',17),rect(x+43,y+20,98,26,T['SoftTeal']),text(x+49,y+38,'Completed' if done else 'To do',T['DarkTeal'],12)]
     x+=155;s.append(text(x+10,y+31,'SOU001',colour)); x+=160;s.append(text(x+10,y+27,title,colour));s.append(text(x+10,y+49,'SOU001 · '+category,T['Ink'],13))
     if priority:s += [rect(x+213,y+36,76,18,T['Yellow']),text(x+217,y+49,'PRIORITY',T['Black'],11,True)]
-    x+=300;s.append(text(x+10,y+31,'07/10/2026',colour));x+=135;s.append(text(x+10,y+31,finish,colour));x+=135;s.append(text(x+10,y+31,category,colour));x+=160;s.append(text(x+10,y+31,'Review drawing and…',colour));x+=220;s.append(text(x+10,y+31,'07/10/2026 09:48',colour))
+    x+=300;s.append(text(x+10,y+31,'03/10/2026' if i==2 else '07/10/2026',colour));x+=135;s.append(text(x+10,y+31,finish,colour));x+=135;s.append(text(x+10,y+31,category,colour));x+=160;s.append(text(x+10,y+31,'Review drawing and…',colour));x+=220;s.append(text(x+10,y+31,'07/10/2026 09:48',colour))
     s.append(f'<path d="M12 {y+65} H1482" stroke="{T["DarkTeal"]}" stroke-opacity="0.2"/>')
 s += [rect(12,772,1470,5,T['SoftTeal']),rect(12,772,1000,5,T['DarkTeal']),text(14,824,'5 tasks · 1 completed · 1 overdue',size=16)]
 action(s,340,824,'Show overdue log',icon='doc');action(s,570,824,'Backup / export',icon='doc');action(s,790,824,'Restore',icon='doc');action(s,940,824,'Data folder',icon='doc')
@@ -85,4 +87,46 @@ for mark in fixture['Marks']:
         s.append(f'<path d="{p}" fill="none" stroke="{d["Colour"]}" stroke-width="{d["Thickness"]}"/>')
 s += ['</g>',text(16,855,'9 nodes · Drag space to pan · Ctrl+wheel to zoom',size=15)]
 save('SUMAPP-mind-map-design',s)
+
+def thumbnail(example, x, y, width, height):
+    scene=example['Scene'];scale=min(width/scene['Width'],height/scene['Height']);dx=x+(width-scene['Width']*scale)/2;dy=y+(height-scene['Height']*scale)/2
+    parts=[f'<g transform="translate({dx} {dy}) scale({scale})">']
+    for mark in example['Marks']:
+        d=mark['Data'];kind=mark['Kind']
+        if kind=='PdfBox':parts.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
+        elif kind=='PdfText':
+            # At thumbnail scale, clear line motifs illustrate text without illegible micro-labels.
+            if d['Size']>12:parts.append(f'<path d="M{d["X"]} {d["Y"]-5} h75" stroke="{d["Colour"]}" stroke-width="{1.4/scale}"/>')
+        elif kind=='PdfLine':
+            p=d['Points'];path='M'+str(p[0]['X'])+' '+str(p[0]['Y'])
+            if d['Curve'] and len(p)==4:path+=' C'+' '.join(str(v) for q in p[1:] for v in [q['X'],q['Y']])
+            else:path+=' '+' '.join('L'+str(q['X'])+' '+str(q['Y']) for q in p[1:])
+            parts.append(f'<path d="{path}" fill="none" stroke="{d["Colour"]}" stroke-width="{1.2/scale}"/>')
+    return parts+['</g>']
+
+H=1410
+s=frame('MIND MAP / WBS','Format')
+s += [text(26,177,'Node designs',size=14,bold=True),text(708,177,'Colour combinations',size=14,bold=True)]
+for i,index in enumerate([0,4,5,8]):
+    item=gallery['Styles'][index];x=26+i*162
+    s += thumbnail(item['Example'],x,184,148,40)+[text(x+8,240,item['Name'],size=12)]
+for i,index in enumerate([0,7,15]):
+    item=gallery['Colours'][index];x=708+i*176
+    s += thumbnail(item['Example'],x,184,148,40)+[text(x+8,240,item['Name'],size=12)]
+s += [text(1280,207,'▾ All options',T['DarkTeal'],16,True),text(24,286,'16 colour combinations',T['DarkTeal'],23,True),text(1050,284,'Each pack colours the nodes and connections',size=16)]
+for i,item in enumerate(gallery['Colours']):
+    x=24+(i%4)*390;y=302+(i//4)*127
+    s += [rect(x,y,376,115,'#FFFFFF'),text(x+14,y+25,item['Name'],size=17,bold=True)]
+    s += thumbnail(item['Example'],x+14,y+34,347,72)
+s.append(text(24,839,'10 node designs',T['DarkTeal'],23,True))
+for i,item in enumerate(gallery['Styles']):
+    x=24+(i%5)*312;y=854+(i//5)*127
+    s += [rect(x,y,298,115,'#FFFFFF'),text(x+12,y+25,item['Name'],size=17,bold=True)]
+    s += thumbnail(item['Example'],x+12,y+34,274,72)
+s.append(text(24,1148,'5 diagram layouts · View tab',T['DarkTeal'],23,True))
+for i,item in enumerate(gallery['Layouts']):
+    x=24+i*312;y=1163
+    s += [rect(x,y,298,170,'#FFFFFF'),text(x+12,y+25,item['Name'],size=15,bold=True)]
+    s += thumbnail(item['Example'],x+12,y+36,274,120)
+save('SUMAPP-diagram-gallery-design',s)
 print('Design previews rendered from Core geometry and tokens; not Windows screenshots:',out)

@@ -135,8 +135,7 @@ assert header_artwork in managed_app, 'Header PNG not bundled in WPF resources'
 sumapp_artwork = source_icon.with_name('SumappLogo.png').read_bytes()
 assert sumapp_artwork in managed_app, 'SUMAPP logo not bundled in WPF resources'
 eire_artwork = source_icon.with_name('EireLogo.png')
-if eire_artwork.exists():
-    assert eire_artwork.read_bytes() in managed_app, 'Eire logo not bundled in WPF resources'
+assert eire_artwork.read_bytes() in managed_app, 'Eire logo not bundled in WPF resources'
 
 runtime = json.loads(content('SUMAPP.runtimeconfig.json'))['runtimeOptions']
 assert 'frameworks' not in runtime and 'framework' not in runtime, 'Requires an installed framework'
@@ -153,5 +152,5 @@ for i in range(export_count):
 assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
 print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
     'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
-    'dpi_awareness': 'PerMonitorV2', 'embedded_icon_sizes': embedded_icon_sizes, 'bundle_files': count,
+    'dpi_awareness': 'PerMonitorV2', 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'bundle_files': count,
     'bundled_frameworks': frameworks, 'offline_pdf_library_and_font': True, 'requires_installed_dotnet': False}, indent=2))

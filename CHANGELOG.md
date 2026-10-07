@@ -1,5 +1,14 @@
 # Changes
 
+## 3.4.0 — visual diagram galleries and Eire header
+
+- Add SmartArt-style ribbon thumbnails and expandable, keyboard-accessible galleries for ten node designs, sixteen colour combinations and five layouts.
+- Add ten new diagram colour packs without changing application chrome or existing saved enum values.
+- Render flat, underlined, outline, side-accent, mixed-level and capsule designs consistently on the canvas, in thumbnails and in PDF exports.
+- Keep selection outlines constant to preserve measured wrapping; cap capsule corners so long titles and codes remain readable.
+- Display a compact Eire emblem prepared from the attached artwork on the right header. Keep SUMAPP as the app icon and left brand.
+- Add persistence/compatibility, contrast, decoration/PDF and layout checks; extend the native Windows capture command to include Format and View galleries.
+
 ## 3.3.0 — SUMAPP branding, readable surfaces, project deletion and measured nodes
 
 - Change the supplied wordmark to SUMAPP; use it in the header and nine-resolution Windows icon. Rename the executable to SUMAPP.exe while retaining the existing data folder.
