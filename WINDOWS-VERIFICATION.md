@@ -77,8 +77,8 @@ not establish native UI or Windows launch behaviour.
 
 10. **2.0 module switcher and chart editing.** Open the TO-DO dropdown, select
     MIND MAP and create a diagram. Click its root, press Insert and name a child;
-    press Enter for a sibling. Verify roots can also have siblings. Use F2 and
-    double-click to edit full notes; Enter inside notes must add a line and
+    press Enter for a sibling. Verify roots can also have siblings. Use Ctrl+Enter or
+    right-click > Node details to edit full notes; Enter inside notes must add a line and
     Ctrl+Enter must save. Test date validation, parent moves, completion,
     reorder, indent/outdent, branch folding, Undo/Redo and confirmed deletion.
     Confirm a folded parent opens when adding/moving a child into it. Try all
@@ -116,3 +116,42 @@ not establish native UI or Windows launch behaviour.
     sides persist. At a scrolled/zoomed location, add a child and verify its cell
     comes into view after rearrangement. Interactive viewport behaviour remains
     untested in Linux even though geometry/persistence checks pass.
+
+14. **3.0 ribbon and direct titles.** Confirm Home/Insert/Format/View groups are
+    reachable at compact size and 100%/150%/200% scaling, with unchanged colours.
+    Enter/Insert must create a title field inside a cell, without a details
+    dialog. Type a title and wait: it must save; Enter continues with a sibling,
+    Insert with a child. F2/double-click edits the title; Ctrl+Enter/right-click
+    opens details. Only the WBS code appears in the cell header. Close, switch
+    modules/diagrams and export immediately after typing to check pending text
+    is saved. Restrict storage in a disposable profile and verify failed title
+    saves remain visibly pending; retry successfully after restoring access.
+15. **Branch dragging.** Drag a branch onto another cell's top, bottom and centre;
+    verify before/after/child destinations, preserved descendants and updated
+    WBS codes. Try moving into its own descendant: it must refuse. Drag sibling
+    order repeatedly, fold/unfold and Undo/Redo. Reopen to verify the order.
+16. **Text formatting.** Select a task/node, change family, size to 12 then 48,
+    bold/italic/underline and all alignments. Large cells must reflow without
+    overlaps in each hierarchy layout. Copy with Format painter, then click
+    another item (also test switching modules before applying). Confirm the
+    source stays unchanged. Test Reset, inherited style on new cells, undo,
+    restart, backup/restore and PDF's portable font fallback.
+17. **Overdue and clock.** Use yesterday/today/tomorrow/blank finish dates on
+    unfinished tasks and WBS nodes. Only yesterday should be red and active
+    in the log. Complete, reopen, reschedule and delete disposable items:
+    resolved history must remain. Test Include resolved history and persisted
+    show/hide. The header clock must follow the local computer's date/time.
+    Leave open through local midnight or restart the next day to verify newly
+    overdue items are recorded. Check a log save failure produces a retry banner.
+18. **Connections.** Create a separate CONNECTIONS diagram. Enter adds a free
+    cell, Insert a linked cell, both with direct title editing. Add multiple
+    incoming/outgoing leads and a cycle; choose Curve and Sharp bends, single
+    and double arrows. Drag cells freely at multiple zooms: leads should follow
+    and the saved position should survive restart. Check automatic new cells
+    avoid occupied space while existing cells stay put. Label/reverse/delete
+    a lead by right-click/double-click; confirm full label tooltip and readable
+    placement. Export connection CSV/XML/PDF, verify endpoints/directions, and
+    check the PDF detail appendix preserves full labels and notes. Undo/Redo,
+    delete an endpoint, restart and backup/restore must preserve the graph or
+    remove its incident leads appropriately. WBS planning profiles remain in
+    WBS mode; free graph links must not become scheduling dependencies.

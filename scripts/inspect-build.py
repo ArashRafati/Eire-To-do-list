@@ -123,8 +123,8 @@ def content(name):
     return zlib.decompress(raw, -15) if compressed else raw
 
 managed_core = content('EireTodo.Core.dll')
-font = Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets/DejaVuSans.ttf'
-assert font.read_bytes() in managed_core, 'Offline PDF font not bundled in core resources'
+for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').glob('*.ttf'):
+    assert font.read_bytes() in managed_core, 'Offline PDF font not bundled: ' + font.name
 
 managed_app = content('EireTodo.dll')
 assert ico in managed_app, 'Window ICO not bundled in WPF resources'

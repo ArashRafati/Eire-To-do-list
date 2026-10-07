@@ -11,7 +11,7 @@ using EireTodo.Core;
 namespace EireTodo.Windows;
 
 internal sealed record LayoutChoice(string Label, ChartLayout Value);
-internal sealed class ChartWorkspace : UserControl
+internal sealed partial class ChartWorkspace : UserControl
 {
     private readonly TodoService service;
     private readonly string dataDirectory;
@@ -37,22 +37,23 @@ internal sealed class ChartWorkspace : UserControl
     private Diagram? Current => service.Data.Diagrams.FirstOrDefault(d => d.Id == chartId);
     private Window OwnerWindow => Window.GetWindow(this);
 
-    public ChartWorkspace(TodoService service, string dataDirectory)
+    public ChartWorkspace(TodoService service, string dataDirectory, FormatPainter painter, Action showOverdue, Action changed)
     {
-        this.service = service; this.dataDirectory = dataDirectory;
+        this.service = service; this.dataDirectory = dataDirectory; this.painter = painter; this.changed = changed;
         var root = new Grid(); root.RowDefinitions.Add(new() { Height = GridLength.Auto }); root.RowDefinitions.Add(new()); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        var toolbars = new StackPanel();
-        var first = new WrapPanel(); first.Children.Add(diagrams); Add(first, "+ Diagram", NewDiagram, true); Add(first, "Settings / rename", RenameDiagram); Add(first, "Delete diagram", DeleteDiagram); Add(first, "From to-do…", FromTodo);
-        var second = new WrapPanel(); second.Children.Add(layouts); Add(second, "+ Sibling · Enter", () => AddNode(false), true); Add(second, "+ Child · Insert", () => AddNode(true), true); NodeAction(second, "Edit / notes · F2", EditNode); NodeAction(second, "Delete node", DeleteNode);
-        var third = new WrapPanel(); NodeAction(third, "↑ Move up", () => Modify(c => Charts.Reorder(c, selectedId!.Value, -1))); NodeAction(third, "↓ Move down", () => Modify(c => Charts.Reorder(c, selectedId!.Value, 1))); NodeAction(third, "Indent", () => Modify(c => Charts.Indent(c, selectedId!.Value))); NodeAction(third, "Outdent", () => Modify(c => Charts.Outdent(c, selectedId!.Value))); NodeAction(third, "Fold / unfold", ToggleFold);
-        undoButton = Add(third, "Undo", Undo); redoButton = Add(third, "Redo", Redo); Add(third, "Unfold all", () => Modify(c => c.Nodes.ForEach(n => n.Collapsed = false)));
-        var fourth = new WrapPanel(); Add(fourth, "Export CSV / XML / PDF", Export, true); fourth.Children.Add(new TextBlock { Text = "Zoom", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 6), FontSize = 15 }); fourth.Children.Add(zoom); fourth.Children.Add(zoomLabel); Add(fourth, "Fit chart", Fit); balanceButton = Add(fourth, "Balance branches", () => Modify(MindMapPlacement.Rebalance));
-        balanceButton.ToolTip = "Redistribute two-sided mind-map branches by subtree size. Existing sides otherwise stay fixed.";
-        toolbars.Children.Add(first); toolbars.Children.Add(second); toolbars.Children.Add(third); toolbars.Children.Add(fourth);
-        var card = new Border { Background = (Brush)Application.Current.FindResource("PanelBrush"), BorderBrush = new SolidColorBrush(Color.FromRgb(51, 70, 93)), BorderThickness = new Thickness(1), Padding = new Thickness(10), Child = toolbars, Margin = new Thickness(0, 0, 0, 10) };
-        controls.Content = card; root.Children.Add(controls);
+        var ribbon = new RibbonBar();
+        var first = ribbon.Group("Home", "Diagram"); first.Children.Add(diagrams); Add(first, "+ Diagram", NewDiagram, true); Add(first, "Settings", RenameDiagram); Add(first, "Delete diagram", DeleteDiagram); fromTodoButton = Add(first, "From to-do…", FromTodo);
+        var history = ribbon.Group("Home", "History"); undoButton = Add(history, "Undo", Undo); redoButton = Add(history, "Redo", Redo);
+        var second = ribbon.Group("Insert", "Nodes"); siblingButton = Add(second, "+ Sibling · Enter", () => AddNode(false), true); childButton = Add(second, "+ Child · Insert", () => AddNode(true), true); NodeAction(second, "Details · Ctrl+Enter", EditNode); NodeAction(second, "Delete node", DeleteNode);
+        var leads = ribbon.Group("Insert", "Connections"); leadControls = leads; Add(leads, "Connect nodes", StartConnection, true); leads.Children.Add(twoHeads); leads.Children.Add(leadRouting); Add(leads, "Cancel connection", () => { connectFrom = null; status.Text = "Connection cancelled."; });
+        var third = ribbon.Group("Home", "Arrange"); hierarchyControls = third; NodeAction(third, "↑ Earlier", () => Modify(c => Charts.Reorder(c, selectedId!.Value, -1))); NodeAction(third, "↓ Later", () => Modify(c => Charts.Reorder(c, selectedId!.Value, 1))); NodeAction(third, "Indent", () => Modify(c => Charts.Indent(c, selectedId!.Value))); NodeAction(third, "Outdent", () => Modify(c => Charts.Outdent(c, selectedId!.Value))); NodeAction(third, "Fold / unfold", ToggleFold); Add(third, "Unfold all", () => Modify(c => c.Nodes.ForEach(n => n.Collapsed = false)));
+        var formatting = ribbon.Group("Format", "Text"); formatTools = new FormattingTools(SelectedFormat, ApplyFormat, painter); formatting.Children.Add(formatTools);
+        var fourth = ribbon.Group("View", "Layout"); fourth.Children.Add(layouts); fourth.Children.Add(zoom); fourth.Children.Add(zoomLabel); Add(fourth, "Fit chart", Fit); balanceButton = Add(fourth, "Balance branches", () => Modify(MindMapPlacement.Rebalance));
+        balanceButton.ToolTip = "Redistribute mind-map branches by subtree size.";
+        var output = ribbon.Group("View", "Data"); Add(output, "Export CSV / XML / PDF", Export, true); Add(output, "Overdue log", showOverdue);
+        controls.Content = ribbon; root.Children.Add(controls);
         var stage = new Grid(); stage.Children.Add(viewport); stage.Children.Add(empty); Grid.SetRow(stage, 1); root.Children.Add(stage); viewport.Content = canvas; Grid.SetRow(status, 2); root.Children.Add(status); Content = root;
-        layouts.ItemsSource = Enum.GetValues<ChartLayout>().Select(l => new LayoutChoice(Charts.LayoutName(l), l)).ToList();
+        SetLayoutChoices(false);
         diagrams.SelectionChanged += DiagramChanged; layouts.SelectionChanged += LayoutChanged; zoom.ValueChanged += ZoomChanged;
         viewport.PreviewKeyDown += KeyDownChart; viewport.PreviewMouseWheel += ZoomWheel;
         canvas.MouseLeftButtonDown += (_, e) => { if (e.Source == canvas) { viewport.Focus(); e.Handled = true; } };
@@ -66,18 +67,28 @@ internal sealed class ChartWorkspace : UserControl
     private void NodeAction(Panel panel, string text, Action action) => nodeActions.Add(Add(panel, text, () => { if (selectedId.HasValue) action(); }));
     public void SetMode(AppMode mode, bool changeLayout = true)
     {
-        defaultLayout = mode == AppMode.Wbs ? ChartLayout.TopDown : ChartLayout.MindMap;
-        var c = Current;
-        if (changeLayout && c is not null && c.Layout != ChartLayout.Outline &&
-            (mode == AppMode.Wbs && c.Layout is ChartLayout.MindMap or ChartLayout.RightTree || mode == AppMode.MindMap && c.Layout is ChartLayout.TopDown or ChartLayout.LeftToRight))
-            Modify(d => d.Layout = defaultLayout, false);
-        else Render();
+        if (!FinishInlineEdit()) return;
+        var network = mode == AppMode.Connections;
+        if (network != networkMode) { networkMode = network; chartId = null; selectedId = null; undo.Clear(); redo.Clear(); connectFrom = null; SetLayoutChoices(network); }
+        defaultLayout = network ? ChartLayout.Freeform : mode == AppMode.Wbs ? ChartLayout.TopDown : ChartLayout.MindMap;
+        RibbonBar.ShowGroup(hierarchyControls, !network); RibbonBar.ShowGroup(leadControls, network); balanceButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible; fromTodoButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
+        empty.Text = network ? "Create a connection diagram. Enter adds a free node; Insert adds a connected node." : "Create a diagram. Enter adds a sibling; Insert adds a child.";
+        siblingButton.Content = network ? "+ Node · Enter" : "+ Sibling · Enter"; childButton.Content = network ? "+ Connected node · Insert" : "+ Child · Insert";
+        RefreshData(); var c = Current;
+        if (changeLayout && !network && c is not null && c.Layout != ChartLayout.Outline &&
+            (mode == AppMode.Wbs && c.Layout is ChartLayout.MindMap or ChartLayout.RightTree || mode == AppMode.MindMap && c.Layout is ChartLayout.TopDown or ChartLayout.LeftToRight)) Modify(d => d.Layout = defaultLayout, false);
     }
+    private void SetLayoutChoices(bool network)
+    {
+        refreshing = true; layouts.ItemsSource = Enum.GetValues<ChartLayout>().Where(l => network ? l == ChartLayout.Freeform : l != ChartLayout.Freeform).Select(l => new LayoutChoice(Charts.LayoutName(l), l)).ToList(); refreshing = false;
+    }
+    public void RefreshIfIdle() { if (inline is null) RefreshData(); }
     public void RefreshData(bool resetHistory = false)
     {
         refreshing = true;
-        var items = service.Data.Diagrams.OrderBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
-        var requested = resetHistory ? service.Data.Settings.SelectedDiagramId : chartId ?? service.Data.Settings.SelectedDiagramId;
+        var items = service.Data.Diagrams.Where(d => (d.Kind == DiagramKind.Network) == networkMode).OrderBy(d => d.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        var saved = networkMode ? service.Data.Settings.SelectedNetworkId : service.Data.Settings.SelectedDiagramId;
+        var requested = resetHistory ? saved : chartId ?? saved;
         var selected = items.FirstOrDefault(d => d.Id == requested) ?? items.FirstOrDefault();
         diagrams.ItemsSource = items; diagrams.SelectedItem = selected; chartId = selected?.Id;
         if (resetHistory) { undo.Clear(); redo.Clear(); selectedId = null; }
@@ -90,37 +101,44 @@ internal sealed class ChartWorkspace : UserControl
     }
     private void DiagramChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (refreshing) return; var old = chartId; var next = (diagrams.SelectedItem as Diagram)?.Id;
+        if (refreshing) return; if (!FinishInlineEdit()) { refreshing = true; diagrams.SelectedItem = diagrams.Items.Cast<Diagram>().FirstOrDefault(d => d.Id == chartId); refreshing = false; return; } var old = chartId; var next = (diagrams.SelectedItem as Diagram)?.Id;
         if (next == old) return;
-        if (!Try(() => service.Change(d => d.Settings.SelectedDiagramId = next))) { RefreshData(); return; }
+        if (!Try(() => service.Change(d => { if (networkMode) d.Settings.SelectedNetworkId = next; else d.Settings.SelectedDiagramId = next; }))) { RefreshData(); return; }
         chartId = next; selectedId = null; undo.Clear(); redo.Clear(); RefreshData();
     }
     private void LayoutChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!refreshing && layouts.SelectedItem is LayoutChoice choice && Current?.Layout != choice.Value) Modify(d => d.Layout = choice.Value, false);
+        if (!refreshing && layouts.SelectedItem is LayoutChoice choice && Current?.Layout != choice.Value)
+        {
+            if (!FinishInlineEdit()) { refreshing = true; layouts.SelectedItem = layouts.Items.Cast<LayoutChoice>().FirstOrDefault(l => l.Value == Current?.Layout); refreshing = false; return; }
+            Modify(d => d.Layout = choice.Value, false);
+        }
     }
     private void NewDiagram()
     {
-        var candidate = Charts.Create("New diagram", defaultLayout);
+        if (!FinishInlineEdit()) return;
+        var candidate = networkMode ? NetworkCharts.Create("New diagram") : Charts.Create("New diagram", defaultLayout);
         var editor = new DiagramEditor(service, candidate, SaveNew) { Owner = OwnerWindow };
         if (editor.ShowDialog() == true) { RefreshData(); viewport.Focus(); }
     }
     private void SaveNew(Diagram candidate)
     {
         Charts.Validate(candidate);
-        service.Change(d => { d.Diagrams.Add(candidate.Clone()); d.Settings.SelectedDiagramId = candidate.Id; });
-        chartId = candidate.Id; selectedId = candidate.Nodes.FirstOrDefault()?.Id; undo.Clear(); redo.Clear();
+        service.Change(d => { d.Diagrams.Add(candidate.Clone()); if (networkMode) d.Settings.SelectedNetworkId = candidate.Id; else d.Settings.SelectedDiagramId = candidate.Id; });
+        changed(); chartId = candidate.Id; selectedId = candidate.Nodes.FirstOrDefault()?.Id; undo.Clear(); redo.Clear();
     }
     private void RenameDiagram()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart) return;
         if (new DiagramEditor(service, chart.Clone(), Commit) { Owner = OwnerWindow }.ShowDialog() == true) { RefreshData(); viewport.Focus(); }
     }
     private void DeleteDiagram()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart) return;
         if (MessageBox.Show(OwnerWindow, $"Delete diagram '{chart.Name}' and all {chart.Nodes.Count} nodes?", "Confirm diagram deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
-        if (Try(() => service.DeleteDiagram(chart.Id))) { chartId = null; RefreshData(true); }
+        if (Try(() => service.DeleteDiagram(chart.Id))) { chartId = null; changed(); RefreshData(true); }
     }
     private void FromTodo()
     {
@@ -145,7 +163,7 @@ internal sealed class ChartWorkspace : UserControl
     }
     private void Commit(Diagram candidate)
     {
-        var previous = Current?.Clone(); service.SaveDiagram(candidate);
+        var previous = Current?.Clone(); service.SaveDiagram(candidate); changed();
         if (previous is not null) { undo.Push(previous); redo.Clear(); LimitHistory(); }
     }
     private void LimitHistory()
@@ -162,26 +180,29 @@ internal sealed class ChartWorkspace : UserControl
     }
     private void Modify(Action<Diagram> change, bool focus = true)
     {
-        if (Current is not Diagram chart) return;
+        if (!FinishInlineEdit() || Current is not Diagram chart) return;
         if (Try(() => { var candidate = chart.Clone(); change(candidate); Commit(candidate); })) { RefreshData(); if (focus) viewport.Focus(); }
         else RefreshData();
     }
     private void AddNode(bool child)
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart) { NewDiagram(); return; }
         if (child && !selectedId.HasValue) { MessageBox.Show(OwnerWindow, "Select a parent node first.", "Add child"); return; }
         Guid? added = null;
-        if (!Try(() => { var candidate = chart.Clone(); added = Charts.Add(candidate, selectedId, child).Id; Commit(candidate); })) return;
-        selectedId = added; RefreshData(); viewport.Focus(); ScrollToSelection(); EditNode();
+        if (!Try(() => { var candidate = chart.Clone(); var n = networkMode ? NetworkCharts.Add(candidate, selectedId, child, doubleHeaded: twoHeads.IsChecked == true, routing: Routing, format: SelectedFormat()) : Charts.Add(candidate, selectedId, child); if (selectedId is Guid source) n.Format = chart.Nodes.Single(x => x.Id == source).Format.Clone(); added = n.Id; Commit(candidate); })) return;
+        selectedId = added; RefreshData(); viewport.Focus(); ScrollToSelection(); BeginTitle();
     }
     private void EditNode()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart || selectedId is not Guid id) return;
         if (new NodeEditor(chart.Clone(), id, Commit) { Owner = OwnerWindow }.ShowDialog() == true) RefreshData();
         viewport.Focus(); ScrollToSelection();
     }
     private void DeleteNode()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart || selectedId is not Guid id) return;
         var count = Charts.Descendants(chart, id).Count; var parent = chart.Nodes.Single(n => n.Id == id).ParentId;
         if (MessageBox.Show(OwnerWindow, $"Delete this node and its branch ({count} nodes)?", "Confirm node deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
@@ -190,20 +211,23 @@ internal sealed class ChartWorkspace : UserControl
     private void ToggleFold() => Modify(c => { var n = c.Nodes.Single(n => n.Id == selectedId); n.Collapsed = !n.Collapsed; });
     private void Undo()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart || !undo.TryPeek(out var previous)) return;
-        if (Try(() => service.SaveDiagram(previous))) { undo.Pop(); redo.Push(chart.Clone()); RefreshData(); viewport.Focus(); }
+        if (Try(() => service.SaveDiagram(previous))) { undo.Pop(); redo.Push(chart.Clone()); changed(); RefreshData(); viewport.Focus(); }
     }
     private void Redo()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart || !redo.TryPeek(out var next)) return;
-        if (Try(() => service.SaveDiagram(next))) { redo.Pop(); undo.Push(chart.Clone()); RefreshData(); viewport.Focus(); }
+        if (Try(() => service.SaveDiagram(next))) { redo.Pop(); undo.Push(chart.Clone()); changed(); RefreshData(); viewport.Focus(); }
     }
     private void Export()
     {
+        if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart) { MessageBox.Show(OwnerWindow, "Create or select a diagram first.", "Export diagram"); return; }
         new ChartExportEditor(async (format, version) =>
         {
-            var ext = format == ChartExportFormat.Pdf ? "pdf" : format is ChartExportFormat.ProjectXml or ChartExportFormat.PrimaveraXml ? "xml" : "csv";
+            var ext = format == ChartExportFormat.Pdf ? "pdf" : format is ChartExportFormat.ProjectXml or ChartExportFormat.PrimaveraXml or ChartExportFormat.NetworkXml ? "xml" : "csv";
             var safeName = string.Concat(chart.Name.Select(c => System.IO.Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
             var file = new SaveFileDialog { Title = "Export complete diagram", Filter = $"{ext.ToUpperInvariant()} files (*.{ext})|*.{ext}", DefaultExt = "." + ext, AddExtension = true, FileName = safeName + "-" + format + "." + ext };
             if (file.ShowDialog(OwnerWindow) != true) return false;
@@ -211,7 +235,7 @@ internal sealed class ChartWorkspace : UserControl
             if (path.StartsWith(System.IO.Path.GetFullPath(dataDirectory) + System.IO.Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Choose an export folder outside the app's data folder.");
             await System.Threading.Tasks.Task.Run(() => ChartExports.Save(chart, format, path, version));
             MessageBox.Show(OwnerWindow, "Diagram exported. All nodes are included, even inside folded branches.\n\n" + path, "Export complete", MessageBoxButton.OK, MessageBoxImage.Information); return true;
-        })
+        }, chart.Kind)
         { Owner = OwnerWindow }.ShowDialog();
     }
     private bool Try(Action action)
@@ -224,7 +248,7 @@ internal sealed class ChartWorkspace : UserControl
         var oldOffset = new Point(viewport.HorizontalOffset, viewport.VerticalOffset);
         var oldChartId = renderedChartId;
         var version = ++renderVersion;
-        canvas.Children.Clear(); nodeViews.Clear();
+        canvas.Children.Clear(); nodeViews.Clear(); titleViews.Clear();
         var chart = Current; renderedChartId = chart?.Id; balanceButton.IsEnabled = chart?.Layout == ChartLayout.MindMap; empty.Visibility = chart is null || chart.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         foreach (var button in nodeActions) button.IsEnabled = selectedId.HasValue && chart?.Nodes.Any(n => n.Id == selectedId) == true;
         undoButton.IsEnabled = undo.Count > 0; redoButton.IsEnabled = redo.Count > 0;
@@ -252,21 +276,22 @@ internal sealed class ChartWorkspace : UserControl
             }
             geometry.Freeze(); path.Data = geometry; canvas.Children.Add(path);
         }
+        if (networkMode) DrawLeads(chart, index);
         foreach (var box in scene.Boxes)
         {
             var o = nodeIndex[box.Id]; var n = o.Node; var content = new Grid { Margin = new Thickness(11, 8, 9, 7) }; content.RowDefinitions.Add(new() { Height = GridLength.Auto }); content.RowDefinitions.Add(new()); content.RowDefinitions.Add(new() { Height = GridLength.Auto });
-            content.Children.Add(new TextBlock { Text = o.Code + "   " + (n.Collapsed && o.Summary ? "+ " : "") + (n.Completed ? "COMPLETED" : o.Summary ? "BRANCH" : n.ActivityId), FontFamily = new FontFamily("Consolas"), FontSize = 14, Foreground = Ui.Accent, TextTrimming = TextTrimming.CharacterEllipsis });
-            var label = new TextBlock { Text = n.Title, FontSize = 17, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 46, Margin = new Thickness(0, 4, 0, 2) }; Grid.SetRow(label, 1); content.Children.Add(label);
+            content.Children.Add(new TextBlock { Text = o.Code, FontFamily = new FontFamily("Consolas"), FontSize = 14, Foreground = Ui.Accent, TextTrimming = TextTrimming.CharacterEllipsis });
+            var label = new TextBlock { Text = n.Title, FontSize = 17, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = n.Format.Size * 2.6, Margin = new Thickness(0, 4, 0, 2) }; FormattingTools.Apply(label, n.Format); if (Overdue.IsDue(n.FinishDate, n.Completed)) label.Foreground = OverdueBrush; Grid.SetRow(label, 1); content.Children.Add(label); titleViews[n.Id] = (content, label);
             var preview = string.Join(" ", n.Notes.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)); var meta = preview.Length > 0 ? preview : $"{AustralianDates.Format(n.StartDate)} → {AustralianDates.Format(n.FinishDate)}";
-            var note = new TextBlock { Text = meta, FontSize = 15, Foreground = Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis }; Grid.SetRow(note, 2); content.Children.Add(note);
-            var border = new Border { Width = box.Width, Height = box.Height, Background = new SolidColorBrush(Color.FromRgb(16, 23, 33)), BorderBrush = new SolidColorBrush(Color.FromRgb(66, 84, 107)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(chart.Layout is ChartLayout.MindMap or ChartLayout.RightTree ? 8 : 2), Child = content, Tag = n.Id, ToolTip = n.Title + "\nDouble-click or F2 to edit / open full notes.", Focusable = true };
-            border.MouseLeftButtonDown += (_, e) => { Select(n.Id); viewport.Focus(); if (e.ClickCount == 2) EditNode(); e.Handled = true; };
+            var note = new TextBlock { Text = meta, FontSize = 15, Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis }; Grid.SetRow(note, 2); content.Children.Add(note);
+            var border = new Border { Width = box.Width, Height = box.Height, Background = new SolidColorBrush(Color.FromRgb(16, 23, 33)), BorderBrush = new SolidColorBrush(Color.FromRgb(66, 84, 107)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(chart.Layout is ChartLayout.MindMap or ChartLayout.RightTree ? 8 : 2), Child = content, Tag = n.Id, ToolTip = n.Title + "\nDouble-click / F2: title. Ctrl+Enter / right-click: details. Drag to move.", Focusable = true };
+            AttachNodeInteraction(border, n.Id);
             Canvas.SetLeft(border, box.X); Canvas.SetTop(border, box.Y); canvas.Children.Add(border); nodeViews[n.Id] = border;
         }
         canvas.Width = scene.Width; canvas.Height = scene.Height; canvas.LayoutTransform = new ScaleTransform(chart.Zoom, chart.Zoom); zoomLabel.Text = $"{chart.Zoom:P0}"; Select(selectedId);
-        status.Text = $"{chart.Name} · {chart.Nodes.Count} nodes · {outlines.Count} visible · Enter: sibling · Insert: child · F2: edit · Ctrl+Z/Y: undo/redo";
+        status.Text = $"{chart.Name} · {chart.Nodes.Count} nodes · {outlines.Count} visible · Enter: sibling / node · Insert: child / connected node · Ctrl+Enter: details · drag to move";
         // Retain the selected node/nearest existing ancestor in the viewport as the chart reflows.
-        if (oldChartId == chart.Id)
+        if (!networkMode && oldChartId == chart.Id)
         {
             var anchor = chart.Nodes.FirstOrDefault(n => n.Id == selectedId);
             while (anchor is not null && !oldScene.Boxes.Any(b => b.Id == anchor.Id))
@@ -286,7 +311,8 @@ internal sealed class ChartWorkspace : UserControl
     private void Select(Guid? id)
     {
         selectedId = id;
-        foreach (var (node, view) in nodeViews) { view.BorderBrush = node == id ? Ui.Accent : new SolidColorBrush(Color.FromRgb(66, 84, 107)); view.BorderThickness = new Thickness(node == id ? 2 : 1); view.Background = new SolidColorBrush(node == id ? Color.FromRgb(28, 42, 57) : Color.FromRgb(16, 23, 33)); }
+        formatTools?.Refresh();
+        foreach (var (node, view) in nodeViews) { view.BorderBrush = node == id ? Ui.Accent : Current?.Nodes.Any(n => n.Id == node && Overdue.IsDue(n.FinishDate, n.Completed)) == true ? OverdueBrush : new SolidColorBrush(Color.FromRgb(66, 84, 107)); view.BorderThickness = new Thickness(node == id ? 2 : 1); view.Background = new SolidColorBrush(node == id ? Color.FromRgb(28, 42, 57) : Color.FromRgb(16, 23, 33)); }
         foreach (var button in nodeActions) button.IsEnabled = id.HasValue && Current?.Nodes.Any(n => n.Id == id) == true;
     }
     private void ScrollToSelection()
@@ -300,12 +326,14 @@ internal sealed class ChartWorkspace : UserControl
     }
     private void KeyDownChart(object sender, KeyEventArgs e)
     {
+        if (e.OriginalSource is TextBox) return;
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
-            if (e.Key == Key.Z) { Undo(); e.Handled = true; }
+            if (e.Key == Key.Enter) { EditNode(); e.Handled = true; }
+            else if (e.Key == Key.Z) { Undo(); e.Handled = true; }
             else if (e.Key == Key.Y) { Redo(); e.Handled = true; }
-            else if (e.Key == Key.Up && selectedId.HasValue) { Modify(c => Charts.Reorder(c, selectedId.Value, -1)); e.Handled = true; }
-            else if (e.Key == Key.Down && selectedId.HasValue) { Modify(c => Charts.Reorder(c, selectedId.Value, 1)); e.Handled = true; }
+            else if (!networkMode && e.Key == Key.Up && selectedId.HasValue) { Modify(c => Charts.Reorder(c, selectedId.Value, -1)); e.Handled = true; }
+            else if (!networkMode && e.Key == Key.Down && selectedId.HasValue) { Modify(c => Charts.Reorder(c, selectedId.Value, 1)); e.Handled = true; }
             return;
         }
         if (Keyboard.Modifiers != ModifierKeys.None) return;
@@ -313,13 +341,13 @@ internal sealed class ChartWorkspace : UserControl
         {
             case Key.Enter: AddNode(false); e.Handled = true; break;
             case Key.Insert: AddNode(true); e.Handled = true; break;
-            case Key.F2: EditNode(); e.Handled = true; break;
+            case Key.F2: BeginTitle(); e.Handled = true; break;
             case Key.Delete: DeleteNode(); e.Handled = true; break;
             case Key.Up:
             case Key.Down:
                 if (Current is Diagram chart) { var visible = Charts.Outline(chart, true); var index = visible.FindIndex(o => o.Node.Id == selectedId); if (visible.Count > 0) { Select(visible[Math.Clamp(index + (e.Key == Key.Up ? -1 : 1), 0, visible.Count - 1)].Node.Id); ScrollToSelection(); } }
                 e.Handled = true; break;
-            case Key.Left: if (selectedId.HasValue) ToggleFold(); e.Handled = true; break;
+            case Key.Left: if (!networkMode && selectedId.HasValue) ToggleFold(); e.Handled = true; break;
         }
     }
     private void ZoomChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

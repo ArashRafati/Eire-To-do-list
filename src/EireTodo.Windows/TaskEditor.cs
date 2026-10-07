@@ -68,7 +68,7 @@ public sealed class TaskEditor : Window
             {
                 ProjectId = selected.Id, Description = description.Text, StartDate = AustralianDates.ParseOptional(start.Text),
                 FinishDate = AustralianDates.ParseOptional(finish.Text), Category = category.Text, Notes = notes.Text,
-                Completed = completed.IsChecked == true, CreatedAt = original?.CreatedAt ?? DateTimeOffset.Now
+                Completed = completed.IsChecked == true, CreatedAt = original?.CreatedAt ?? DateTimeOffset.Now, Format = original?.Format.Clone() ?? new()
             };
             service.SaveTask(task, original?.Id);
             DialogResult = true;

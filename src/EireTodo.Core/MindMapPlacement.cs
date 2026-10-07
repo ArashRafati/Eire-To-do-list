@@ -13,7 +13,7 @@ public static class MindMapPlacement
         double Height(ChartNode node)
         {
             if (footprints.TryGetValue(node.Id, out var height)) return height;
-            height = Math.Max(ChartGeometry.NodeHeight, Kids(node.Id).Sum(n => Height(n) + ChartGeometry.Gap) - ChartGeometry.Gap);
+            height = Math.Max(ChartGeometry.Measure(node).Height, Kids(node.Id).Sum(n => Height(n) + ChartGeometry.Gap) - ChartGeometry.Gap);
             footprints[node.Id] = height; return height;
         }
         var result = new Dictionary<Guid, MindMapBranchSide>();

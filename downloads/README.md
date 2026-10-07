@@ -1,4 +1,4 @@
-# Windows download — version 2.1
+# Windows download — version 3.0
 
 `EireTodo-Windows-x64.zip` contains the self-contained Windows x64 executable,
 short instructions, chart/planning import guide, component notices and remaining Windows acceptance checks. Download the raw
@@ -33,3 +33,8 @@ Version 2.1 improves dynamic placement: new main branches use the less crowded
 side, existing sides remain stable, and subtree spacing recalculates as cells
 are added/moved/deleted. It adds Balance branches and improved viewport handling.
 Twenty-three automated check groups pass, including 1,000-node growth checks.
+
+Version 3.0 adds the tabbed ribbon, inline titles, branch drag/drop, saved text
+formatting and format painter, local clock, red overdue items/history, and a
+separate Connections module with movable nodes and labelled directional leads.
+The black/slate/yellow palette is preserved. See QUICKSTART.txt in the ZIP.

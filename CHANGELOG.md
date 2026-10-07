@@ -1,5 +1,16 @@
 # Changes
 
+## 3.0.0 — ribbon, direct editing and connection diagrams
+
+- Preserve the existing dark/yellow palette; add Home/Insert/Format/View ribbon tabs.
+- Add inline autosaved titles, Enter/Insert continuation, Ctrl+Enter/right-click details, and WBS-code-only headers.
+- Add branch drag/drop before, after or inside a node, with cycle prevention and undo.
+- Save font family/size, bold/italic/underline, alignment and format-painter changes; expand hierarchy cells/spacing for large text.
+- Add a local header clock, red overdue items and a hideable persistent overdue history retaining resolved episodes.
+- Add a separate Connections module with automatic initial placement, free dragging, multiple directional leads, double arrowheads, curves/sharp bends and editable labels.
+- Export connection CSV/XML/PDF separately from planning formats; preserve lead directions and full notes/labels.
+- Bundle regular/bold/oblique/bold-oblique PDF fonts and add routing, graph, formatting, overdue, persistence and rollback checks.
+
 ## 2.1.0 — dynamic mind-map placement
 
 - Place new main branches according to available space on each side, using

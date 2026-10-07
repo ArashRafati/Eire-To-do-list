@@ -1,11 +1,11 @@
-EIRE TO-DO / MIND MAP / WBS 2.1 — PORTABLE WINDOWS WIDGET
+EIRE TO-DO / MIND MAP / WBS / CONNECTIONS 3.0 — PORTABLE WINDOWS WIDGET
 
 1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
 2. Double-click EireTodo.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
 
-UPDATING FROM 1.x: Back up your data first. Close the running app, unzip the new release, then run the
+UPDATING: Back up your data first. Close the running app, unzip the new release, then run the
 new EireTodo.exe. Your tasks, projects and preferences are read from the same
 profile data folder. The update needs no manual data migration. Larger text and dark
 high-contrast panels are used throughout the app. Version 1.2 adds a custom
@@ -50,9 +50,12 @@ otherwise inaccessible window to the primary display.
 MIND MAPS AND WBS
 Click the yellow TO-DO title dropdown to choose MIND MAP or WBS CHART.
 Create a diagram, select a cell and press Enter to create a same-level sibling
-or Insert to create a child. F2/double-click edits the label and full notes.
-New cells save immediately and open an editor. Cancel keeps the placeholder;
-Undo removes it. Enter in a notes field makes a new line; Ctrl+Enter saves.
+or Insert to create a child. New cells save immediately and let you type the title directly in the cell.
+Enter while typing saves and creates the next sibling; Insert saves and adds
+its child. F2/double-click edits the title. Ctrl+Enter or right-click > Node
+details opens full notes, dates and completion. Escape discards pending title
+text and keeps the latest saved title; Undo removes a new cell. Enter in a
+notes field makes a new line; Ctrl+Enter saves details.
 New siblings and children automatically reposition the chart with space for
 their branches. New main branches use the less crowded side; existing branches
 keep their side. Balance branches redistributes an existing two-sided map.
@@ -67,8 +70,45 @@ Microsoft Project XML, native P6 XML and PDF chart + full node details.
 XML carries hierarchy directly. P6's CSV needs mapping into a P6-exported XLSX
 template; it is not a direct P6 CSV import. The guide PLANNING-EXPORTS.md included
 with this app provides the exact routes and scheduling/calendar conventions.
-Backups/restores include all diagrams. Continue using version 2.1 after making
+Backups/restores include all diagrams, formatting, leads and overdue history. Continue using version 3.0 after making
 charts; older versions cannot preserve the new diagram fields when saving.
+
+DRAGGING AND RIBBON
+The Home, Insert, Format and View tabs group commands. Drag a hierarchy node
+onto the top of another cell to place it before, bottom to place it after,
+or centre to make it a child. A yellow border indicates the destination.
+The whole branch moves, numbering updates, and Undo restores it. A node cannot
+be moved into its own branch. Each cell header shows only the WBS code.
+
+Format applies to the selected task description or cell title: font family,
+size 12-48, bold/italic/underline and left/centre/right alignment. Format
+painter copies the selected style; click the destination task or node to apply.
+Click the painter again to cancel. New cells inherit the selection's style.
+
+OVERDUE AND CLOCK
+The top clock shows the computer's local dd/MM/yyyy HH:mm:ss time.
+Unfinished tasks/nodes with an entered finish date before today turn red.
+Show overdue log (footer or View ribbon) displays active entries and optional
+resolved history. Completion, deletion and rescheduling retain the old episode.
+The log updates on changes, restart and each minute. Blank finish dates and
+items due today are not overdue; planning-export default dates are not due dates.
+Hide log closes the panel and saves that preference.
+
+CONNECTION DIAGRAMS
+Choose CONNECTIONS from the title dropdown and create a diagram.
+Enter adds a free node. Insert adds a new node connected from the selection;
+type its title directly. New nodes use available space, while existing positions
+stay fixed. Drag any node freely and its leads follow. Manual overlap is allowed.
+Insert > Connect nodes arms a lead from the selected source; click its target.
+Repeat for as many incoming/outgoing leads as needed (up to 5,000 per diagram,
+1,000 nodes). Set Double lead for both arrowheads; choose Curve or Sharp bends.
+Right-click or double-click a lead to set its optional description, reverse
+its direction, change its shape/arrowheads, or confirm deletion. Labels follow
+the lead; a tooltip and export appendix retain the full description.
+Node details still use Ctrl+Enter or right-click > Node details.
+Connection diagrams export node/lead CSV, Eire connection XML and PDF. They are
+separate from WBS planning exports; their arbitrary links are not scheduling
+dependencies for Microsoft Project or Primavera P6.
 
 DATA
 All application data and window settings are stored at:
@@ -79,7 +119,9 @@ The directory is local to the current Windows user. Files are not encrypted.
 The bundled runtime may unpack native files under the user's TEMP\.net folder.
 This is a cache, not an installed runtime, and contains no task data.
 
-Every task/project/diagram change is saved immediately using an atomic file replace.
+Every task/project/diagram change uses an atomic file replace. Inline titles
+autosave after a 400 ms pause and flush before switching/exporting/closing.
+A title save failure remains visible and keeps the field open for retry.
 Window settings save shortly after changes and are flushed when you close.
 Saving errors are displayed; failed task/project edits are not accepted and
 an editor remains open for retry. Window-setting failures show a retry banner.

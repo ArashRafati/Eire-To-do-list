@@ -7,7 +7,7 @@ using PdfSharp.Pdf;
 
 namespace EireTodo.Core;
 
-public enum ChartExportFormat { HierarchyCsv, ProjectCsv, PrimaveraCsv, ProjectXml, PrimaveraXml, Pdf }
+public enum ChartExportFormat { HierarchyCsv, ProjectCsv, PrimaveraCsv, ProjectXml, PrimaveraXml, Pdf, NetworkCsv, NetworkXml }
 public sealed record PlannedNode(OutlineNode Outline, DateOnly Start, DateOnly Finish, int Days);
 
 public static class ChartExports
@@ -16,6 +16,7 @@ public static class ChartExports
     public static readonly string[] PrimaveraVersions = ["18.8", "23.12", "24.12", "25.12"];
     public static List<PlannedNode> Plan(Diagram chart)
     {
+        if (chart.Kind == DiagramKind.Network) throw new ArgumentException("Use a WBS diagram for planning exports.");
         var outline = Charts.Outline(chart); var planned = new Dictionary<Guid, PlannedNode>();
         foreach (var entry in outline.AsEnumerable().Reverse())
         {
@@ -37,7 +38,10 @@ public static class ChartExports
     public static byte[] Export(Diagram chart, ChartExportFormat format, string p6Version = "18.8")
     {
         Charts.Validate(chart);
+        if (!Enum.IsDefined(format)) throw new ArgumentException("Unknown export format.");
         if (format == ChartExportFormat.Pdf) return Pdf(chart);
+        if (chart.Kind == DiagramKind.Network) return NetworkExports.Export(chart, format);
+        if (format is ChartExportFormat.NetworkCsv or ChartExportFormat.NetworkXml) throw new ArgumentException("Select a connection diagram for this export.");
         if (format == ChartExportFormat.ProjectXml) return XmlBytes(ProjectXml(chart));
         if (format == ChartExportFormat.PrimaveraXml) return XmlBytes(PrimaveraXml(chart, p6Version));
         return Csv(chart, format);
@@ -138,7 +142,8 @@ public static class ChartExports
         using var pdf = new PdfDocument(); pdf.Info.Title = chart.Name; pdf.Info.Creator = "Eire To-do / Mind map / WBS";
         var scene = ChartGeometry.Arrange(chart, true); var boxes = scene.Boxes.ToDictionary(b => b.Id); var nodes = Charts.Outline(chart).ToDictionary(o => o.Node.Id);
         var accent = XColor.FromArgb(255, 204, 51); var pen = new XPen(XColor.FromArgb(65, 83, 105), 1.4);
-        const double width = 1190, height = 842, margin = 35, top = 75, scale = .75;
+        const double width = 1190, height = 842, margin = 35, top = 75;
+        var scale = chart.Kind == DiagramKind.Network ? Math.Min(.75, Math.Min((width - 2 * margin) / scene.Width, (height - top - margin) / scene.Height)) : .75;
         var tileWidth = (width - 2 * margin) / scale; var tileHeight = (height - top - margin) / scale;
         var columns = Math.Max(1, (int)Math.Ceiling(scene.Width / (tileWidth - 30))); var rows = Math.Max(1, (int)Math.Ceiling(scene.Height / (tileHeight - 30)));
         for (var row = 0; row < rows; row++) for (var col = 0; col < columns; col++)
@@ -155,13 +160,22 @@ public static class ChartExports
                 if (n.Node.ParentId is Guid parent && boxes.TryGetValue(parent, out var p))
                 { var c = ChartGeometry.Connector(p, box, chart.Layout); g.DrawLine(pen, c.X1, c.Y1, c.X2, c.Y2); }
             }
+            if (chart.Kind == DiagramKind.Network) DrawPdfLeads(g, chart, boxes, small, pen);
             foreach (var box in scene.Boxes)
             {
                 var n = nodes[box.Id]; g.DrawRectangle(new XSolidBrush(XColor.FromArgb(247, 249, 252)), box.X, box.Y, box.Width, box.Height); g.DrawRectangle(pen, box.X, box.Y, box.Width, box.Height);
                 g.DrawRectangle(new XSolidBrush(accent), box.X, box.Y, 5, box.Height);
-                g.DrawString(n.Code + (n.Node.Completed ? "  COMPLETED" : ""), small, XBrushes.Black, new XPoint(box.X + 13, box.Y + 19));
-                var lines = Wrap(g, n.Node.Title, font, box.Width - 26).Take(3).ToList();
-                for (var i = 0; i < lines.Count; i++) g.DrawString(lines[i], font, XBrushes.Black, new XPoint(box.X + 13, box.Y + 41 + i * 18));
+                g.DrawString(n.Code, small, XBrushes.Black, new XPoint(box.X + 13, box.Y + 19));
+                var f = n.Node.Format; var style = (f.Bold ? XFontStyleEx.Bold : XFontStyleEx.Regular) | (f.Italic ? XFontStyleEx.Italic : XFontStyleEx.Regular) | (f.Underline ? XFontStyleEx.Underline : XFontStyleEx.Regular);
+                var nodeFont = new XFont("EireExport", f.Size, style);
+                var colour = Overdue.IsDue(n.Node.FinishDate, n.Node.Completed) ? new XSolidBrush(XColor.FromArgb(208, 35, 35)) : XBrushes.Black;
+                var lines = Wrap(g, n.Node.Title, nodeFont, box.Width - 26).Take(2).ToList();
+                for (var i = 0; i < lines.Count; i++)
+                {
+                    var measured = g.MeasureString(lines[i], nodeFont).Width;
+                    var x = f.Alignment == TextJustification.Centre ? box.X + (box.Width - measured) / 2 : f.Alignment == TextJustification.Right ? box.X + box.Width - 13 - measured : box.X + 13;
+                    g.DrawString(lines[i], nodeFont, colour, new XPoint(x, box.Y + 30 + f.Size + i * f.Size * 1.25));
+                }
             }
             g.Restore(state); g.DrawString($"Eire  |  Page {pdf.PageCount}", small, XBrushes.Black, new XPoint(margin, height - 14));
         }
@@ -180,7 +194,40 @@ public static class ChartExports
             { if (y > 1140) NewTextPage(); text!.DrawString(line, font, XBrushes.Black, new XPoint(35, y)); y += 20; }
             y += 14;
         }
+        foreach (var lead in chart.Leads)
+        {
+            var description = $"Lead: {chart.Nodes.Single(n => n.Id == lead.From).Title} {(lead.DoubleHeaded ? "↔" : "→")} {chart.Nodes.Single(n => n.Id == lead.To).Title} · {lead.Routing}\n{lead.Description}";
+            foreach (var line in Wrap(text!, description, font, 772)) { if (y > 1140) NewTextPage(); text!.DrawString(line, font, XBrushes.Black, new XPoint(35, y)); y += 20; } y += 14;
+        }
         text?.Dispose(); using var stream = new MemoryStream(); pdf.Save(stream, false); return stream.ToArray();
+    }
+    private static void DrawPdfLeads(XGraphics g, Diagram chart, Dictionary<Guid, NodeBox> boxes, XFont font, XPen pen)
+    {
+        foreach (var group in chart.Leads.GroupBy(l => l.From.CompareTo(l.To) < 0 ? (l.From, l.To) : (l.To, l.From)))
+        {
+            var leads = group.ToList();
+            for (var i = 0; i < leads.Count; i++)
+            {
+                var lead = leads[i]; var c = LeadGeometry.Route(boxes[lead.From], boxes[lead.To], lead.Routing, i - leads.Count / 2, boxes.Values.ToList());
+                if (lead.Routing == LeadRouting.Curve) { var path = new XGraphicsPath(); path.AddBezier(c.X1, c.Y1, c.C1X, c.C1Y, c.C2X, c.C2Y, c.X2, c.Y2); g.DrawPath(pen, path); }
+                else { g.DrawLine(pen, c.X1, c.Y1, c.C1X, c.C1Y); g.DrawLine(pen, c.C1X, c.C1Y, c.C2X, c.C2Y); g.DrawLine(pen, c.C2X, c.C2Y, c.X2, c.Y2); }
+                Arrow(c.X2, c.Y2, c.C2X, c.C2Y); if (lead.DoubleHeaded) Arrow(c.X1, c.Y1, c.C1X, c.C1Y);
+                if (lead.Description.Length > 0)
+                {
+                    var state = g.Save(); g.TranslateTransform(c.LabelX, c.LabelY); g.RotateTransform(c.LabelAngle);
+                    var preview = lead.Description;
+                    while (preview.Length > 1 && g.MeasureString(preview + "…", font).Width > c.LabelWidth) preview = preview[..^1];
+                    if (preview.Length < lead.Description.Length) preview += "…";
+                    var width = g.MeasureString(preview, font).Width; g.DrawRectangle(XBrushes.White, -width / 2 - 3, -10, width + 6, 20);
+                    g.DrawString(preview, font, XBrushes.Black, new XPoint(-width / 2, 4)); g.Restore(state);
+                }
+            }
+        }
+        void Arrow(double x, double y, double px, double py)
+        {
+            var angle = Math.Atan2(y - py, x - px) + Math.PI;
+            g.DrawPolygon(XBrushes.Black, new[] { new XPoint(x, y), new XPoint(x + 13 * Math.Cos(angle + .42), y + 13 * Math.Sin(angle + .42)), new XPoint(x + 13 * Math.Cos(angle - .42), y + 13 * Math.Sin(angle - .42)) }, XFillMode.Winding);
+        }
     }
     private static IEnumerable<string> Wrap(XGraphics graphics, string text, XFont font, double width)
     {
@@ -197,11 +244,12 @@ public static class ChartExports
     }
     private sealed class EireFontResolver : IFontResolver
     {
-        public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic) => familyName == "EireExport" ? new FontResolverInfo("EireDejaVu") : null;
+        public FontResolverInfo? ResolveTypeface(string familyName, bool bold, bool italic) => familyName == "EireExport" ? new FontResolverInfo("EireDejaVu" + (bold ? "Bold" : "") + (italic ? "Italic" : "")) : null;
         public byte[]? GetFont(string faceName)
         {
-            if (faceName != "EireDejaVu") return null;
-            using var stream = typeof(ChartExports).Assembly.GetManifestResourceStream("EireTodo.Core.Assets.DejaVuSans.ttf")!;
+            var file = faceName switch { "EireDejaVu" => "DejaVuSans.ttf", "EireDejaVuBold" => "DejaVuSans-Bold.ttf", "EireDejaVuItalic" => "DejaVuSans-Oblique.ttf", "EireDejaVuBoldItalic" => "DejaVuSans-BoldOblique.ttf", _ => null };
+            if (file is null) return null;
+            using var stream = typeof(ChartExports).Assembly.GetManifestResourceStream("EireTodo.Core.Assets." + file)!;
             using var memory = new MemoryStream(); stream.CopyTo(memory); return memory.ToArray();
         }
     }

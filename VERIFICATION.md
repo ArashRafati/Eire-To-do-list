@@ -1,11 +1,12 @@
 # Build and verification evidence
 
-Current delivery: version **2.1.0**, including mind-map/WBS modules, five layouts,
-CSV/MSPDI/P6 PMXML/PDF exports, saved charts, the custom Windows app icon,
+Current delivery: version **3.0.0**, including mind-map/WBS modules, five layouts,
+CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
+text formatting, overdue history, a header clock and the Connections module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 2.1 interface.
+Windows acceptance checks or the updated 3.0 interface.
 
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
@@ -33,6 +34,13 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | CSV quoting, BOM/UTF-8, multiline notes, all rows and parent IDs | Passed core checks and independent Python CSV parser |
 | MSPDI and P6 PMXML contents | Passed core checks and independent MPXJ 16.10.0 reads: hierarchy, permanent IDs, dates, 24-hour sample duration, 100% completion and notes; P6 namespaces 18.8/23.12/24.12/25.12 |
 | PDF tiling/detail pages, embedded font, full labels/notes and Unicode | Opened with PDFsharp, Poppler `pdfinfo` / `pdftotext`; sample chart page visually inspected |
+| Branch drag destinations, identity/order/code preservation and circular-drop rejection | Passed core checks; actual mouse dragging requires Windows |
+| Mixed font sizes 12–48 across all hierarchy layouts | Passed non-overlap checks |
+| Graph automatic placement, stable manual positions, multiple leads, cycles and endpoint cleanup | Passed core checks |
+| Lead routes, cell-edge arrows, upright labels and intervening-cell avoidance | Passed geometry checks; PDF chart visually reviewed |
+| Overdue local-date rules, resolved episodes, restart and backup/restore | Passed core checks |
+| New text formats, graph data, module/log preferences and failed-save rollback | Passed core checks |
+| Connection CSV/XML/PDF | Passed independent Python parsers and Poppler text extraction, preserving node/lead data, positions, directions, formats, full Unicode notes and labels |
 | Native Microsoft Project and P6 imports | **Not run**; import guide and acceptance steps included |
 | Packaged executable's PE architecture and GUI subsystem | Inspected: Windows x64 GUI |
 | Packaged executable's embedded privilege manifest | Inspected: `asInvoker`, `uiAccess=false` |
@@ -40,11 +48,11 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Packaged executable's embedded DPI manifest | Inspected: `PerMonitorV2` |
 | Single-file runtime contents | Inspected: 395 entries, WPF assemblies/native libraries, embedded CLR/JIT host, included .NET and WindowsDesktop 10.0.12 frameworks; no installed-framework reference |
 | Interactive Windows desktop and standard-user Windows launch | **Not run**; Linux cannot execute WPF |
-| Real display scaling, dragging/resizing, minimise/close, topmost and opacity | **Not run**; Windows acceptance steps provided |
+| Real display scaling, ribbon/inline editing, node dragging, window controls, topmost and opacity | **Not run**; Windows acceptance steps provided |
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **23 passed; 0 failed**. These are twenty-three named groups
+The functional runner reports **33 passed; 0 failed**. These are thirty-three named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 
@@ -60,7 +68,7 @@ PYTHONPATH=/tmp/eire-export-tools python3 scripts/verify-chart-exports.py
 
 The release ZIP contains `EireTodo.exe`, `QUICKSTART.txt`,
 `WINDOWS-VERIFICATION.md`, `PLANNING-EXPORTS.md` and `THIRD-PARTY-NOTICES.txt`.
-Its PDF library and font are embedded; no separately installed runtime or
+Its PDF library and four regular/bold/oblique/bold-oblique font faces are embedded; no separately installed runtime or
 printer driver is needed.
 Artifacts are unsigned. See `WINDOWS-VERIFICATION.md` for the remaining standard-
 account desktop checks. Source and portable ZIPs are delivered on the GitHub branch

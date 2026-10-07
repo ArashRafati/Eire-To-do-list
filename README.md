@@ -1,9 +1,52 @@
 # Eire To-do
 
-A portable, offline Windows desktop to-do, mind-map and WBS widget built with WPF and .NET 10.
+A portable, offline Windows desktop to-do, mind-map, WBS and connection-diagram widget built with WPF and .NET 10.
 The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
+
+## Ribbon and connection diagrams — version 3.0
+
+The existing black/slate/yellow palette is preserved. The top ribbon has
+**Home**, **Insert**, **Format** and **View** tabs with grouped commands. The
+header displays the computer's current local date/time in Australian format.
+
+- **Enter / Insert** creates a sibling / child with its title editable directly
+  in the cell. Enter while typing saves that title and creates the next sibling;
+  Insert saves and creates a child. **F2 / double-click** edits the title;
+  **Ctrl+Enter** or **right-click → Node details** opens full notes and dates.
+  The cell header shows only its WBS code. Title changes autosave after a short
+  pause and are flushed before changing diagram/module, exporting or closing.
+- **Drag a branch** onto a cell's top edge to put it before that cell, bottom
+  edge to put it after, or centre to make it a child. The highlighted border
+  shows the destination. Descendants move with their branch, WBS codes update,
+  and permanent IDs stay fixed. Circular moves are rejected; Undo is available.
+- **Format** changes the selected task description or node title: installed
+  font family, size 12–48, bold, italic, underline and left/centre/right
+  alignment. Format painter copies a selection's style to the next clicked
+  task/node, including across modules. New cells inherit the selection's style.
+  Hierarchy spacing expands for larger fonts.
+- **Show overdue log** toggles an autosaved history panel. Unfinished items with
+  an explicitly entered finish date before today turn red. Today and blank
+  finish dates are not overdue. The log retains resolved episodes after
+  completion, deletion or deadline changes, and notices newly overdue items
+  on restart and each minute while the app is open. Its visibility persists.
+- **CONNECTIONS** is a separate module. Enter adds a free node; Insert creates an
+  automatically positioned node connected from the selection. Choose **Insert
+  → Connect nodes**, then click the target to add more leads. Any cell may have
+  multiple incoming/outgoing leads, including cycles. Drag cells freely; their
+  leads follow. Choose curved or sharp-bend leads and one or two arrowheads.
+  Right-click/double-click a lead to describe, reverse, reshape or delete it.
+  Long leads route around intervening cells; labels follow the lead direction
+  and show a shortened preview with full text in the tooltip and PDF appendix.
+
+Connection diagrams export their own CSV/XML plus PDF; WBS/mind-map diagrams
+retain the Microsoft Project / P6 planning exports. Free-form relationships are
+not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
+portable output and preserves size, weight, italic, underline and alignment;
+Windows font families use this export fallback. All new data is included in
+JSON backup/restore. **Back up before updating and continue using version 3.0;
+older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1
 

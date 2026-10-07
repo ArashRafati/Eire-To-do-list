@@ -88,6 +88,8 @@ public sealed partial class TodoService
     {
         var next = Data.Clone();
         change(next);
+        Validation.Document(next);
+        Overdue.Sync(next, DateTimeOffset.Now);
         store.Save(next);
         Data = next;
     }
@@ -97,7 +99,7 @@ public sealed partial class TodoService
         {
             Id = editingId ?? task.Id, ProjectId = task.ProjectId, Description = task.Description.Trim(),
             StartDate = task.StartDate, FinishDate = task.FinishDate, Category = task.Category.Trim(),
-            Notes = task.Notes, CreatedAt = task.CreatedAt, Completed = task.Completed
+            Notes = task.Notes, CreatedAt = task.CreatedAt, Completed = task.Completed, Format = task.Format.Clone()
         };
         Validation.Task(candidate);
         Change(data =>

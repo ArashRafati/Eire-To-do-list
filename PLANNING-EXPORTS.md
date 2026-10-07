@@ -17,13 +17,15 @@ and backup/restore. Drawing and exporting do not modify the diagram.
 
 ## Editing
 
-Create a diagram, select a cell, then:
+Create a diagram, select a cell, then (new cells accept their title inline):
 
 | Action | Shortcut / control |
 | --- | --- |
 | Create a cell at the same level, immediately after the selection | **Enter** / + Sibling |
 | Create a child below the selection | **Insert** / + Child |
-| Edit label, full notes, parent, dates, duration and completion | **F2** / double-click / Edit |
+| Edit the title directly in the cell | **F2** / double-click |
+| Open full notes, parent, dates, duration and completion | **Ctrl+Enter** / right-click → Node details |
+| Move a branch before/after/inside another cell | Drag to its top/bottom/centre |
 | Move between visible nodes | Up / Down |
 | Reorder among siblings | Ctrl+Up / Ctrl+Down / Move buttons |
 | Make the previous sibling the parent | Indent |
@@ -132,3 +134,26 @@ version-specific import checks. Start with a new/disposable target project.
 The XML field conventions were checked against MPXJ's schema-derived readers
 and writer implementation: https://github.com/joniles/mpxj . The app does not
 bundle or call MPXJ; it is only an optional developer verification tool.
+
+## Connection module and text formatting (3.0)
+
+**CONNECTIONS** uses independent nodes and directed leads. It supports cycles,
+many incoming/outgoing relationships, double arrowheads and manual positions.
+Its **CSV** has Node/Lead records, endpoint IDs, directions, routing, positions,
+notes and text-format JSON. Its **XML** uses `urn:eire:connection-diagram:1`;
+this is an Eire diagram interchange format, not MSPDI or PMXML. Its **PDF**
+includes direction arrows, lead descriptions and full node/lead detail pages.
+These files do not schedule dependencies or masquerade as native planning
+imports. Switch to WBS/Mind map for the existing MSP/P6 export profiles above.
+All-data JSON backup/restore is the supported import route for Eire itself.
+
+The Format ribbon saves font family/size, bold, italic, underline and alignment.
+PDF preserves text size/style/alignment using embedded DejaVu fonts as a
+portable fallback for installed Windows families. Planning CSV/XML carry data
+and hierarchy; they do not carry Eire visual styling. Formatting does not alter
+node IDs, dates, durations or exported hierarchy.
+
+Overdue uses explicitly entered finish dates and the computer's local date.
+Summary rollup dates and undated-node scheduling defaults in planning exports
+do not create overdue entries. Red chart/task styling and the persistent log
+are app features; planning tools apply their own overdue formatting rules.

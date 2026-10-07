@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace EireTodo.Core;
 
-public enum AppMode { Todo, MindMap, Wbs }
-public enum ChartLayout { MindMap, RightTree, TopDown, LeftToRight, Outline }
+public enum AppMode { Todo, MindMap, Wbs, Connections }
+public enum ChartLayout { MindMap, RightTree, TopDown, LeftToRight, Outline, Freeform }
 public enum MindMapBranchSide { Auto, Right, Left }
 
 public sealed class ChartNode
@@ -21,6 +21,9 @@ public sealed class ChartNode
     public bool Completed { get; set; }
     public bool Collapsed { get; set; }
     public MindMapBranchSide MindMapSide { get; set; }
+    public TextFormat Format { get; set; } = new();
+    public double? X { get; set; }
+    public double? Y { get; set; }
     [JsonIgnore] public string ActivityId => $"A{Number:D5}";
 }
 
@@ -29,6 +32,8 @@ public sealed class Diagram
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "New diagram";
     public Guid? ProjectId { get; set; }
+    public DiagramKind Kind { get; set; }
+    public List<DiagramLead> Leads { get; set; } = [];
     public ChartLayout Layout { get; set; } = ChartLayout.MindMap;
     public DateOnly ScheduleStart { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public double Zoom { get; set; } = 1;
@@ -49,6 +54,7 @@ public static class Charts
         ChartLayout.RightTree => "Mind map · right tree",
         ChartLayout.TopDown => "WBS · top down",
         ChartLayout.LeftToRight => "WBS · left to right",
+        ChartLayout.Freeform => "Connections · free placement",
         _ => "Numbered outline"
     };
     public static Diagram Create(string name, ChartLayout layout, Guid? projectId = null)
@@ -70,6 +76,17 @@ public static class Charts
             chart.Nodes.Select(n => n.Number).Distinct().Count() != chart.Nodes.Count ||
             chart.NextNumber <= chart.Nodes.Select(n => n.Number).DefaultIfEmpty(0).Max() || chart.NextNumber > 1000001)
             throw new ArgumentException("Nodes need unique IDs, titles up to 100 characters and valid dates/durations. Finish cannot precede start.");
+        if (!Enum.IsDefined(chart.Kind) || chart.Leads is null || chart.Leads.Count > NetworkCharts.MaxLeads ||
+            (chart.Kind == DiagramKind.Network) != (chart.Layout == ChartLayout.Freeform) || chart.Kind == DiagramKind.Hierarchy && chart.Leads.Count > 0)
+            throw new ArgumentException("Invalid diagram module or leads.");
+        foreach (var n in chart.Nodes)
+        {
+            if (n.Format is null) throw new ArgumentException("Node formatting is missing."); n.Format.Validate();
+            if (n.X.HasValue != n.Y.HasValue || n.X.HasValue && (!double.IsFinite(n.X.Value) || !double.IsFinite(n.Y!.Value) || n.X < 0 || n.Y < 0 || n.X > 100000 || n.Y > 100000) ||
+                chart.Kind == DiagramKind.Network && (n.ParentId.HasValue || !n.X.HasValue)) throw new ArgumentException("Invalid free node position.");
+        }
+        if (chart.Leads.Any(l => l is null || l.Id == Guid.Empty || l.From == l.To || !chart.Nodes.Any(n => n.Id == l.From) || !chart.Nodes.Any(n => n.Id == l.To) || !Enum.IsDefined(l.Routing) || l.Description is null || l.Description.Length > 500) || chart.Leads.Select(l => l.Id).Distinct().Count() != chart.Leads.Count)
+            throw new ArgumentException("Leads need valid endpoints and descriptions up to 500 characters.");
         var index = chart.Nodes.ToDictionary(n => n.Id);
         foreach (var node in chart.Nodes)
         {
@@ -121,7 +138,7 @@ public static class Charts
     public static void Delete(Diagram chart, Guid id)
     {
         MindMapPlacement.AssignSides(chart);
-        var ids = Descendants(chart, id); chart.Nodes.RemoveAll(n => ids.Contains(n.Id)); Normalise(chart); Validate(chart);
+        var ids = Descendants(chart, id); chart.Nodes.RemoveAll(n => ids.Contains(n.Id)); chart.Leads.RemoveAll(l => ids.Contains(l.From) || ids.Contains(l.To)); Normalise(chart); Validate(chart);
     }
     public static void Move(Diagram chart, Guid id, Guid? parent)
     {
@@ -131,6 +148,22 @@ public static class Charts
         MindMapPlacement.AssignSides(chart);
         node.ParentId = parent; node.MindMapSide = MindMapBranchSide.Auto; node.Order = Children(chart, parent).Count;
         for (var ancestor = parent; ancestor.HasValue; ancestor = chart.Nodes.Single(n => n.Id == ancestor).ParentId) chart.Nodes.Single(n => n.Id == ancestor).Collapsed = false; Normalise(chart); Validate(chart); MindMapPlacement.AssignSides(chart);
+    }
+    public static void MoveRelative(Diagram chart, Guid id, Guid target, NodeDrop drop)
+    {
+        if (chart.Kind != DiagramKind.Hierarchy || !Enum.IsDefined(drop) || id == target || Descendants(chart, id).Contains(target))
+            throw new ArgumentException("Drop outside this node's own branch.");
+        var moving = chart.Nodes.Single(n => n.Id == id); var destination = chart.Nodes.Single(n => n.Id == target);
+        var parent = drop == NodeDrop.Child ? target : destination.ParentId;
+        var check = chart.Clone(); var probe = check.Nodes.Single(n => n.Id == id); probe.ParentId = parent; Validate(check);
+        MindMapPlacement.AssignSides(chart);
+        if (moving.ParentId != parent) moving.MindMapSide = MindMapBranchSide.Auto;
+        moving.ParentId = parent;
+        var siblings = Children(chart, parent).Where(n => n.Id != id).ToList();
+        var at = drop == NodeDrop.Child ? siblings.Count : siblings.FindIndex(n => n.Id == target) + (drop == NodeDrop.After ? 1 : 0);
+        siblings.Insert(at, moving); for (var i = 0; i < siblings.Count; i++) siblings[i].Order = i;
+        for (var ancestor = parent; ancestor.HasValue; ancestor = chart.Nodes.Single(n => n.Id == ancestor).ParentId) chart.Nodes.Single(n => n.Id == ancestor).Collapsed = false;
+        Normalise(chart); Validate(chart); MindMapPlacement.AssignSides(chart);
     }
     public static void Reorder(Diagram chart, Guid id, int direction)
     {
@@ -168,33 +201,47 @@ public sealed record ChartScene(List<NodeBox> Boxes, double Width, double Height
 public static class ChartGeometry
 {
     public const double NodeWidth = 260, NodeHeight = 118, Gap = 28, LevelGap = 74, Margin = 40;
+    public static (double Width, double Height) Measure(ChartNode node) => (Math.Max(NodeWidth, node.Format.Size * 8 + 32), Math.Max(NodeHeight, node.Format.Size * 2.6 + 68));
     // Subtree spans reserve space for every leaf; siblings cannot overlap even at uneven depths.
     public static ChartScene Arrange(Diagram chart, bool includeCollapsed = false)
     {
+        if (chart.Kind == DiagramKind.Network)
+        {
+            Charts.Validate(chart);
+            var free = chart.Nodes.Select(n => { var s = Measure(n); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height); }).ToList();
+            var index = free.ToDictionary(b => b.Id);
+            var routes = chart.Leads.Select(l => LeadGeometry.Route(index[l.From], index[l.To], l.Routing, obstacles: free)).ToList();
+            return new(free, Math.Max(500, free.Select(b => b.X + b.Width + Margin).Concat(routes.Select(p => Math.Max(p.C1X, p.C2X) + Margin)).DefaultIfEmpty(0).Max()), Math.Max(300, free.Select(b => b.Y + b.Height + Margin).Concat(routes.Select(p => Math.Max(p.C1Y, p.C2Y) + Margin)).DefaultIfEmpty(0).Max()));
+        }
         var outline = Charts.Outline(chart, !includeCollapsed); var visible = outline.Select(o => o.Node.Id).ToHashSet();
         var boxes = new List<NodeBox>();
         var childIndex = chart.Nodes.Where(n => visible.Contains(n.Id)).GroupBy(n => n.ParentId ?? Guid.Empty)
             .ToDictionary(g => g.Key, g => g.OrderBy(n => n.Order).ThenBy(n => n.Number).ToList());
         List<ChartNode> Kids(Guid? id) => childIndex.GetValueOrDefault(id ?? Guid.Empty) ?? [];
+        var widths = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Measure(o.Node).Width));
+        var heights = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Measure(o.Node).Height));
+        double Band(Dictionary<int, double> bands, int depth) => Enumerable.Range(0, depth).Sum(i => bands.GetValueOrDefault(i, NodeWidth) + LevelGap);
         var spans = new Dictionary<(Guid Id, bool Vertical), double>();
         double Span(ChartNode node, bool vertical)
         {
             var key = (node.Id, vertical);
             if (spans.TryGetValue(key, out var cached)) return cached;
-            var size = Math.Max(vertical ? NodeWidth : NodeHeight, Kids(node.Id).Sum(n => Span(n, vertical) + Gap) - Gap);
+            var size = Math.Max(vertical ? Measure(node).Width : Measure(node).Height, Kids(node.Id).Sum(n => Span(n, vertical) + Gap) - Gap);
             spans[key] = size; return size;
         }
         void Tree(ChartNode node, int depth, double offset, bool vertical, int side)
         {
             var span = Span(node, vertical);
-            var x = vertical ? offset + (span - NodeWidth) / 2 : side * depth * (NodeWidth + LevelGap);
-            var y = vertical ? depth * (NodeHeight + LevelGap) : offset + (span - NodeHeight) / 2;
-            boxes.Add(new(node.Id, x, y, NodeWidth, NodeHeight));
+            var size = Measure(node);
+            var x = vertical ? offset + (span - size.Width) / 2 : side > 0 ? Band(widths, depth) : widths[0] - Band(widths, depth + 1) + LevelGap + widths[depth] - size.Width;
+            var y = vertical ? Band(heights, depth) : offset + (span - size.Height) / 2;
+            boxes.Add(new(node.Id, x, y, size.Width, size.Height));
             foreach (var c in Kids(node.Id)) { Tree(c, depth + 1, offset, vertical, side); offset += Span(c, vertical) + Gap; }
         }
         if (chart.Layout == ChartLayout.Outline)
         {
-            for (var i = 0; i < outline.Count; i++) boxes.Add(new(outline[i].Node.Id, (outline[i].Level - 1) * 36, i * (NodeHeight + 16), NodeWidth + 160, NodeHeight));
+            double y = 0;
+            foreach (var item in outline) { var size = Measure(item.Node); boxes.Add(new(item.Node.Id, (item.Level - 1) * 36, y, size.Width + 160, size.Height)); y += size.Height + 16; }
         }
         else if (chart.Layout == ChartLayout.MindMap)
         {
@@ -205,9 +252,9 @@ public static class ChartGeometry
                 var children = Kids(root.Id);
                 var left = children.Where(n => sides[n.Id] == MindMapBranchSide.Left).ToList();
                 var right = children.Where(n => sides[n.Id] == MindMapBranchSide.Right).ToList();
-                double SideSpan(List<ChartNode> list) => Math.Max(NodeHeight, list.Sum(n => Span(n, false) + Gap) - Gap);
+                double SideSpan(List<ChartNode> list) => Math.Max(Measure(root).Height, list.Sum(n => Span(n, false) + Gap) - Gap);
                 var height = Math.Max(SideSpan(left), SideSpan(right));
-                boxes.Add(new(root.Id, 0, forestOffset + (height - NodeHeight) / 2, NodeWidth, NodeHeight));
+                boxes.Add(new(root.Id, 0, forestOffset + (height - Measure(root).Height) / 2, Measure(root).Width, Measure(root).Height));
                 void Side(List<ChartNode> list, int sign)
                 {
                     var offset = forestOffset + (height - SideSpan(list)) / 2;

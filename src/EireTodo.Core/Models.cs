@@ -23,6 +23,7 @@ public sealed class TodoTask
     public string Notes { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
     public bool Completed { get; set; }
+    public TextFormat Format { get; set; } = new();
 }
 
 public sealed class WindowSettings
@@ -35,6 +36,8 @@ public sealed class WindowSettings
     public bool AlwaysOnTop { get; set; }
     public AppMode ActiveMode { get; set; }
     public Guid? SelectedDiagramId { get; set; }
+    public Guid? SelectedNetworkId { get; set; }
+    public bool ShowOverdueLog { get; set; }
     public Dictionary<string, double> ColumnWidths { get; set; } = [];
 }
 
@@ -45,6 +48,7 @@ public sealed class DataDocument
     [JsonRequired] public List<TodoTask> Tasks { get; set; } = [];
     [JsonRequired] public List<string> Categories { get; set; } = [];
     public List<Diagram> Diagrams { get; set; } = [];
+    public List<OverdueEntry> OverdueLog { get; set; } = [];
     [JsonRequired] public WindowSettings Settings { get; set; } = new();
     public DataDocument Clone() => JsonSerializer.Deserialize<DataDocument>(JsonSerializer.Serialize(this, JsonOptions), JsonOptions)!;
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
@@ -75,6 +79,8 @@ public static class Validation
 {
     public static void Task(TodoTask task)
     {
+        if (task.Format is null) throw new ArgumentException("Task formatting is missing.");
+        task.Format.Validate();
         if (string.IsNullOrWhiteSpace(task.Description)) throw new ArgumentException("A task description is required.");
         if (task.StartDate.HasValue && task.FinishDate < task.StartDate)
             throw new ArgumentException("Finish date cannot be earlier than start date.");
@@ -104,6 +110,7 @@ public static class Validation
             Charts.Validate(chart);
             if (chart.ProjectId.HasValue && !data.Projects.Any(p => p.Id == chart.ProjectId)) throw new ArgumentException("A diagram refers to a missing project.");
         }
+        Overdue.Validate(data.OverdueLog);
         if (!Enum.IsDefined(data.Settings.ActiveMode)) throw new ArgumentException("Invalid app mode.");
         if (data.Categories.Any(c => c is null)) throw new ArgumentException("A category is invalid.");
         var s = data.Settings;

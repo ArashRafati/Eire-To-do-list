@@ -32,7 +32,7 @@ jpype.startJVM()
 try:
     from org.mpxj.reader import UniversalProjectReader
     from org.mpxj import TimeUnit
-    for path in sorted(folder.glob('*.xml')):
+    for path in sorted(p for p in folder.glob('*.xml') if p.name != 'network.xml'):
         project = UniversalProjectReader().read(str(path))
         tasks = list(project.getTasks())
         assert len(tasks) == len(nodes) + 1, (path.name, len(tasks))
@@ -64,3 +64,43 @@ assert review['Title'] in result.stdout and review['Notes'] in result.stdout
 for node in nodes:
     assert node['Title'] in result.stdout
 print('PASS independent PDF text extraction: full labels, multiline notes and Unicode')
+
+# Free-form diagrams use a separate interchange format, without scheduling semantics.
+import xml.etree.ElementTree as ET
+network = json.loads((folder / 'network.json').read_text())
+rows = list(csv.DictReader(io.StringIO((folder / 'network.csv').read_text(encoding='utf-8-sig'))))
+node_rows = {r['ID']: r for r in rows if r['Type'] == 'Node'}
+lead_rows = {r['ID']: r for r in rows if r['Type'] == 'Lead'}
+assert len(node_rows) == len(network['Nodes']) and len(lead_rows) == len(network['Leads'])
+for node in network['Nodes']:
+    row = node_rows[node['Id']]
+    assert row['Title / Description'] == node['Title'] and row['Notes'] == node['Notes']
+    assert float(row['X']) == node['X'] and float(row['Y']) == node['Y']
+    assert json.loads(row['Text Format JSON']) == node['Format']
+for lead in network['Leads']:
+    row = lead_rows[lead['Id']]
+    assert row['From Node ID'] == lead['From'] and row['To Node ID'] == lead['To']
+    assert row['Double Headed'].lower() == str(lead['DoubleHeaded']).lower()
+    assert row['Title / Description'] == lead['Description']
+ns = {'e': 'urn:eire:connection-diagram:1'}
+xml = ET.parse(folder / 'network.xml').getroot()
+xml_nodes = {n.attrib['id']: n for n in xml.findall('e:Nodes/e:Node', ns)}
+xml_leads = {n.attrib['id']: n for n in xml.findall('e:Leads/e:Lead', ns)}
+assert len(xml_nodes) == len(network['Nodes']) and len(xml_leads) == len(network['Leads'])
+for node in network['Nodes']:
+    n = xml_nodes[node['Id']]
+    assert n.findtext('e:Title', namespaces=ns) == node['Title'] and n.findtext('e:Notes', namespaces=ns) == node['Notes']
+    assert float(n.attrib['x']) == node['X'] and float(n.attrib['y']) == node['Y']
+    assert json.loads(n.findtext('e:Format', namespaces=ns)) == node['Format']
+for lead in network['Leads']:
+    n = xml_leads[lead['Id']]
+    assert n.attrib['from'] == lead['From'] and n.attrib['to'] == lead['To']
+    assert n.attrib['doubleHeaded'] == str(lead['DoubleHeaded']).lower()
+    assert n.findtext('e:Description', namespaces=ns) == lead['Description']
+print('PASS independent network CSV/XML parsers: all nodes, positions, formats, directions, double leads and labels')
+result = subprocess.run(['pdftotext', str(folder / 'network.pdf'), '-'], check=True, capture_output=True, text=True)
+for node in network['Nodes']:
+    assert node['Title'] in result.stdout and node['Notes'] in result.stdout
+for lead in network['Leads']:
+    assert lead['Description'] in result.stdout
+print('PASS independent network PDF text extraction: full labels, leads, notes and Unicode')

@@ -45,7 +45,7 @@ internal static class ChartChecks
         {
             var chart = Fixture(); var selected = chart.Nodes.Last(); for (var i = 0; i < 8; i++) Charts.Add(chart, selected.Id, true, "Branch " + i);
             Charts.Add(chart, null, false, "Second root");
-            foreach (var layout in Enum.GetValues<ChartLayout>())
+            foreach (var layout in Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform))
             {
                 chart.Layout = layout; var scene = ChartGeometry.Arrange(chart); Assert(scene.Boxes.Count == chart.Nodes.Count);
                 Assert(scene.Boxes.All(b => b.X >= 0 && b.Y >= 0 && b.X + b.Width <= scene.Width && b.Y + b.Height <= scene.Height));
@@ -129,7 +129,7 @@ internal static class ChartChecks
                     }
                 }
             }
-            foreach (var layout in Enum.GetValues<ChartLayout>()) { chart.Layout = layout; NoOverlap(ChartGeometry.Arrange(chart)); }
+            foreach (var layout in Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform)) { chart.Layout = layout; NoOverlap(ChartGeometry.Arrange(chart)); }
         });
         check("Diagrams, module, selection, zoom and node edits persist and restore", () =>
         {
@@ -200,7 +200,7 @@ internal static class ChartChecks
     internal static void WriteFixtures(string directory)
     {
         Directory.CreateDirectory(directory); var chart = Fixture(); File.WriteAllText(Path.Combine(directory, "fixture.json"), JsonSerializer.Serialize(chart, DataDocument.JsonOptions));
-        foreach (var format in Enum.GetValues<ChartExportFormat>()) ChartExports.Save(chart, format, Path.Combine(directory, format + (format == ChartExportFormat.Pdf ? ".pdf" : format is ChartExportFormat.ProjectXml or ChartExportFormat.PrimaveraXml ? ".xml" : ".csv")));
+        foreach (var format in Enum.GetValues<ChartExportFormat>().Where(f => f is not ChartExportFormat.NetworkCsv and not ChartExportFormat.NetworkXml)) ChartExports.Save(chart, format, Path.Combine(directory, format + (format == ChartExportFormat.Pdf ? ".pdf" : format is ChartExportFormat.ProjectXml or ChartExportFormat.PrimaveraXml ? ".xml" : ".csv")));
         foreach (var version in ChartExports.PrimaveraVersions) ChartExports.Save(chart, ChartExportFormat.PrimaveraXml, Path.Combine(directory, "Primavera-" + version + ".xml"), version);
     }
 }

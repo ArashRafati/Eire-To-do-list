@@ -19,8 +19,8 @@ internal sealed class DiagramEditor : Window
         project.ItemsSource = options; project.SelectedItem = options.FirstOrDefault(p => p.Value == candidate.ProjectId) ?? options[0];
         var start = new TextBox { Text = AustralianDates.Format(candidate.ScheduleStart) };
         var error = new TextBlock { Foreground = Ui.Accent, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) };
-        var panel = new StackPanel(); panel.Children.Add(Ui.Field("Diagram name *", name)); panel.Children.Add(Ui.Field("Project (optional)", project)); panel.Children.Add(Ui.Field("Scheduling start · dd/MM/yyyy *", start));
-        panel.Children.Add(new TextBlock { Text = "Undated leaf nodes use this date when exported to planning tools. Exports use a seven-day, eight-hour calendar.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0), FontSize = 15 }); panel.Children.Add(error);
+        var panel = new StackPanel(); panel.Children.Add(Ui.Field("Diagram name *", name)); panel.Children.Add(Ui.Field("Project (optional)", project)); if (candidate.Kind == DiagramKind.Hierarchy) panel.Children.Add(Ui.Field("Scheduling start · dd/MM/yyyy *", start));
+        panel.Children.Add(new TextBlock { Text = candidate.Kind == DiagramKind.Network ? "Nodes have independent positions and can have multiple incoming and outgoing leads." : "Undated leaf nodes use this date when exported to planning tools. Exports use a seven-day, eight-hour calendar.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0), FontSize = 15 }); panel.Children.Add(error);
         var root = new DockPanel { Margin = new Thickness(18) }; var footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) };
         var cancel = Ui.Button("Cancel", (_, _) => Close()); cancel.IsCancel = true; footer.Children.Add(cancel);
         var button = Ui.Button("Save diagram", (_, _) =>
@@ -48,12 +48,12 @@ internal sealed class NodeEditor : Window
         parents.AddRange(Charts.Outline(candidate).Where(o => !forbidden.Contains(o.Node.Id)).Select(o => new ProjectChoice(o.Code + " · " + o.Node.Title, o.Node.Id)));
         parent.ItemsSource = parents; parent.SelectedItem = parents.First(p => p.Value == node.ParentId);
         var error = new TextBlock { Foreground = Ui.Accent, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) };
-        var panel = new StackPanel(); panel.Children.Add(Ui.Field("Node label * · up to 100 characters", label)); panel.Children.Add(Ui.Field("Parent · moves this branch", parent));
+        var panel = new StackPanel(); panel.Children.Add(Ui.Field("Node label * · up to 100 characters", label)); if (candidate.Kind == DiagramKind.Hierarchy) panel.Children.Add(Ui.Field("Parent · moves this branch", parent));
         var dates = new Grid(); dates.ColumnDefinitions.Add(new()); dates.ColumnDefinitions.Add(new());
         var a = Ui.Field("Start · dd/MM/yyyy (optional)", start); a.Margin = new Thickness(0, 0, 6, 0); var z = Ui.Field("Finish · dd/MM/yyyy (optional)", finish); z.Margin = new Thickness(6, 0, 0, 0); Grid.SetColumn(z, 1); dates.Children.Add(a); dates.Children.Add(z); panel.Children.Add(dates);
-        panel.Children.Add(Ui.Field("Duration · days (1–3,650)", duration));
-        panel.Children.Add(new TextBlock { Text = "For leaf nodes, both dates override duration. Branch dates roll up from children in planning exports. Diagram links show hierarchy, not scheduling dependencies.", TextWrapping = TextWrapping.Wrap, FontSize = 15, Margin = new Thickness(0, 12, 0, 0) });
-        panel.Children.Add(Ui.Field("Full notes · Ctrl+Enter to save", notes)); panel.Children.Add(completed); panel.Children.Add(Ui.Label("Permanent export ID · " + node.ActivityId)); panel.Children.Add(error);
+        if (candidate.Kind == DiagramKind.Hierarchy) panel.Children.Add(Ui.Field("Duration · days (1–3,650)", duration));
+        panel.Children.Add(new TextBlock { Text = candidate.Kind == DiagramKind.Network ? "Dates are optional. Unfinished nodes with a finish date before today appear in the overdue log." : "For leaf nodes, both dates override duration. Branch dates roll up from children in planning exports. Diagram links show hierarchy, not scheduling dependencies.", TextWrapping = TextWrapping.Wrap, FontSize = 15, Margin = new Thickness(0, 12, 0, 0) });
+        panel.Children.Add(Ui.Field("Full notes · Ctrl+Enter to save", notes)); panel.Children.Add(completed); panel.Children.Add(Ui.Label(candidate.Kind == DiagramKind.Network ? "Permanent node ID · " + node.Id : "Permanent export ID · " + node.ActivityId)); panel.Children.Add(error);
         void Commit()
         {
             try
@@ -75,17 +75,17 @@ internal sealed class NodeEditor : Window
 internal sealed record ExportChoice(string Label, ChartExportFormat Format, string Extension);
 internal sealed class ChartExportEditor : Window
 {
-    public ChartExportEditor(Func<ChartExportFormat, string, Task<bool>> export)
+    public ChartExportEditor(Func<ChartExportFormat, string, Task<bool>> export, DiagramKind kind = DiagramKind.Hierarchy)
     {
         Ui.ApplyWindowStyle(this); Title = "Export diagram"; Width = 560; Height = 385; MinWidth = 440; MinHeight = 320; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
-        var format = new ComboBox { ItemTemplate = Ui.DisplayTemplate("Label") }; format.ItemsSource = new ExportChoice[] {
+        var format = new ComboBox { ItemTemplate = Ui.DisplayTemplate("Label") }; format.ItemsSource = kind == DiagramKind.Network ? new ExportChoice[] { new("PDF · connections + node / lead details", ChartExportFormat.Pdf, "pdf"), new("CSV · nodes and leads", ChartExportFormat.NetworkCsv, "csv"), new("XML · Eire connection diagram", ChartExportFormat.NetworkXml, "xml") } : new ExportChoice[] {
             new("PDF · chart + full node details",ChartExportFormat.Pdf,"pdf"),new("XML · Microsoft Project (MSPDI)",ChartExportFormat.ProjectXml,"xml"),new("XML · Primavera P6 (PMXML)",ChartExportFormat.PrimaveraXml,"xml"),
             new("CSV · complete hierarchy",ChartExportFormat.HierarchyCsv,"csv"),new("CSV · Microsoft Project mapping",ChartExportFormat.ProjectCsv,"csv"),new("CSV · P6 WBS / activity mapping material",ChartExportFormat.PrimaveraCsv,"csv")}; format.SelectedIndex = 0;
         var version = new ComboBox { ItemsSource = ChartExports.PrimaveraVersions, SelectedIndex = 0, IsEnabled = false };
         format.SelectionChanged += (_, _) => version.IsEnabled = (format.SelectedItem as ExportChoice)?.Format == ChartExportFormat.PrimaveraXml;
         var error = new TextBlock { Foreground = Ui.Accent, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0) };
-        var panel = new StackPanel(); panel.Children.Add(Ui.Field("Export format", format)); panel.Children.Add(Ui.Field("P6 XML target version · use your version or an older one", version)); panel.Children.Add(new TextBlock { Text = "XML exports carry the hierarchy directly. CSV needs field mapping; P6 CSV rows must be copied into a P6-exported XLSX template. See PLANNING-EXPORTS.md included with the app.", TextWrapping = TextWrapping.Wrap, FontSize = 15, Margin = new Thickness(0, 12, 0, 0) }); panel.Children.Add(error);
+        var panel = new StackPanel(); panel.Children.Add(Ui.Field("Export format", format)); panel.Children.Add(Ui.Field("P6 XML target version · use your version or an older one", version)); panel.Children.Add(new TextBlock { Text = kind == DiagramKind.Network ? "Connection exports preserve nodes, positions and directional leads. Free-form links are diagram relationships; use WBS mode for Microsoft Project / P6 planning exports." : "XML exports carry the hierarchy directly. CSV needs field mapping; P6 CSV rows must be copied into a P6-exported XLSX template. See PLANNING-EXPORTS.md included with the app.", TextWrapping = TextWrapping.Wrap, FontSize = 15, Margin = new Thickness(0, 12, 0, 0) }); panel.Children.Add(error);
         var root = new DockPanel { Margin = new Thickness(18) }; var footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; var cancel = Ui.Button("Cancel", (_, _) => Close()); cancel.IsCancel = true; footer.Children.Add(cancel);
         var saving = false;
         var save = Ui.Button("Choose file / export", async (sender, _) =>
