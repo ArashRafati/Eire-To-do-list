@@ -1,15 +1,15 @@
-EIRE TO-DO / MIND MAP + WBS / GRAPH 3.2 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.3 — PORTABLE WINDOWS WIDGET
 
-1. Unzip EireTodo-Windows-x64.zip to a folder you can write to, such as
+1. Unzip SUMAPP-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
-2. Double-click EireTodo.exe. No installer, runtime installation, account,
+2. Double-click SUMAPP.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
 
 UPDATING: Back up your data first. Close the running app, unzip the new release, then run the
-new EireTodo.exe. Your tasks, projects and preferences are read from the same
-profile data folder. The update needs no manual data migration. Larger text and dark
-high-contrast panels are used throughout the app. Version 1.2 adds a custom
-black-and-yellow icon to the executable, taskbar, app windows and header.
+new SUMAPP.exe. Your tasks, projects and preferences are read from the same
+profile data folder (%LOCALAPPDATA%\EireTodo). The update needs no manual data
+migration. SUMAPP uses readable neutral surfaces, teal actions and its corrected
+logo/icon. The Eire header logo is pending its accessible original PNG/SVG asset.
 If a previously pinned shortcut keeps an old icon, unpin it and pin the
 updated executable through the normal Windows menu.
 
@@ -72,7 +72,7 @@ Microsoft Project XML, native P6 XML and PDF chart + full node details.
 XML carries hierarchy directly. P6's CSV needs mapping into a P6-exported XLSX
 template; it is not a direct P6 CSV import. The guide PLANNING-EXPORTS.md included
 with this app provides the exact routes and scheduling/calendar conventions.
-Backups/restores include all diagrams, formatting, leads and overdue history. Continue using version 3.2 after making
+Backups/restores include all diagrams, formatting, leads and overdue history. Continue using version 3.3 after making
 charts; older versions cannot preserve the new diagram fields when saving.
 
 DRAGGING AND RIBBON
@@ -177,3 +177,14 @@ data folder, move only data.json aside, reopen the app, then use Restore.
 Windows UI behaviour has not been executed in the Linux build environment.
 See WINDOWS-VERIFICATION.md for the remaining desktop checks. Data, filters,
 validation, restart persistence and backup/restore passed automated checks.
+
+VERSION 3.3: Delete projects through Projects -> Delete. Choose where to move
+any tasks; empty projects delete immediately. Tasks, diagrams and history are
+preserved. Priority is available in task/node details. Node sizing now follows
+actual text measurements and reflows after title editing/format changes.
+
+WINDOWS SCREENSHOTS: From the app folder in a normal PowerShell window, run:
+.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
+This uses isolated temporary sample data and leaves your actual profile intact.
+It saves real WPF to-do/mind-map PNGs and visual-checks.txt. This command cannot
+be tested in the Linux cloud environment. See BRANDING.md for current limitations.

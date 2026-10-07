@@ -17,7 +17,7 @@ internal sealed partial class ChartWorkspace : UserControl
     private readonly string dataDirectory;
     private readonly ComboBox diagrams = new() { Width = 210, MinHeight = 34, FontSize = 15, ItemTemplate = Ui.DisplayTemplate("Name"), Margin = new Thickness(0, 0, 8, 6) };
     private readonly ComboBox layouts = new() { Width = 235, MinHeight = 34, FontSize = 15, ItemTemplate = Ui.DisplayTemplate("Label"), Margin = new Thickness(0, 0, 8, 6) };
-    private readonly Canvas canvas = new() { Background = new SolidColorBrush(Color.FromRgb(8, 12, 18)) };
+    private readonly Canvas canvas = new() { Background = Ui.Brush("Surface") };
     private readonly ScrollViewer viewport = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = true };
     private readonly ScrollViewer controls = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = 195 };
     private readonly TextBlock status = new() { FontSize = 15, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0) };
@@ -165,7 +165,7 @@ internal sealed partial class ChartWorkspace : UserControl
                 if (tasks.Count > Charts.MaxNodes - 1) throw new ArgumentException("This project exceeds the 999-task diagram limit.");
                 if (tasks.Any(t => t.Description.Trim().Length > 100)) throw new ArgumentException("Some task descriptions exceed the 100-character planning node limit. Shorten them before copying this project.");
                 var chart = Charts.Create(project.Name, defaultLayout, project.Id); var root = chart.Nodes[0].Id;
-                foreach (var task in tasks) { var node = Charts.Add(chart, root, true, task.Description); node.Notes = task.Notes; node.StartDate = task.StartDate; node.FinishDate = task.FinishDate; node.Completed = task.Completed; }
+                foreach (var task in tasks) { var node = Charts.Add(chart, root, true, task.Description); node.Notes = task.Notes; node.StartDate = task.StartDate; node.FinishDate = task.FinishDate; node.Completed = task.Completed; node.Priority = task.Priority; node.Format = task.Format.Clone(); }
                 SaveNew(chart); RefreshData(); picker.DialogResult = true;
             })) viewport.Focus();
         }, true)); picker.Content = panel; picker.ShowDialog();
@@ -199,7 +199,7 @@ internal sealed partial class ChartWorkspace : UserControl
         if (Current is not Diagram chart) { NewDiagram(); return; }
         if (!networkMode && child && !selectedId.HasValue) { MessageBox.Show(OwnerWindow, "Select a parent node first.", "Add child"); return; }
         Guid? added = null;
-        if (!Try(() => { var candidate = chart.Clone(); var n = networkMode ? GraphCreation.Add(candidate, selectedId, direction: Direction, routing: Routing, format: SelectedFormat(), unlinked: unlinked) : Charts.Add(candidate, selectedId, child); if (selectedId is Guid source) n.Format = chart.Nodes.Single(x => x.Id == source).Format.Clone(); added = n.Id; Commit(candidate); })) return;
+        if (!Try(() => { var candidate = chart.Clone(); var n = networkMode ? GraphCreation.Add(candidate, selectedId, direction: Direction, routing: Routing, format: SelectedFormat(), unlinked: unlinked, measure: WindowsNodeMetrics.Measure) : Charts.Add(candidate, selectedId, child); if (selectedId is Guid source) n.Format = chart.Nodes.Single(x => x.Id == source).Format.Clone(); added = n.Id; Commit(candidate); })) return;
         selectedId = added; RefreshData(); viewport.Focus(); ScrollToSelection(); BeginTitle();
     }
     private void EditNode()
@@ -302,12 +302,12 @@ internal sealed partial class ChartWorkspace : UserControl
         {
             var o = nodeIndex[box.Id]; var n = o.Node; var level = nodeLevels[n.Id]; var colours = DiagramAppearance.Colours(chart.Palette);
             var content = new Grid { Margin = new Thickness(11, 7, 11, 7) }; content.RowDefinitions.Add(new() { Height = GridLength.Auto }); content.RowDefinitions.Add(new()); content.RowDefinitions.Add(new() { Height = GridLength.Auto });
-            content.Children.Add(new TextBlock { Text = o.Code, FontFamily = new FontFamily("Consolas"), FontSize = 12, Foreground = Colour(colours.Accent) });
-            var label = new TextBlock { Text = n.Title, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 1), VerticalAlignment = VerticalAlignment.Top, LineHeight = n.Format.Size * 1.35, LineStackingStrategy = LineStackingStrategy.BlockLineHeight }; FormattingTools.Apply(label, n.Format); label.Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Colour(colours.Text); Grid.SetRow(label, 1); content.Children.Add(label); titleViews[n.Id] = (content, label);
+            content.Children.Add(new TextBlock { Text = o.Code, FontFamily = new FontFamily("Consolas"), FontSize = 12, Foreground = Colour(DiagramAppearance.Text(chart, n, level)), FontWeight = FontWeights.SemiBold });
+            var label = new TextBlock { Text = n.Title, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 1), VerticalAlignment = VerticalAlignment.Top, LineHeight = n.Format.Size * 1.35, LineStackingStrategy = LineStackingStrategy.BlockLineHeight }; FormattingTools.Apply(label, n.Format); label.Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Colour(DiagramAppearance.Text(chart, n, level)); Grid.SetRow(label, 1); content.Children.Add(label); titleViews[n.Id] = (content, label);
             var preview = string.Join(" ", n.Notes.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
             var meta = preview.Length > 0 ? preview : n.StartDate.HasValue || n.FinishDate.HasValue ? $"{AustralianDates.Format(n.StartDate)} → {AustralianDates.Format(n.FinishDate)}" : "";
-            var note = new TextBlock { Text = meta, FontSize = 12, Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis, Visibility = meta.Length == 0 ? Visibility.Collapsed : Visibility.Visible, Margin = new Thickness(0,4,0,0) }; Grid.SetRow(note, 2); content.Children.Add(note);
-            var border = new Border { Width = box.Width, Height = box.Height, Background = Colour(DiagramAppearance.Fill(chart, level)), BorderBrush = Colour(colours.Border), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(DiagramAppearance.Radius(chart.Design, level)), Child = content, Tag = n.Id, ToolTip = n.Title + "\nDouble-click / F2: title. Ctrl+Enter / right-click: details. Drag to move.", Focusable = true };
+            var note = new TextBlock { Text = meta, FontSize = 12, Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Colour(DiagramAppearance.Text(chart, n, level)), TextTrimming = TextTrimming.CharacterEllipsis, Visibility = meta.Length == 0 ? Visibility.Collapsed : Visibility.Visible, Margin = new Thickness(0,4,0,0) }; Grid.SetRow(note, 2); content.Children.Add(note);
+            var border = new Border { Width = box.Width, Height = box.Height, Background = Colour(DiagramAppearance.Fill(chart, n, level)), BorderBrush = Colour(colours.Border), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(DiagramAppearance.Radius(chart.Design, level)), Child = content, Tag = n.Id, ToolTip = n.Title + "\nDouble-click / F2: title. Ctrl+Enter / right-click: details. Drag to move.", Focusable = true };
             AttachNodeInteraction(border, n.Id);
             Canvas.SetLeft(border, box.X); Canvas.SetTop(border, box.Y); canvas.Children.Add(border); nodeViews[n.Id] = border;
         }
@@ -341,7 +341,7 @@ internal sealed partial class ChartWorkspace : UserControl
         if (Current is Diagram selectionChart)
         {
             var colours = DiagramAppearance.Colours(selectionChart.Palette); var levels = DiagramAppearance.Levels(selectionChart);
-            foreach (var (node, view) in nodeViews) { view.BorderBrush = node == id ? Colour(colours.Accent) : selectionChart.Nodes.Any(n => n.Id == node && Overdue.IsDue(n.FinishDate, n.Completed)) ? OverdueBrush : Colour(colours.Border); view.BorderThickness = new Thickness(node == id ? 2 : 1); view.Background = Colour(DiagramAppearance.Fill(selectionChart, levels[node])); }
+            foreach (var (node, view) in nodeViews) { view.BorderBrush = node == id ? Ui.Accent : selectionChart.Nodes.Any(n => n.Id == node && Overdue.IsDue(n.FinishDate, n.Completed)) ? OverdueBrush : Colour(colours.Border); view.BorderThickness = new Thickness(node == id ? 2 : 1); view.Background = Colour(DiagramAppearance.Fill(selectionChart, selectionChart.Nodes.Single(n => n.Id == node), levels[node])); }
         }
         foreach (var button in nodeActions) button.IsEnabled = id.HasValue && Current?.Nodes.Any(n => n.Id == id) == true;
     }

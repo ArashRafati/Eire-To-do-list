@@ -73,7 +73,7 @@ internal sealed partial class ChartWorkspace
     }
     private void PrepareOpenScene(Diagram chart, bool opening)
     {
-        documentScene = ChartGeometry.Arrange(chart); documentBounds = OpenWorkspace.Bounds(chart, documentScene);
+        documentScene = ChartGeometry.Arrange(chart, measure: WindowsNodeMetrics.Measure); documentBounds = OpenWorkspace.Bounds(chart, documentScene);
         if (opening) canvasOrigin = new(OpenWorkspace.Padding + Math.Max(0, -documentBounds.X), OpenWorkspace.Padding + Math.Max(0, -documentBounds.Y));
         var dx = Math.Max(0, OpenWorkspace.Padding - documentBounds.X - canvasOrigin.X);
         var dy = Math.Max(0, OpenWorkspace.Padding - documentBounds.Y - canvasOrigin.Y);

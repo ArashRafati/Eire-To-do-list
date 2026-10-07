@@ -14,6 +14,7 @@ public sealed class ChartNode
     public Guid? ParentId { get; set; }
     public int Order { get; set; }
     public string Title { get; set; } = "New node";
+    public bool Priority { get; set; }
     public string Notes { get; set; } = "";
     public DateOnly? StartDate { get; set; }
     public DateOnly? FinishDate { get; set; }
@@ -204,20 +205,16 @@ public static class ChartGeometry
 {
     public const double NodeWidth = 220, NodeHeight = 72, Gap = 28, LevelGap = 66, Margin = 40;
     public static (double Width, double Height) Measure(ChartNode node, int level = 1)
-    {
-        var width = Math.Max(level == 1 ? 220 : level == 2 ? 200 : 180, node.Format.Size * 6 + 28);
-        var lines = DiagramAppearance.TitleLines(node.Title, node.Format.Size, width - 24);
-        var meta = !string.IsNullOrWhiteSpace(node.Notes) || node.StartDate.HasValue || node.FinishDate.HasValue ? 23 : 0;
-        return (width, Math.Max(level == 1 ? 80 : level == 2 ? 72 : 66, 38 + lines * node.Format.Size * 1.35 + meta));
-    }
+        => NodeMetrics.Measure(node, level);
     // Subtree spans reserve space for every leaf; siblings cannot overlap even at uneven depths.
-    public static ChartScene Arrange(Diagram chart, bool includeCollapsed = false)
+    public static ChartScene Arrange(Diagram chart, bool includeCollapsed = false, Func<ChartNode, int, (double Width, double Height)>? measure = null)
     {
+        measure ??= Measure;
         if (chart.Kind == DiagramKind.Network)
         {
             Charts.Validate(chart);
             var levels = DiagramAppearance.Levels(chart);
-            var free = chart.Nodes.Select(n => { var s = Measure(n, levels[n.Id]); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height); }).ToList();
+            var free = chart.Nodes.Select(n => { var s = measure(n, levels[n.Id]); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height); }).ToList();
             var index = free.ToDictionary(b => b.Id);
             var routes = chart.Leads.Select(l => LeadGeometry.Route(index[l.From], index[l.To], l.Routing, obstacles: free, fromSide: l.FromSide, toSide: l.ToSide)).ToList();
             return new(free, Math.Max(500, free.Select(b => b.X + b.Width + Margin).Concat(routes.Select(p => Math.Max(p.C1X, p.C2X) + Margin)).DefaultIfEmpty(0).Max()), Math.Max(300, free.Select(b => b.Y + b.Height + Margin).Concat(routes.Select(p => Math.Max(p.C1Y, p.C2Y) + Margin)).DefaultIfEmpty(0).Max()));
@@ -225,7 +222,8 @@ public static class ChartGeometry
         var outline = Charts.Outline(chart, !includeCollapsed); var visible = outline.Select(o => o.Node.Id).ToHashSet();
         var boxes = new List<NodeBox>();
         var hierarchyLevels = outline.ToDictionary(o => o.Node.Id, o => o.Level);
-        (double Width, double Height) Size(ChartNode node) => Measure(node, hierarchyLevels[node.Id]);
+        var measured = outline.ToDictionary(o => o.Node.Id, o => measure(o.Node, o.Level));
+        (double Width, double Height) Size(ChartNode node) => measured[node.Id];
         var childIndex = chart.Nodes.Where(n => visible.Contains(n.Id)).GroupBy(n => n.ParentId ?? Guid.Empty)
             .ToDictionary(g => g.Key, g => g.OrderBy(n => n.Order).ThenBy(n => n.Number).ToList());
         List<ChartNode> Kids(Guid? id) => childIndex.GetValueOrDefault(id ?? Guid.Empty) ?? [];

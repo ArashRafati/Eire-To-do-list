@@ -23,7 +23,7 @@ internal sealed partial class ChartWorkspace
     private Guid? connectFrom;
     private readonly Dictionary<Guid, (Grid Grid, TextBlock Label)> titleViews = [];
     private readonly List<UIElement> leadViews = [];
-    private static readonly Brush OverdueBrush = new SolidColorBrush(Color.FromRgb(255, 91, 91));
+    private static readonly Brush OverdueBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(BrandTheme.Error));
     private TextBox? inline;
     private Guid? inlineId;
     private Diagram? inlineBefore;
@@ -42,7 +42,7 @@ internal sealed partial class ChartWorkspace
         if (!FinishInlineEdit() || selectedId is not Guid id || Current is not Diagram chart || !titleViews.TryGetValue(id, out var view)) return;
         inlineId = id; inlineBefore = chart.Clone(); inlineSaved = false;
         var node = chart.Nodes.Single(n => n.Id == id);
-        inline = new TextBox { Text = node.Title, MaxLength = 100, FontFamily = new FontFamily(node.Format.Family), FontSize = node.Format.Size, FontWeight = node.Format.Bold ? FontWeights.Bold : FontWeights.Normal, FontStyle = node.Format.Italic ? FontStyles.Italic : FontStyles.Normal, TextAlignment = node.Format.Alignment == TextJustification.Centre ? TextAlignment.Center : node.Format.Alignment == TextJustification.Right ? TextAlignment.Right : TextAlignment.Left, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false, Padding = new Thickness(2), VerticalAlignment = VerticalAlignment.Top };
+        inline = new TextBox { Text = node.Title, MaxLength = 100, FontFamily = new FontFamily(node.Format.Family), FontSize = node.Format.Size, FontWeight = node.Format.Bold ? FontWeights.Bold : FontWeights.Normal, FontStyle = node.Format.Italic ? FontStyles.Italic : FontStyles.Normal, TextAlignment = node.Format.Alignment == TextJustification.Centre ? TextAlignment.Center : node.Format.Alignment == TextJustification.Right ? TextAlignment.Right : TextAlignment.Left, TextWrapping = TextWrapping.Wrap, AcceptsReturn = false, MinHeight = 0, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new Thickness(2), VerticalAlignment = VerticalAlignment.Top };
         view.Label.Visibility = Visibility.Collapsed; Grid.SetRow(inline, 1); view.Grid.Children.Add(inline);
         var editor = inline;
         editor.TextChanged += (_, _) => { status.Text = "Saving title…"; titleTimer.Stop(); titleTimer.Start(); };
@@ -85,7 +85,10 @@ internal sealed partial class ChartWorkspace
         {
             view.Label.Text = Current?.Nodes.FirstOrDefault(n => n.Id == id)?.Title ?? view.Label.Text; view.Label.Visibility = Visibility.Visible; view.Grid.Children.Remove(inline);
         }
-        inline = null; inlineId = null; inlineBefore = null; endingInline = false; return true;
+        var reflow = inlineSaved; var version = renderVersion;
+        inline = null; inlineId = null; inlineBefore = null; endingInline = false;
+        if (reflow) Dispatcher.InvokeAsync(() => { if (inline is null && renderVersion == version) RefreshData(); }, DispatcherPriority.Background);
+        return true;
     }
     private void StartConnection()
     {

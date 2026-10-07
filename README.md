@@ -1,9 +1,53 @@
-# Eire To-do
+# SUMAPP
 
 A portable, offline Windows desktop to-do, mind-map/WBS and graph widget built with WPF and .NET 10.
-The Windows x64 release bundles its runtime in `EireTodo.exe`; users unzip and
+The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
+
+## SUMAPP branding, project deletion and measured nodes — version 3.3
+
+The supplied SAMAP wordmark was changed to **SUMAPP**, as requested, preserving
+its teal ribbon symbol. The corrected transparent artwork is used in the header
+and nine-resolution executable/window icon. The header has a small neutral logo
+backing, a black background, thin Eire yellow top strip and top-right local clock.
+Shared component resources use the requested neutral/teal palette with readable
+ink text, dark-teal primary actions and restrained yellow priority badges.
+
+**Eire branding is pending:** the inline Eire logo's source bytes are not accessible
+in the workspace. The right-hand header labels the missing asset explicitly;
+no recreated Eire logo is substituted. Supply its original PNG/SVG before
+finalising the brand. See [BRANDING.md](BRANDING.md).
+
+Projects now have **Delete**. Empty projects are removed immediately; for projects
+with tasks, choose an active destination or create one. Deletion and reassignment
+save atomically. Task IDs, creation times, dates, notes, status, formatting and
+history stay intact; diagrams move to the destination or lose only their optional
+project association. Save failures leave the original project and tasks intact.
+
+Node widths adapt to title length and hierarchy level. Heights use real WPF
+TextBlock measurements for the selected font, weight and wrapping; selection
+border space is reserved. PDF exports measure their bundled fonts and wrap at
+word boundaries. Layouts reserve actual node dimensions, including large fonts
+and notes/date previews, and reflow after title confirmation or blur. New graph
+nodes reserve the renderer's final size after their lead changes the graph levels.
+Priority can be set in task/node details; status checkboxes remain accessible as
+the first table column. Existing filters, graph leads, drag/drop and exports remain.
+
+The executable is now **SUMAPP.exe**. The existing `%LOCALAPPDATA%\EireTodo`
+profile location is deliberately retained so previous tasks/settings still load.
+Close the previous version before running SUMAPP. Avoid editing updated data
+with older executables, which cannot preserve the new priority flag.
+
+[To-do design preview](previews/SUMAPP-to-do-design.png) ·
+[Mind-map design preview](previews/SUMAPP-mind-map-design.png).
+These are labelled vector design previews, **not native Windows screenshots**.
+The Linux environment cannot run WPF. On Windows, the real app can capture both
+views and check header/tab resizing and long-title sizing in isolated sample data:
+
+```powershell
+.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
+```
 
 ## Editing, lead handles and paper preview — version 3.2
 
@@ -104,7 +148,7 @@ retain the Microsoft Project / P6 planning exports. Free-form relationships are
 not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
 portable output and preserves size, weight, italic, underline and alignment;
 Windows font families use this export fallback. All new data is included in
-JSON backup/restore. **Back up before updating and continue using version 3.2;
+JSON backup/restore. **Back up before updating and continue using version 3.3;
 older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1
@@ -144,7 +188,7 @@ executable for subsequent changes; older app versions do not understand diagrams
 
 ## App icon update 1.2
 
-A custom black-and-yellow Eire icon is now embedded in the Windows executable
+Historically, version 1.2 embedded a black-and-yellow Eire icon, now superseded by SUMAPP. That icon was embedded in the Windows executable
 and applied to all app windows. The icon appears in Explorer, desktop shortcuts,
 the taskbar and the window switcher. The header uses the same artwork. The
 Windows ICO contains 16, 20, 24, 32, 40, 48, 64, 128 and 256 px sizes.
@@ -154,19 +198,19 @@ installation step is needed when running the portable executable.
 
 ## Interface update 1.1
 
-The interface now uses 17 px body/table text, bright white labels, dark black/slate
+Historically, version 1.1 used 17 px body/table text, bright white labels, dark black/slate
 panels and yellow focus indicators. Explicit window styling fixes the white
 background shown in the first Windows screenshots; explicit dropdown templates
 show project and category names. See [CHANGELOG.md](CHANGELOG.md).
 
 To update, close the running app, download and extract the new ZIP, then replace
-or run the new `EireTodo.exe`. The app reads the same local data folder and schema;
+or run the new `SUMAPP.exe`. The app reads the same local data folder and schema;
 there is no data migration or separate runtime installation.
 
 ## Run and data
 
-Unzip `artifacts/EireTodo-Windows-x64.zip` into a writable folder and double-click
-`EireTodo.exe`. Supports Windows 10 22H2 / Windows 11 x64. Application data and
+Unzip `artifacts/SUMAPP-Windows-x64.zip` into a writable folder and double-click
+`SUMAPP.exe`. Supports Windows 10 22H2 / Windows 11 x64. Application data and
 settings live in `%LOCALAPPDATA%\EireTodo\data.json`. Moving the executable does
 not move or reset data. The app is unsigned; normal Windows/company policy may
 require IT approval. The app does not bypass security controls.
@@ -193,9 +237,9 @@ require IT approval. The app does not bypass security controls.
   single-instance profile lock, validated full-data backup/restore, and a
   pre-restore safety copy. Save failures stay visible and reject the failed edit.
 
-The header and application icon share the black-and-yellow three-bar mark,
-using new icon artwork inspired by the supplied logo. Artwork and the
-multi-resolution ICO are included under `src/EireTodo.Windows/Assets`.
+The header and application icon use the corrected SUMAPP artwork. Logo and
+multi-resolution ICO assets are included under `src/EireTodo.Windows/Assets`.
+The company logo remains pending its accessible original source asset.
 
 ## Build on Windows (no administrator privileges)
 
@@ -224,7 +268,7 @@ dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-rest
 
 The project pins `win-x64`, `SelfContained=true`, `PublishSingleFile=true`,
 `IncludeNativeLibrariesForSelfExtract=true` and disables trimming. The published
-app needs only `EireTodo.exe`. Its embedded manifest requests `asInvoker`, with
+app needs only `SUMAPP.exe`. Its embedded manifest requests `asInvoker`, with
 `uiAccess=false` and `PerMonitorV2` DPI awareness. The runtime extracts native
 libraries to the current user's temporary cache; no machine-wide files are
 installed. Developers need an SDK; people running the portable app do not.

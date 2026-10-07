@@ -19,8 +19,8 @@ internal sealed class OverdueView : Border
         foreach (var (title, property, width) in new[] { ("Module / diagram", "Location", 210d), ("Item", "Title", 300d), ("Due date", "Due", 140d), ("First seen", "Seen", 180d), ("State", "State", 160d), ("Resolved", "Resolved", 180d) })
             table.Columns.Add(new DataGridTextColumn { Header = title, Binding = new Binding(property), Width = width, ElementStyle = (Style)Application.Current.FindResource("GridText") });
         var style = new Style(typeof(DataGridRow), (Style)Application.Current.FindResource(typeof(DataGridRow)));
-        var trigger = new DataTrigger { Binding = new Binding("Active"), Value = true }; trigger.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(255, 91, 91)))); style.Triggers.Add(trigger); table.RowStyle = style;
-        var cells = new Style(typeof(DataGridCell), (Style)Application.Current.FindResource(typeof(DataGridCell))); var active = new DataTrigger { Binding = new Binding("Active"), Value = true }; active.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush(Color.FromRgb(255, 91, 91)))); cells.Triggers.Add(active); table.CellStyle = cells;
+        var trigger = new DataTrigger { Binding = new Binding("Active"), Value = true }; trigger.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString(BrandTheme.Error)))); style.Triggers.Add(trigger); table.RowStyle = style;
+        var cells = new Style(typeof(DataGridCell), (Style)Application.Current.FindResource(typeof(DataGridCell))); var active = new DataTrigger { Binding = new Binding("Active"), Value = true }; active.Setters.Add(new Setter(Control.ForegroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString(BrandTheme.Error)))); cells.Triggers.Add(active); table.CellStyle = cells;
         history.Checked += (_, _) => Refresh(); history.Unchecked += (_, _) => Refresh();
     }
     public void Refresh()

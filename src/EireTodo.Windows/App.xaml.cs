@@ -8,18 +8,24 @@ namespace EireTodo.Windows;
 public partial class App : Application
 {
     private FileStream? instanceLock;
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
             MessageBox.Show("An unexpected error occurred. The app will close; changes already saved remain on disk.\n\n" + args.Exception.Message,
-                "Eire To-do error", MessageBoxButton.OK, MessageBoxImage.Error);
+                "SUMAPP error", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         };
         CultureInfo.DefaultThreadCurrentCulture = AustralianDates.Culture;
         CultureInfo.DefaultThreadCurrentUICulture = AustralianDates.Culture;
+        if (e.Args.Length == 2 && e.Args[0] == "--capture-previews")
+        {
+            try { await VisualCapture.Run(e.Args[1]); Shutdown(); }
+            catch (Exception ex) { MessageBox.Show("Windows visual capture failed: " + ex.Message, "SUMAPP visual capture", MessageBoxButton.OK, MessageBoxImage.Error); Shutdown(1); }
+            return;
+        }
         var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EireTodo");
         try
         {
@@ -27,7 +33,7 @@ public partial class App : Application
             try { instanceLock = new FileStream(Path.Combine(directory, "session.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
             catch (IOException)
             {
-                MessageBox.Show("Eire To-do is already running, or its data folder is locked. Close the other instance and try again.", "Eire To-do", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("SUMAPP is already running, or its data folder is locked. Close the other instance and try again.", "SUMAPP", MessageBoxButton.OK, MessageBoxImage.Information);
                 Shutdown(); return;
             }
             var store = new DataStore(directory);
@@ -47,7 +53,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Eire To-do could not start. No new tasks were accepted.\n\n{ex.Message}\n\nData folder: {directory}", "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show($"SUMAPP could not start. No new tasks were accepted.\n\n{ex.Message}\n\nData folder: {directory}", "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
         }
     }

@@ -43,11 +43,24 @@ public static class OpenWorkspace
 public enum LeadDirection { Outgoing, Incoming, Both }
 public static class GraphCreation
 {
-    public static ChartNode Add(Diagram chart, Guid? selected, string title = "New node", LeadDirection direction = LeadDirection.Outgoing, LeadRouting routing = LeadRouting.Curve, TextFormat? format = null, bool unlinked = false)
+    public static ChartNode Add(Diagram chart, Guid? selected, string title = "New node", LeadDirection direction = LeadDirection.Outgoing, LeadRouting routing = LeadRouting.Curve, TextFormat? format = null, bool unlinked = false, Func<ChartNode, int, (double Width, double Height)>? measure = null)
     {
         if (!Enum.IsDefined(direction)) throw new ArgumentException("Choose a valid lead direction.");
         var node = NetworkCharts.Add(chart, selected, false, title, routing: routing, format: format, preferLeft: direction == LeadDirection.Incoming);
         if (selected is Guid source && !unlinked) Connect(chart, source, node.Id, direction, routing);
+        // Direction can change the graph levels. Reserve the final renderer size after creating the lead.
+        var boxes = ChartGeometry.Arrange(chart, measure: measure).Boxes;
+        var cell = boxes.Single(b => b.Id == node.Id); var others = boxes.Where(b => b.Id != node.Id).ToList();
+        bool Free(double x, double y) => others.All(b => x + cell.Width + 28 <= b.X || b.X + b.Width + 28 <= x || y + cell.Height + 28 <= b.Y || b.Y + b.Height + 28 <= y);
+        var originalX = cell.X; var originalY = cell.Y; var found = Free(cell.X, cell.Y);
+        for (var radius = 1; radius <= 64 && !found; radius++)
+            for (var dy = -radius; dy <= radius && !found; dy++) for (var dx = -radius; dx <= radius && !found; dx++)
+            {
+                if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != radius) continue;
+                var x = originalX + dx * (cell.Width + 74); var y = originalY + dy * (cell.Height + 74);
+                if (Math.Abs(x) <= 100000 && Math.Abs(y) <= 100000 && Free(x, y)) { node.X = x; node.Y = y; found = true; }
+            }
+        if (!found) throw new ArgumentException("No free position was found. Move existing nodes to make space.");
         return node;
     }
     public static DiagramLead Connect(Diagram chart, Guid source, Guid target, LeadDirection direction, LeadRouting routing)

@@ -1,12 +1,30 @@
 # Build and verification evidence
 
-Current delivery: version **3.2.0**, including the combined mind-map/WBS module, five layouts,
+Current delivery: version **3.3.0**, including the combined mind-map/WBS module, five layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a header clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.2 interface.
+Windows acceptance checks or the updated 3.3 interface.
+
+Version 3.3 also adds the corrected SUMAPP wordmark/icon, exact shared brand
+palette, light surfaces, priority states, project deletion and real font-based
+node sizing. The Eire logo remains explicitly pending its source asset. The
+provided design previews are SVG renders of shared Core geometry/theme tokens;
+they are not native WPF captures. Windows hover/focus/resizing/logo rendering,
+Explorer/taskbar/shortcut icon behaviour and non-elevated launch remain unrun.
+
+New executed checks cover atomic project deletion/reassignment, empty-project
+removal, save-failure rollback, glyph widths, font sizing, metadata allowance,
+renderer-supplied geometry, all node-state contrasts and priority persistence.
+All normal node states meet 4.5:1 text contrast, including root, child, priority
+and overdue surfaces, across all six saved palette variants.
+
+The Windows build embeds the SUMAPP artwork, the matching nine ICO frames,
+standard-user manifest and self-contained runtime. `--capture-previews` provides
+actual Windows screenshots and native long-title/resizing checks with disposable
+sample data. It has compiled successfully but has **not run** in Linux.
 
 Executed in the Linux x86_64 cloud workspace using the checksum-verified
 Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
@@ -15,7 +33,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | --- | --- |
 | WPF source build | Passed; initial build reported 0 warnings and 0 errors |
 | Final saved Linux setup script | Executed successfully, including locked restores, all functional checks and Windows publish |
-| Windows x64 self-contained publish | Passed; `artifacts/windows-x64/EireTodo.exe` produced |
+| Windows x64 self-contained publish | Passed; `artifacts/windows-x64/SUMAPP.exe` produced |
 | Task creation/editing/completion/reopening/deletion and restart | Passed automated core checks |
 | Project creation/rename/archive/unarchive and assignment rules | Passed automated core checks |
 | Filters for every column, combined AND behaviour, blank fields, open/inclusive bounds, hide completed | Passed automated core checks |
@@ -64,7 +82,7 @@ Microsoft .NET SDK 10.0.401, under user ID 1000 (not root).
 | Windows PowerShell SDK bootstrap/build script | **Not run**; exact commands and checksum-verified portable SDK bootstrap provided |
 | Company allowlisting, SmartScreen, AppLocker or other endpoint restrictions | **Not tested**; unsigned app respects existing policy |
 
-The functional runner reports **45 passed; 0 failed**. These are forty-five named groups
+The functional runner reports **52 passed; 0 failed**. These are fifty-two named groups
 of assertions, not interactive UI tests. No tests were skipped. Settings
 checks validate storage and restoration, not native window behaviour.
 
@@ -72,13 +90,13 @@ Reproduce current checks:
 
 ```bash
 bash scripts/setup-cloud.sh
-python3 scripts/inspect-build.py artifacts/windows-x64/EireTodo.exe
+python3 scripts/inspect-build.py artifacts/windows-x64/SUMAPP.exe
 # Optional independent export checks (Java + Poppler required):
 python3 -m pip install --target /tmp/eire-export-tools mpxj==16.10.0 JPype1==1.7.1
 PYTHONPATH=/tmp/eire-export-tools python3 scripts/verify-chart-exports.py
 ```
 
-The release ZIP contains `EireTodo.exe`, `QUICKSTART.txt`,
+The release ZIP contains `SUMAPP.exe`, `QUICKSTART.txt`,
 `WINDOWS-VERIFICATION.md`, `PLANNING-EXPORTS.md` and `THIRD-PARTY-NOTICES.txt`.
 Its PDF library and four regular/bold/oblique/bold-oblique font faces are embedded; no separately installed runtime or
 printer driver is needed.

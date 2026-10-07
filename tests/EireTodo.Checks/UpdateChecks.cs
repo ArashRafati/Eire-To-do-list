@@ -33,7 +33,7 @@ internal static class UpdateChecks
             var chart = ChartChecks.Fixture(); var parent = chart.Nodes.Last();
             for (var i = 0; i < 45; i++) { var n = Charts.Add(chart, i % 3 == 0 ? parent.Id : chart.Nodes[0].Id, true, "Formatted " + i); n.Format.Size = i % 2 == 0 ? 48 : 12; n.Format.Bold = true; n.Format.Alignment = TextJustification.Centre; }
             chart.Nodes[0].Format.Size = 36; Charts.Add(chart, null, false, "Other root").Format.Size = 44;
-            foreach (var layout in Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform)) { chart.Layout = layout; var scene = ChartGeometry.Arrange(chart); NoOverlap(scene); Assert(scene.Boxes.Count == chart.Nodes.Count); Assert(scene.Boxes.Any(b => b.Height > 120)); }
+            foreach (var layout in Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform)) { chart.Layout = layout; var scene = ChartGeometry.Arrange(chart); NoOverlap(scene); Assert(scene.Boxes.Count == chart.Nodes.Count); Assert(scene.Boxes.All(b => b.Height >= 38 + chart.Nodes.Single(n => n.Id == b.Id).Format.Size * 1.35)); }
             Reject(() => new TextFormat { Size = double.NaN }.Validate()); Reject(() => new TextFormat { Size = 49 }.Validate()); Reject(() => new TextFormat { Family = "file:///font" }.Validate());
         });
         check("New connection nodes auto-place without overlaps and preserve existing manual positions", () =>

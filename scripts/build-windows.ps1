@@ -40,12 +40,14 @@ Run-Dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-
 $staging = Join-Path 'artifacts' ('portable-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
 try {
-    Copy-Item artifacts/windows-x64/EireTodo.exe $staging
+    Copy-Item artifacts/windows-x64/SUMAPP.exe $staging
     Copy-Item QUICKSTART.txt $staging
+    Copy-Item BRANDING.md $staging
     Copy-Item WINDOWS-VERIFICATION.md $staging
     Copy-Item PLANNING-EXPORTS.md $staging
     Copy-Item THIRD-PARTY-NOTICES.txt $staging
-    Compress-Archive -Path "$staging/*" -DestinationPath artifacts/EireTodo-Windows-x64.zip -Force
+    if (Test-Path previews) { Copy-Item previews (Join-Path $staging 'previews') -Recurse }
+    Compress-Archive -Path "$staging/*" -DestinationPath artifacts/SUMAPP-Windows-x64.zip -Force
 } finally { Remove-Item -LiteralPath $staging -Recurse -Force }
-Get-FileHash artifacts/EireTodo-Windows-x64.zip -Algorithm SHA256
-Write-Host 'Portable app: artifacts/EireTodo-Windows-x64.zip'
+Get-FileHash artifacts/SUMAPP-Windows-x64.zip -Algorithm SHA256
+Write-Host 'Portable app: artifacts/SUMAPP-Windows-x64.zip'

@@ -6,20 +6,34 @@ security controls, change execution policy, or bypass an organisation's rules.
 If the unsigned app is blocked, seek approval through the normal IT process.
 Back up existing app data first if you have used it before.
 
-0. **1.2 icon.** Verify the executable's icon in Explorer, a normal desktop
-   shortcut, the taskbar and Alt+Tab. Check task/project editor title bars and
-   the widget header use the same mark. Test 100%, 150% and 200% display scaling.
-   Existing pinned shortcuts may need unpinning and re-pinning to refresh their
-   cached icon; use normal Windows menus without changing security settings.
-0. **1.1 readability regression.** Confirm the main window, task editor and
-   project editor have dark backgrounds with bright labels. Check task text
-   is visibly larger, even with the previous saved window size. Project and
-   category filters must display names (for example All projects), never
-   `ProjectChoice` / `CategoryChoice`. Disabled date inputs must stay dark.
-   Expand filters, scroll the control panel at a compact size and confirm the
-   table/footer stay reachable. Test slider and both scrollbar directions.
+0. **3.3 branding and readability.** Check SUMAPP in the header and executable,
+   editor title bars, taskbar, Alt+Tab and a normal shortcut. The icon has nine
+   sizes. Header SUMAPP uses its original proportions on a neutral backing; Eire
+   is on the right and explicitly pending until its authoritative asset arrives.
+   Verify black/yellow header, neutral surfaces, ink text, teal focus/selection,
+   dark-teal/white primary buttons and black text on yellow priority badges.
+   Check hover, keyboard focus, selected/disabled controls and red overdue/error
+   states at 100%, 150% and 200% scaling. Do not recolour or stretch either logo.
+   Existing pinned shortcuts may require normal unpin/re-pin to refresh cached icons.
+0. **3.3 measured node sizing.** Try short titles, the DN100 long title, wide W/M
+   glyphs, multiline notes and date previews, each in Segoe UI, Arial and Consolas,
+   normal/bold/italic at 12, 17, 32 and 48 px. Confirm full titles remain visible
+   after Enter, clicking away, format changes, selection-border changes, saving,
+   reopening and switching layout. Check roots/branches/leaves differ in size
+   and there are no hierarchy overlaps. New incoming/outgoing/double/unlinked
+   graph nodes must reserve their displayed sizes without moving existing nodes.
+0. **3.3 project deletion.** Delete an empty project. Delete a populated project
+   by moving tasks to another active project, then by creating a new destination.
+   Confirm IDs, created dates, notes, completion/priority and diagrams persist.
+   Cancel leaves data intact. Blank/duplicate destinations and save failures
+   must not remove projects or reassign tasks partially.
+0. **Native sample screenshots.** From the extracted app folder in PowerShell:
+   `.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"`.
+   Inspect both PNGs and `visual-checks.txt`. The command uses isolated sample data
+   and checks header/View visibility at 520×400, 940×620 and 1440×900, and long
+   title sizing across three fonts at 12–48 px. Actual user data is not touched.
 1. **Portable launch and offline use.** Unzip the release in Documents. On a PC
-   without a separately installed .NET runtime, double-click `EireTodo.exe`.
+   without a separately installed .NET runtime, double-click `SUMAPP.exe`.
    Confirm no runtime installation or elevation is requested. Disconnect the
    network and complete the checks below. In Task Manager's Details view enable
    the Elevated column and confirm the app reads **No**.

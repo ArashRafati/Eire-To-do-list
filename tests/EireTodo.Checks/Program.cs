@@ -150,7 +150,8 @@ try
     UpdateChecks.Run(Check, root);
     WorkspaceChecks.Run(Check, root);
     InteractionChecks.Run(Check, root);
-    if (args.Length == 2 && args[0] == "--exports-dir") { ChartChecks.WriteFixtures(args[1]); UpdateChecks.WriteFixtures(args[1]); InteractionChecks.WriteFixtures(args[1]); }
+    BrandChecks.Run(Check, root);
+    if (args.Length == 2 && args[0] == "--exports-dir") { ChartChecks.WriteFixtures(args[1]); UpdateChecks.WriteFixtures(args[1]); InteractionChecks.WriteFixtures(args[1]); BrandChecks.WriteFixtures(args[1]); }
 }
 finally { Directory.Delete(root, recursive: true); }
 Console.WriteLine($"\n{passed} passed; {failures} failed. All checks executed as the current user.");

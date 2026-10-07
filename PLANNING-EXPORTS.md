@@ -1,6 +1,6 @@
 # Mind maps, WBS and planning exports
 
-Use the yellow title dropdown to select **TO-DO**, **MIND MAP / WBS** or **GRAPH**.
+Use the header module dropdown to select **TO-DO**, **MIND MAP / WBS** or **GRAPH**.
 The combined Mind map / WBS module shares saved diagrams and nodes. Module
 switching preserves their layout; choose any of the five in View → Diagram layout:
 two-sided mind map, right tree, top-down WBS, left-to-right WBS or numbered outline.

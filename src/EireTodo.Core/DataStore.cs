@@ -99,7 +99,7 @@ public sealed partial class TodoService
         {
             Id = editingId ?? task.Id, ProjectId = task.ProjectId, Description = task.Description.Trim(),
             StartDate = task.StartDate, FinishDate = task.FinishDate, Category = task.Category.Trim(),
-            Notes = task.Notes, CreatedAt = task.CreatedAt, Completed = task.Completed, Format = task.Format.Clone()
+            Notes = task.Notes, CreatedAt = task.CreatedAt, Completed = task.Completed, Priority = task.Priority, Format = task.Format.Clone()
         };
         Validation.Task(candidate);
         Change(data =>
@@ -126,6 +126,25 @@ public sealed partial class TodoService
     public void AddProject(string name) => Change(d => d.Projects.Add(new Project { Name = name.Trim() }));
     public void RenameProject(Guid id, string name) => Change(d => d.Projects.Single(p => p.Id == id).Name = name.Trim());
     public void SetArchived(Guid id, bool archived) => Change(d => d.Projects.Single(p => p.Id == id).Archived = archived);
+    public void DeleteProject(Guid id, Guid? destinationId = null, string? newProjectName = null) => Change(d =>
+    {
+        if (!d.Projects.Any(p => p.Id == id)) throw new ArgumentException("This project no longer exists.");
+        var tasks = d.Tasks.Where(t => t.ProjectId == id).ToList();
+        if (destinationId == id) throw new ArgumentException("Choose a different destination project.");
+        if (destinationId.HasValue && newProjectName is not null) throw new ArgumentException("Choose one destination.");
+        if (newProjectName is not null)
+        {
+            var destination = new Project { Name = newProjectName.Trim() };
+            d.Projects.Add(destination); destinationId = destination.Id;
+        }
+        if (destinationId.HasValue && !d.Projects.Any(p => p.Id == destinationId && !p.Archived))
+            throw new ArgumentException("Choose an active destination project.");
+        if (tasks.Count > 0 && !destinationId.HasValue)
+            throw new ArgumentException("Choose where to move this project's tasks before deleting it.");
+        foreach (var task in tasks) task.ProjectId = destinationId!.Value;
+        foreach (var diagram in d.Diagrams.Where(c => c.ProjectId == id)) diagram.ProjectId = destinationId;
+        d.Projects.RemoveAll(p => p.Id == id);
+    });
     public void SetCompleted(Guid id, bool completed) => Change(d => d.Tasks.Single(t => t.Id == id).Completed = completed);
     public void DeleteTask(Guid id) => Change(d => d.Tasks.RemoveAll(t => t.Id == id));
     public void SaveSettings(WindowSettings settings) => Change(d => d.Settings = settings);

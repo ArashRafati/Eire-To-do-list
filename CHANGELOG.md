@@ -1,5 +1,16 @@
 # Changes
 
+## 3.3.0 — SUMAPP branding, readable surfaces, project deletion and measured nodes
+
+- Change the supplied wordmark to SUMAPP; use it in the header and nine-resolution Windows icon. Rename the executable to SUMAPP.exe while retaining the existing data folder.
+- Centralise the exact neutral/teal/yellow palette, component typography/spacing, selected/focus states and distinct red error styling. Apply the same palette to mind maps, graphs and PDFs.
+- Add yellow priority badges/nodes with black text, secondary task metadata and a leading status checkbox/badge column.
+- Delete projects atomically, moving their tasks to a chosen/new active project and preserving diagrams/history. Reject invalid destinations and failed saves without changing visible data.
+- Measure actual WPF text with the chosen font/weight/wrapping, reserve selection borders and metadata, and reflow titles on confirmation/blur. Measure PDF font glyphs and wrap whole words.
+- Recheck new graph node spacing after lead creation and final renderer measurement.
+- Add isolated Windows screenshot capture and native header/tab/font-sizing checks; native execution remains unrun in Linux.
+- Supply labelled design previews. Final Eire header branding awaits its accessible original asset; no replacement logo is invented.
+
 ## 3.2.0 — precise editing, graph ports, flat ribbon and paper preview
 
 - Enter confirms an active title; the next distinct Enter creates a node. Ignore key-repeat creation.

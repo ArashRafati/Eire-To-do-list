@@ -29,6 +29,8 @@ public sealed class TaskRow
     public required string Project { get; init; }
     public Guid Id => Task.Id;
     public string Description => Task.Description;
+    public string SecondaryInfo => Project + (Category.Length > 0 ? " · " + Category : "");
+    public string StatusLabel => Completed ? "Completed" : "To do";
     public DateOnly? StartDate => Task.StartDate;
     public DateOnly? FinishDate => Task.FinishDate;
     public string StartDisplay => AustralianDates.Format(StartDate);
@@ -52,7 +54,7 @@ public sealed class TaskRow
     public FontStyle FontStyle => Task.Format.Italic ? FontStyles.Italic : FontStyles.Normal;
     public TextAlignment Alignment => Task.Format.Alignment == TextJustification.Centre ? TextAlignment.Center : Task.Format.Alignment == TextJustification.Right ? TextAlignment.Right : TextAlignment.Left;
     public TextDecorationCollection? Decorations => Task.Format.Underline ? TextDecorations.Underline : null;
-    public double RowHeight => Math.Max(46, Task.Format.Size * 1.7 + 12);
+    public double RowHeight => Math.Max(58, Task.Format.Size * 1.7 + 28);
 }
 
 public partial class MainWindow : Window
@@ -80,6 +82,7 @@ public partial class MainWindow : Window
         this.service = service;
         this.dataDirectory = dataDirectory;
         InitializeComponent();
+        Branding.ApplyEireLogo(EireLogo, EireLogoPending);
         overdueView = new OverdueView(service, ToggleOverdue); OverdueHost.Content = overdueView;
         chartWorkspace = new ChartWorkspace(service, dataDirectory, painter, ToggleOverdue, RefreshOverdueView);
         var ribbon = new RibbonBar();
@@ -324,14 +327,14 @@ public partial class MainWindow : Window
     {
         if (!chartWorkspace.FinishInlineEdit()) return;
         if (settingsDirty && !SaveWindowSettings()) return;
-        var dialog = new SaveFileDialog { Title = "Back up all projects, tasks, diagrams and window settings", Filter = "Eire backup (*.json)|*.json", FileName = $"EireTodo-backup-{DateTime.Now:yyyyMMdd-HHmm}.json", AddExtension = true, DefaultExt = ".json" };
+        var dialog = new SaveFileDialog { Title = "Back up all projects, tasks, diagrams and window settings", Filter = "SUMAPP backup (*.json)|*.json", FileName = $"EireTodo-backup-{DateTime.Now:yyyyMMdd-HHmm}.json", AddExtension = true, DefaultExt = ".json" };
         if (dialog.ShowDialog(this) == true && TryAction(() => service.Export(dialog.FileName)))
             MessageBox.Show(this, "Backup saved. It includes all projects, tasks, categories, diagrams and window settings.", "Backup complete", MessageBoxButton.OK, MessageBoxImage.Information);
     }
     private void RestoreClick(object sender, RoutedEventArgs e)
     {
         if (!chartWorkspace.FinishInlineEdit()) return;
-        var dialog = new OpenFileDialog { Title = "Restore an Eire backup", Filter = "Eire backup (*.json)|*.json", CheckFileExists = true };
+        var dialog = new OpenFileDialog { Title = "Restore a SUMAPP backup", Filter = "SUMAPP backup (*.json)|*.json", CheckFileExists = true };
         if (dialog.ShowDialog(this) != true) return;
         if (MessageBox.Show(this, "Replace all current data and settings with this backup?\n\nA safety copy of the current data will be kept in the data folder.", "Confirm restore", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         settingsTimer.Stop();
@@ -382,13 +385,14 @@ public partial class MainWindow : Window
         if (!chartWorkspace.FinishInlineEdit()) { initialized = false; ModeSelector.SelectedIndex = AppModules.SelectorIndex(service.Data.Settings.ActiveMode); initialized = true; return; }
         ApplyMode(true); QueueSettings();
     }
+    internal void CaptureMode(AppMode mode) => ModeSelector.SelectedIndex = AppModules.SelectorIndex(mode);
     private void ApplyMode(bool changeLayout)
     {
         var mode = AppModules.FromSelector(ModeSelector.SelectedIndex);
         var todo = mode == AppMode.Todo;
         ControlsScroll.Visibility = TodoTablePanel.Visibility = TaskCount.Visibility = todo ? Visibility.Visible : Visibility.Collapsed;
         ChartHost.Visibility = todo ? Visibility.Collapsed : Visibility.Visible;
-        Title = mode == AppMode.Todo ? "Eire To-do" : mode == AppMode.Diagram ? "Eire Mind map / WBS" : "Eire Graph";
+        Title = mode == AppMode.Todo ? "SUMAPP · To-do" : mode == AppMode.Diagram ? "SUMAPP · Mind map / WBS" : "SUMAPP · Graph";
         if (!todo) chartWorkspace.SetMode(mode, changeLayout);
         UpdateControlsViewport();
     }

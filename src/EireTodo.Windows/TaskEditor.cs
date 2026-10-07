@@ -16,7 +16,8 @@ public sealed class TaskEditor : Window
     private readonly ComboBox category = new() { IsEditable = true, IsTextSearchEnabled = true, MaxDropDownHeight = 200 };
     private readonly TextBox notes = new() { AcceptsReturn = true, AcceptsTab = true, TextWrapping = TextWrapping.Wrap, Height = 150, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxLength = 250000 };
     private readonly CheckBox completed = new() { Content = "Completed", Margin = new Thickness(0, 8, 0, 8) };
-    private readonly TextBlock error = new() { Foreground = Ui.Accent, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 5, 0, 8) };
+    private readonly CheckBox priority = new() { Content = "Priority", Margin = new Thickness(0, 0, 0, 8) };
+    private readonly TextBlock error = new() { Foreground = Ui.Error, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 5, 0, 8) };
 
     public TaskEditor(TodoService service, TodoTask? task, Guid? preferredProject)
     {
@@ -44,7 +45,7 @@ public sealed class TaskEditor : Window
         panel.Children.Add(Ui.Label("Notes (optional) · Ctrl+Enter to save")); panel.Children.Add(notes);
         panel.Children.Add(Ui.Label("Created date/time · read-only"));
         var created = new TextBox { IsReadOnly = true, Text = task is null ? "Recorded automatically when saved" : AustralianDates.Format(task.CreatedAt), IsTabStop = false };
-        panel.Children.Add(created); panel.Children.Add(completed); panel.Children.Add(error);
+        panel.Children.Add(created); panel.Children.Add(completed); panel.Children.Add(priority); panel.Children.Add(error);
         root.Children.Add(new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }); Content = root;
         var projects = service.Data.Projects.Where(p => !p.Archived || p.Id == task?.ProjectId).OrderBy(p => p.Archived).ThenBy(p => p.Name).ToList();
         TextSearch.SetTextPath(project, "DisplayName");
@@ -54,7 +55,7 @@ public sealed class TaskEditor : Window
         if (task is not null)
         {
             description.Text = task.Description; start.Text = AustralianDates.Format(task.StartDate); finish.Text = AustralianDates.Format(task.FinishDate);
-            category.Text = task.Category; notes.Text = task.Notes; completed.IsChecked = task.Completed;
+            category.Text = task.Category; notes.Text = task.Notes; completed.IsChecked = task.Completed; priority.IsChecked = task.Priority;
         }
         Loaded += (_, _) => { description.Focus(); description.CaretIndex = description.Text.Length; };
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control) { Save(this, new RoutedEventArgs()); e.Handled = true; } };
@@ -68,7 +69,7 @@ public sealed class TaskEditor : Window
             {
                 ProjectId = selected.Id, Description = description.Text, StartDate = AustralianDates.ParseOptional(start.Text),
                 FinishDate = AustralianDates.ParseOptional(finish.Text), Category = category.Text, Notes = notes.Text,
-                Completed = completed.IsChecked == true, CreatedAt = original?.CreatedAt ?? DateTimeOffset.Now, Format = original?.Format.Clone() ?? new()
+                Completed = completed.IsChecked == true, Priority = priority.IsChecked == true, CreatedAt = original?.CreatedAt ?? DateTimeOffset.Now, Format = original?.Format.Clone() ?? new()
             };
             service.SaveTask(task, original?.Id);
             DialogResult = true;
@@ -79,7 +80,10 @@ public sealed class TaskEditor : Window
 
 internal static class Ui
 {
-    internal static readonly System.Windows.Media.Brush Accent = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 204, 51));
+    internal static System.Windows.Media.Brush Brush(string key) => (System.Windows.Media.Brush)Application.Current.FindResource(key);
+    internal static System.Windows.Media.Brush Accent => Brush("PrimaryTeal");
+    internal static System.Windows.Media.Brush Ink => Brush("TextBrush");
+    internal static System.Windows.Media.Brush Error => Brush("ErrorBrush");
     internal static void ApplyWindowStyle(Window window) => window.Style = (Style)Application.Current.FindResource("AppWindow");
     internal static DataTemplate DisplayTemplate(string property)
     {

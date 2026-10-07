@@ -41,11 +41,11 @@ internal sealed class RibbonBar : Border
     public void Show(string name)
     {
         foreach (FrameworkElement page in pages.Children) page.Visibility = (string)page.Tag == name ? Visibility.Visible : Visibility.Collapsed;
-        foreach (var (key, button) in buttons) { button.Foreground = key == name ? Ui.Accent : Brushes.White; button.BorderBrush = key == name ? Ui.Accent : Brushes.Transparent; }
+        foreach (var (key, button) in buttons) { button.Style = (Style)Application.Current.FindResource(key == name ? "RibbonPrimaryButton" : "RibbonButton"); button.BorderBrush = key == name ? Ui.Accent : Brushes.Transparent; }
     }
     public WrapPanel Group(string tab, string caption)
     {
-        var content = new DockPanel(); var label = new TextBlock { Text = caption.ToUpperInvariant(), FontSize = 12, Foreground = Brushes.White, Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Center }; DockPanel.SetDock(label, Dock.Bottom); content.Children.Add(label);
+        var content = new DockPanel(); var label = new TextBlock { Text = caption.ToUpperInvariant(), FontSize = 12, Foreground = Ui.Ink, Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Center }; DockPanel.SetDock(label, Dock.Bottom); content.Children.Add(label);
         var controls = new WrapPanel { Orientation = Orientation.Vertical, Height = 110 }; content.Children.Add(controls);
         panels[tab].Children.Add(new Border { Child = content, BorderBrush = (Brush)Application.Current.FindResource("LineBrush"), BorderThickness = new Thickness(0, 0, 1, 0), Padding = new Thickness(0, 0, 12, 0), Margin = new Thickness(0, 0, 12, 0) }); return controls;
     }
@@ -83,7 +83,7 @@ internal sealed class RibbonBar : Border
     private static string TooltipDetail(string text) => text.Contains("delete node") ? "\nRemove the selected node and its branch immediately. Undo restores it." : text.Contains("delete lead") ? "\nRemove the selected lead. Nodes stay in place. Undo restores it." : text.Contains("sibling") ? "\nEnter outside title editing creates a node at the same level." : text.Contains("child") ? "\nInsert creates a node below the selection." : text.Contains("linked") ? "\nEnter / Insert creates a node linked from the graph selection." : text.Contains("lead label") ? "\nSelect a lead, then edit its label, direction and endpoints. F2 also opens this editor." : text.Contains("fit") ? "\nFit and centre the entire diagram in the workspace." : text.Contains("format painter") ? "\nCopy the selected text style, then click the destination task or node." : text.Contains("export") ? "\nExport the full diagram. PDF opens a paper preview first." : text.Contains("details") ? "\nEdit the full notes, dates and status. Shortcut: Ctrl+Enter." : "\n" + text + " for the current selection or diagram.";
     public static Button Action(Panel panel, string label, Action action, bool primary = false)
     {
-        var button = Ui.Button(label, (_, _) => action(), primary); Prepare(button); if (primary) button.Foreground = Ui.Accent; panel.Children.Add(button); return button;
+        var button = Ui.Button(label, (_, _) => action(), primary); Prepare(button); if (primary) button.Style = (Style)Application.Current.FindResource("RibbonPrimaryButton"); panel.Children.Add(button); return button;
     }
 }
 

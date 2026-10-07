@@ -23,6 +23,7 @@ public sealed class TodoTask
     public string Notes { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.Now;
     public bool Completed { get; set; }
+    public bool Priority { get; set; }
     public TextFormat Format { get; set; } = new();
 }
 

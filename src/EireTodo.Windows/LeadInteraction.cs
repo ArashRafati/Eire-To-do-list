@@ -48,7 +48,7 @@ internal sealed partial class ChartWorkspace
                 var p = LeadGeometry.Route(from,to,lead.Routing,i-leads.Count/2,boxes.Values.ToList(),lead.FromSide,lead.ToSide);
                 var geometry = PathGeometry(p,lead.Routing); var selected = selectedLeadId == lead.Id;
                 var hit = new Path { Data = geometry, Stroke = Brushes.Transparent, StrokeThickness = 18, ToolTip = "Click: select · Delete: remove · double-click / F2: label · drag endpoint handles to node sides" };
-                var line = new Path { Data = geometry, Stroke = Colour(selected ? colours.Accent : colours.Lead), StrokeThickness = selected ? 3 : 2, IsHitTestVisible = false };
+                var line = new Path { Data = geometry, Stroke = Colour(selected ? BrandTheme.Primary : colours.Lead), StrokeThickness = selected ? 3 : 2, IsHitTestVisible = false };
                 void Click(object sender, MouseButtonEventArgs e) { if (e.ClickCount == 2) { SelectLead(lead.Id); EditLead(lead.Id); } else SelectLead(lead.Id); e.Handled = true; }
                 hit.MouseLeftButtonDown += Click;
                 var menu = new ContextMenu(); var edit = new MenuItem { Header = "Label / direction / endpoints · F2" }; edit.Click += (_, _) => { SelectLead(lead.Id); EditLead(lead.Id); }; menu.Items.Add(edit);
@@ -57,7 +57,7 @@ internal sealed partial class ChartWorkspace
                 Arrow(p.X2,p.Y2,p.C2X,p.C2Y); if (lead.DoubleHeaded) Arrow(p.X1,p.Y1,p.C1X,p.C1Y);
                 if (!string.IsNullOrWhiteSpace(lead.Description))
                 {
-                    var text = new TextBlock { Text = lead.Description, FontSize = 14, Foreground = Brushes.White, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = p.LabelWidth, ToolTip = lead.Description };
+                    var text = new TextBlock { Text = lead.Description, FontSize = 14, Foreground = Ui.Ink, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = p.LabelWidth, ToolTip = lead.Description };
                     var label = new Border { Child = text, Background = (Brush)Application.Current.FindResource("CanvasBrush"), Padding = new Thickness(5,2,5,2), RenderTransformOrigin = new(.5,.5), RenderTransform = new RotateTransform(p.LabelAngle), ContextMenu = menu };
                     label.Measure(new Size(p.LabelWidth+10,double.PositiveInfinity)); Canvas.SetLeft(label,p.LabelX-label.DesiredSize.Width/2); Canvas.SetTop(label,p.LabelY-label.DesiredSize.Height/2); label.MouseLeftButtonDown += Click; Put(label,1);
                 }

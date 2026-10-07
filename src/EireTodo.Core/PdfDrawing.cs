@@ -64,21 +64,21 @@ public static class DiagramPdf
                     var font=Font(12); var label=lead.Description.Replace("\r", "").Replace("\n", " "); var original=label;
                     while(label.Length>1&&graphics.MeasureString(label+"…",font).Width>p.LabelWidth) label=label[..^1]; if(label.Length<original.Length)label+="…";
                     // The paper preview and exported file both use the same upright tangent and baseline.
-                    chartMarks.Add(new PdfText(p.LabelX,p.LabelY,label,12,"#172230",Angle:p.LabelAngle,Centre:true,Backdrop:"#FFFFFF"));
+                    chartMarks.Add(new PdfText(p.LabelX,p.LabelY,label,12,BrandTheme.Ink,Angle:p.LabelAngle,Centre:true,Backdrop:BrandTheme.White));
                 }
             }
         }
         foreach(var box in scene.Boxes)
         {
             var o=outline[box.Id]; var node=o.Node; var due=Overdue.IsDue(node.FinishDate,node.Completed); var level=levels[node.Id];
-            chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,DiagramAppearance.Fill(diagram,level),due?"#FF5B5B":colours.Border,DiagramAppearance.Radius(diagram.Design,level)));
-            chartMarks.Add(new PdfText(box.X+11,box.Y+19,o.Code,12,colours.Accent));
-            var format=node.Format; var font=Font(format.Size,format.Bold,format.Italic,format.Underline); var lines=ChartExports.Wrap(graphics,node.Title,font,box.Width-24).ToList();
+            chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,DiagramAppearance.Fill(diagram,node,level),due?BrandTheme.Error:colours.Border,DiagramAppearance.Radius(diagram.Design,level)));
+            chartMarks.Add(new PdfText(box.X+11,box.Y+19,o.Code,12,DiagramAppearance.Text(diagram,node,level)));
+            var format=node.Format; var font=Font(format.Size,format.Bold,format.Italic,format.Underline); var lines=ChartExports.Wrap(graphics,node.Title,font,box.Width-28).ToList();
             for(var i=0;i<lines.Count;i++)
             {
                 var length=graphics.MeasureString(lines[i],font).Width;
                 var x=format.Alignment==TextJustification.Centre?box.X+(box.Width-length)/2:format.Alignment==TextJustification.Right?box.X+box.Width-12-length:box.X+12;
-                chartMarks.Add(new PdfText(x,box.Y+29+format.Size+i*format.Size*1.35,lines[i],format.Size,due?"#FF5B5B":colours.Text,format.Bold,format.Italic,format.Underline));
+                chartMarks.Add(new PdfText(x,box.Y+29+format.Size+i*format.Size*1.35,lines[i],format.Size,DiagramAppearance.Text(diagram,node,level),format.Bold,format.Italic,format.Underline));
             }
         }
         var pages=new List<PdfSheet>();
@@ -86,7 +86,7 @@ public static class DiagramPdf
         {
             var header=new PdfLayer(); header.Marks.Add(new PdfText(margin,29,diagram.Name,18)); header.Marks.Add(new PdfText(margin,48,$"{Charts.LayoutName(diagram.Layout)} · {(options.FitToPaper?"Fit to paper":$"Tile {row+1}/{rows}, {col+1}/{columns}")} · All nodes",10));
             var layer=new PdfLayer { Scale=scale, X=margin-col*tileWidth*scale+(options.FitToPaper?(areaWidth-scene.Width*scale)/2:0), Y=top-row*tileHeight*scale+(options.FitToPaper?(areaHeight-scene.Height*scale)/2:0), Clip=new(margin,top,areaWidth,areaHeight) }; layer.Marks.AddRange(chartMarks);
-            var footer=new PdfLayer(); footer.Marks.Add(new PdfText(margin,height-12,$"Eire · Page {pages.Count+1}",10)); pages.Add(new(width,height,[header,layer,footer]));
+            var footer=new PdfLayer(); footer.Marks.Add(new PdfText(margin,height-12,$"SUMAPP · Page {pages.Count+1}",10)); pages.Add(new(width,height,[header,layer,footer]));
         }
         if(options.IncludeDetails)
         {
@@ -108,7 +108,7 @@ public static class DiagramPdf
     public static void SaveBytes(byte[] bytes, string path) => DataStore.WriteExport(path,bytes);
     public static byte[] Write(PdfDrawing drawing)
     {
-        ChartExports.EnsureFonts(); using var document=new PdfDocument(); document.Info.Title=drawing.Title; document.Info.Creator="Eire To-do / Mind map / WBS / Graph";
+        ChartExports.EnsureFonts(); using var document=new PdfDocument(); document.Info.Title=drawing.Title; document.Info.Creator="SUMAPP · To-do / Mind map / WBS / Graph";
         foreach(var sheet in drawing.Pages)
         {
             var page=document.AddPage();page.Width=XUnit.FromPoint(sheet.Width);page.Height=XUnit.FromPoint(sheet.Height);using var g=XGraphics.FromPdfPage(page);

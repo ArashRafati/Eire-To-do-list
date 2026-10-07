@@ -1,52 +1,23 @@
-# Windows download — version 3.2
+# SUMAPP Windows download — version 3.3
 
-`EireTodo-Windows-x64.zip` contains the self-contained Windows x64 executable,
-short instructions, chart/planning import guide, component notices and remaining Windows acceptance checks. Download the raw
-ZIP from GitHub, unzip into a writable folder, and double-click `EireTodo.exe`.
-No installer, separate runtime installation or elevation is required. The app
-is unsigned; follow normal IT approval if your organisation blocks it.
+Download `SUMAPP-Windows-x64.zip`, unzip it into a writable folder and double-click
+`SUMAPP.exe`. Runtime and SUMAPP artwork/icon are bundled; no installation,
+network, account or elevation is required. Existing data/settings stay under
+`%LOCALAPPDATA%\EireTodo`. Close the previous executable before updating.
 
-Data is stored under `%LOCALAPPDATA%\EireTodo`. Automated core checks passed;
-interactive WPF behaviour and standard-user Windows launch have not been run
-in the Linux build environment. See the included acceptance checklist.
+This build contains the exact neutral/teal/yellow colour system, corrected SUMAPP
+wordmark/icon, light readable surfaces, atomic project deletion, priority states
+and real font-based node sizing. The Eire header logo is explicitly pending its
+accessible original source asset; no recreated company mark is substituted.
 
-`EireTodo-Source.zip` contains the source, tests, build scripts and detailed
-instructions. `SHA256SUMS.txt` records checksums for both ZIPs.
+`SUMAPP-Source.zip` includes source, tests, scripts and instructions;
+`SHA256SUMS.txt` records both archive hashes. These downloads are delivered through
+GitHub as an alternative to the failing chat artifact route.
 
-These are copies of the already-built artifacts, prepared as an alternative to
-the failing chat download route. Repository visibility is not changed.
+52 core check groups pass. The Windows standard-user manifest, icon resources and
+bundled runtime were inspected. Native WPF, taskbar/Explorer rendering and Windows
+non-elevated launch remain unrun in the Linux environment. `BRANDING.md` and
+`WINDOWS-VERIFICATION.md` describe exact capture/build/acceptance commands.
 
-Version 1.1 increases body/table text to 17 px, fixes the white window background,
-uses bright labels and black/slate panels, and corrects project/category labels.
-Close the previous app, unzip this release, and run the new executable. Existing
-tasks and projects are read from the same data folder without a migration.
-
-Version 1.2 embeds a custom multi-resolution black-and-yellow app icon in the
-executable and uses it in the taskbar, app windows and header.
-
-Version 2.0 adds To-do / Mind map / WBS switching, Enter/Insert node creation,
-five chart layouts, local autosave/backup, and CSV/XML/PDF exports. Native
-MSP/P6 import remains a Windows acceptance check; P6 CSV requires mapping into
-its exported XLSX template. Use PLANNING-EXPORTS.md from the ZIP for details.
-
-Version 2.1 improves dynamic placement: new main branches use the less crowded
-side, existing sides remain stable, and subtree spacing recalculates as cells
-are added/moved/deleted. It adds Balance branches and improved viewport handling.
-Twenty-three automated check groups pass, including 1,000-node growth checks.
-
-Version 3.0 adds the tabbed ribbon, inline titles, branch drag/drop, saved text
-formatting and format painter, local clock, red overdue items/history, and a
-separate Connections module with movable nodes and labelled directional leads.
-The black/slate/yellow palette is preserved. See QUICKSTART.txt in the ZIP.
-
-Version 3.1 centres diagrams in an open, expanding canvas, moves the clock to the
-top right, merges Mind map/WBS, renames Connections to Graph, reorganises the
-ribbon, and connects both Enter/Insert nodes automatically. Existing data and
-layouts remain compatible. Direction can be outgoing, incoming or both.
-
-Version 3.2 adds title confirmation before node creation, exact sibling-gap
-moves, selectable/deletable Graph leads, draggable side-centre endpoints and
-focused labels. The ribbon has visible tabs, flat vector buttons and hover tips.
-Compact full-title nodes support six palettes/four designs. Zoom animates the
-existing views. PDF opens a preview with fitted A4 landscape by default,
-portrait/A3/tiles/details choices, and optional normal Windows printing.
+Older EireTodo ZIPs retained here are superseded by the SUMAPP files above.
+Do not use older executables to edit data containing the new priority fields.

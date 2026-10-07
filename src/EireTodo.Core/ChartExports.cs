@@ -145,8 +145,13 @@ public static class ChartExports
             var line = "";
             foreach (var rune in paragraph.EnumerateRunes())
             {
-                var next = line + rune;
-                if (graphics.MeasureString(next, font).Width > width && line.Length > 0) { yield return line; line = rune.ToString(); } else line = next;
+                while (line.Length > 0 && graphics.MeasureString(line + rune, font).Width > width)
+                {
+                    var space = line.LastIndexOfAny([' ', '\t']);
+                    if (space >= 0) { yield return line[..(space + 1)]; line = line[(space + 1)..]; }
+                    else { yield return line; line = ""; }
+                }
+                line += rune;
             }
             yield return line;
         }

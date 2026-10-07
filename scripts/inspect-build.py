@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 import zlib
 from pathlib import Path
 
-path = Path(sys.argv[1] if len(sys.argv) > 1 else 'artifacts/windows-x64/EireTodo.exe')
+path = Path(sys.argv[1] if len(sys.argv) > 1 else 'artifacts/windows-x64/SUMAPP.exe')
 b = path.read_bytes()
 
 def u16(i): return struct.unpack_from('<H', b, i)[0]
@@ -112,7 +112,7 @@ for i in range(count):
     name = read_string()
     assert offset + (compressed_size or size) <= len(b), 'Invalid bundle entry'
     files[name] = (offset, size, compressed_size, kind)
-for name in ['EireTodo.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
+for name in ['SUMAPP.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
              'PresentationFramework.dll', 'PresentationCore.dll', 'WindowsBase.dll',
              'PresentationNative_cor3.dll', 'PdfSharp.dll']:
     assert name in files, 'Missing bundled runtime/application file: ' + name
@@ -126,14 +126,19 @@ managed_core = content('EireTodo.Core.dll')
 for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').glob('*.ttf'):
     assert font.read_bytes() in managed_core, 'Offline PDF font not bundled: ' + font.name
 
-managed_app = content('EireTodo.dll')
+managed_app = content('SUMAPP.dll')
 for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').glob('*.ttf'):
     assert font.read_bytes() in managed_app, 'Offline preview font not bundled: ' + font.name
 assert ico in managed_app, 'Window ICO not bundled in WPF resources'
 header_artwork = source_icon.with_suffix('.png').read_bytes()
 assert header_artwork in managed_app, 'Header PNG not bundled in WPF resources'
+sumapp_artwork = source_icon.with_name('SumappLogo.png').read_bytes()
+assert sumapp_artwork in managed_app, 'SUMAPP logo not bundled in WPF resources'
+eire_artwork = source_icon.with_name('EireLogo.png')
+if eire_artwork.exists():
+    assert eire_artwork.read_bytes() in managed_app, 'Eire logo not bundled in WPF resources'
 
-runtime = json.loads(content('EireTodo.runtimeconfig.json'))['runtimeOptions']
+runtime = json.loads(content('SUMAPP.runtimeconfig.json'))['runtimeOptions']
 assert 'frameworks' not in runtime and 'framework' not in runtime, 'Requires an installed framework'
 frameworks = {f['name']: f['version'] for f in runtime['includedFrameworks']}
 assert 'Microsoft.NETCore.App' in frameworks and 'Microsoft.WindowsDesktop.App' in frameworks
