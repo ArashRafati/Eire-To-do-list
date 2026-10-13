@@ -1,5 +1,13 @@
 # Changes
 
+## 3.6.0 — node clipboard, full notes and expanded galleries
+
+- Add Ctrl-click/Ctrl+A multi-selection and Ctrl+C/Ctrl+V branch copying, with deduplicated descendants, fresh IDs, child-level paste and saved Undo. Graph copies preserve internal leads.
+- Add persistent full-note rendering with measured wrapping in the canvas and PDF; add expand/collapse controls to hierarchy nodes.
+- Add a styled Save / Save As / Cancel / Close dialog without changing live profile autosave.
+- Add five layouts, five colour palettes and five node styles; keep legacy numeric values stable and preview every new option.
+- Add six functional check groups for clipboard hierarchy/graph behavior, invalid-paste atomicity, persistence, full-note fitting and all layout geometry.
+
 ## 3.5.1 — authoritative logo and bundled icon startup repair
 
 - Remove the relative BitmapImage resource address that could resolve to C:\SUMAPP;component\Assets\AppIcon.ico and prevent launch.

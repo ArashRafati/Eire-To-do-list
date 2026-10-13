@@ -78,13 +78,13 @@ internal static class BrandChecks
         });
         check("New diagram packs and designs preserve old values, hierarchy, graph positions and backup data", () =>
         {
-            Assert(Enum.GetValues<DiagramPalette>().Length == 16 && Enum.GetValues<NodeDesign>().Length == 10);
+            Assert(Enum.GetValues<DiagramPalette>().Length == 21 && Enum.GetValues<NodeDesign>().Length == 15);
             Assert((int)DiagramPalette.Monochrome == 5 && (int)NodeDesign.Minimal == 3);
             var store = new DataStore(Path.Combine(root, "gallery-persistence")); var service = new TodoService(store, store.Load());
             foreach (var kind in Enum.GetValues<DiagramKind>()) foreach (var palette in Enum.GetValues<DiagramPalette>())
             {
                 var chart = kind == DiagramKind.Network ? NetworkCharts.Create("Graph pack") : DiagramSamples.Create(ChartLayout.MindMap, palette, NodeDesign.Tiered);
-                chart.Palette = palette; chart.Design = (NodeDesign)((int)palette % 10);
+                chart.Palette = palette; chart.Design = (NodeDesign)((int)palette % Enum.GetValues<NodeDesign>().Length);
                 if (kind == DiagramKind.Network) { chart.Nodes[0].X = -271; chart.Nodes[0].Y = 129; }
                 service.SaveDiagram(chart);
             }
@@ -103,7 +103,7 @@ internal static class BrandChecks
                 foreach (var box in scene.Boxes)
                 {
                     var surface = DiagramAppearance.Surface(chart, chart.Nodes.Single(n => n.Id == box.Id), levels[box.Id]);
-                    if (surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar)
+                    if (surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar or NodeDecoration.TopBar)
                     {
                         var rectangle = marks.OfType<PdfBox>().Single(b => b.X == box.X && b.Y == box.Y);
                         Assert(rectangle.Fill == surface.Fill && rectangle.Stroke == (surface.Decoration == NodeDecoration.Box ? surface.Stroke : ""));

@@ -5,6 +5,43 @@ The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Node clipboard and expanded galleries — version 3.6
+
+Ctrl-click adds/removes nodes from the selection; Ctrl+A selects visible nodes.
+Ctrl+C copies selected hierarchy branches, including hidden descendants, without
+copying the same descendant twice. Select a destination node and press Ctrl+V to
+paste the branches as its children. Press Esc to clear selection; with no node selected they paste at top level.
+New IDs and export numbers are allocated; titles, notes, formatting, dates,
+completion, priority and folded state are preserved. Repeated paste is supported.
+Copy/paste also works across diagrams: graphs retain leads between copied nodes
+and connect pasted nodes from the destination selection. Text fields retain their
+normal text copy/paste shortcuts. Home → Clipboard and node context menus expose
+the same actions. Pasting is one saved Undo step; invalid or oversized paste leaves
+the previous diagram intact. Ctrl+A + Delete can delete the visible selection;
+Undo restores it.
+
+Node details has **Show complete notes on the canvas**. The same option is
+available as Show / hide notes in Home → Edit and the node context menu. Notes
+preserve paragraphs and wrap without ellipses; measured nodes grow and layouts
+reflow. The option persists and is reflected in the PDF diagram, in addition to
+full export details. Hierarchy nodes with children show a small **− / +** button
+beside the WBS code to collapse/expand underlying levels. Folding changes only
+visibility; descendants stay saved and remain in exports and copied branches.
+
+Closing opens a styled SUMAPP dialog every time. **Save** finishes the title edit
+and saves the live profile/settings; **Save As** also exports a complete `.sumapp`
+PC copy before closing. Cancelled file dialogs or save failures keep the app open.
+**Cancel** returns to work. **Close** keeps existing autosaved changes and discards
+an unfinished title or unsaved window settings; it does not roll back changes
+already autosaved.
+
+The galleries now offer **10 hierarchy layouts, 21 colour palettes and 15 node
+designs**. New layouts: bottom up, left tree, compact tree, wide tree and indented
+tree. New colours: Lagoon & aqua, Indigo & periwinkle, Sand & espresso, Steel &
+sky and Olive & cream. New designs: soft cards, top accent, bold outline, capsule
+outline and branch cards. Existing numeric settings and data remain compatible;
+all options have ribbon previews and share PDF appearance/geometry.
+
 ## Startup repair — version 3.5.1
 
 The 3.5 startup error referring to `C:\SUMAPP;component\Assets\AppIcon.ico`

@@ -27,7 +27,7 @@ internal static class VisualCapture
             var fabrication = Charts.Add(chart, chart.Nodes[0].Id, true, "Fabrication");
             var procurement = Charts.Add(chart, chart.Nodes[0].Id, true, "Procurement"); procurement.Priority = true;
             foreach (var title in titles.Skip(1)) Charts.Add(chart, fabrication.Id, true, title);
-            Charts.Add(chart, procurement.Id, true, titles[0]); service.SaveDiagram(chart);
+            var notesNode = Charts.Add(chart, procurement.Id, true, titles[0]); notesNode.ShowNotes = true; notesNode.Notes = "Review drawing and confirm dimensions.\nRecord engineering comments here.\nComplete notes stay visible on the canvas."; service.SaveDiagram(chart);
             var settings = service.Data.Settings; settings.Width = 1280; settings.Height = 850; settings.Opacity = 1; settings.SelectedDiagramId = chart.Id; service.SaveSettings(settings);
             // Exercise resource loading without any Assets folder beside the working directory.
             Directory.SetCurrentDirectory(directory);
@@ -67,7 +67,7 @@ internal static class VisualCapture
             results.Add("PASS long-title sizing at 12–48 px, bold, metadata, Segoe UI / Arial / Consolas.");
             File.WriteAllLines(Path.Combine(destination, "visual-checks.txt"), results);
         }
-        finally { window?.Close(); Directory.SetCurrentDirectory(previousDirectory); if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
+        finally { if (window is not null) { window.CaptureClosing = true; window.Close(); } Directory.SetCurrentDirectory(previousDirectory); if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); }
     }
     private static void Assert(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
     private static async Task Settle(Window window) { await Task.Delay(350); await window.Dispatcher.InvokeAsync(() => window.UpdateLayout(), DispatcherPriority.ApplicationIdle); }

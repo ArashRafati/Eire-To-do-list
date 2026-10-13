@@ -20,6 +20,7 @@ internal sealed class DiagramGallery : StackPanel
     private readonly Popup popup = new() { StaysOpen = false, AllowsTransparency = true, Placement = PlacementMode.Bottom };
     private DiagramPalette palette;
     private NodeDesign design;
+    private IEnumerable<int> Indices => kind == DiagramGalleryKind.Layouts ? Enum.GetValues<ChartLayout>().Where(l => l != ChartLayout.Freeform).Select(l => (int)l) : Enumerable.Range(0, count);
     private ChartLayout layout = ChartLayout.MindMap;
     private int selected;
     private readonly int count;
@@ -46,8 +47,8 @@ internal sealed class DiagramGallery : StackPanel
         strip.Children.Clear();
         // Show useful alternatives immediately, as well as the current choice.
         var featured = kind == DiagramGalleryKind.Styles ? new[] { selected, (int)NodeDesign.Flat, (int)NodeDesign.Underlined } : kind == DiagramGalleryKind.Colours ? new[] { selected, (int)DiagramPalette.Navy, (int)DiagramPalette.Plum } : new[] { selected, (int)ChartLayout.MindMap, (int)ChartLayout.TopDown };
-        foreach (var index in featured.Concat(Enumerable.Range(0, count)).Distinct().Take(3)) strip.Children.Add(Tile(index, 100, true));
-        var more = new Button { Content = "▾", Width = 34, Height = 64, Style = (Style)Application.Current.FindResource("RibbonButton"), Padding = new Thickness(2), Margin = new Thickness(2, 0, 0, 0), ToolTip = kind == DiagramGalleryKind.Colours ? "Show all 16 colour combinations" : kind == DiagramGalleryKind.Layouts ? "Show all diagram layouts" : "Show all node designs" };
+        foreach (var index in featured.Concat(Indices).Distinct().Take(3)) strip.Children.Add(Tile(index, 100, true));
+        var more = new Button { Content = "▾", Width = 34, Height = 64, Style = (Style)Application.Current.FindResource("RibbonButton"), Padding = new Thickness(2), Margin = new Thickness(2, 0, 0, 0), ToolTip = kind == DiagramGalleryKind.Colours ? $"Show all {count} colour combinations" : kind == DiagramGalleryKind.Layouts ? "Show all diagram layouts" : "Show all node designs" };
         AutomationProperties.SetName(more, "More " + kind.ToString().ToLowerInvariant());
         more.Click += (_, _) => Open(more); strip.Children.Add(more);
         if (popup.IsOpen) popup.IsOpen = false;
@@ -80,7 +81,7 @@ internal sealed class DiagramGallery : StackPanel
         var wrap = new WrapPanel { Width = columns * 142, Margin = new Thickness(8) };
         KeyboardNavigation.SetDirectionalNavigation(wrap, KeyboardNavigationMode.Cycle);
         Button? current = null;
-        for (var i = 0; i < count; i++) { var button = Tile(i, 138); if (i == selected) current = button; wrap.Children.Add(button); }
+        foreach (var i in Indices) { var button = Tile(i, 138); if (i == selected) current = button; wrap.Children.Add(button); }
         var title = new TextBlock { Text = kind == DiagramGalleryKind.Colours ? "Colour combinations" : kind == DiagramGalleryKind.Layouts ? "Diagram layouts" : "Node designs", FontSize = 17, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 10, 12, 4), Foreground = Ui.Ink, TextWrapping = TextWrapping.Wrap };
         var body = new DockPanel(); DockPanel.SetDock(title, Dock.Top); body.Children.Add(title);
         body.Children.Add(new ScrollViewer { Content = wrap, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, MaxHeight = Math.Max(160, Math.Min(460, SystemParameters.WorkArea.Height - 180)) });
@@ -116,8 +117,8 @@ internal sealed class DiagramThumbnail : FrameworkElement
             var geometry = new StreamGeometry(); using (var g = geometry.Open())
             {
                 g.BeginFigure(new(c.X1, c.Y1), false, false);
-                if (chart.Layout is ChartLayout.MindMap or ChartLayout.RightTree) g.BezierTo(new((c.X1 + c.X2) / 2, c.Y1), new((c.X1 + c.X2) / 2, c.Y2), new(c.X2, c.Y2), true, false);
-                else if (chart.Layout == ChartLayout.TopDown) { g.LineTo(new(c.X1, (c.Y1 + c.Y2) / 2), true, false); g.LineTo(new(c.X2, (c.Y1 + c.Y2) / 2), true, false); g.LineTo(new(c.X2, c.Y2), true, false); }
+                if (chart.Layout is ChartLayout.MindMap or ChartLayout.RightTree or ChartLayout.LeftTree) g.BezierTo(new((c.X1 + c.X2) / 2, c.Y1), new((c.X1 + c.X2) / 2, c.Y2), new(c.X2, c.Y2), true, false);
+                else if (ChartGeometry.IsVertical(chart.Layout)) { g.LineTo(new(c.X1, (c.Y1 + c.Y2) / 2), true, false); g.LineTo(new(c.X2, (c.Y1 + c.Y2) / 2), true, false); g.LineTo(new(c.X2, c.Y2), true, false); }
                 else { g.LineTo(new((c.X1 + c.X2) / 2, c.Y1), true, false); g.LineTo(new((c.X1 + c.X2) / 2, c.Y2), true, false); g.LineTo(new(c.X2, c.Y2), true, false); }
             }
             dc.DrawGeometry(null, pen, geometry);
@@ -125,11 +126,12 @@ internal sealed class DiagramThumbnail : FrameworkElement
         foreach (var box in scene.Boxes)
         {
             var surface = DiagramAppearance.Surface(chart, chart.Nodes.Single(n => n.Id == box.Id), levels[box.Id]);
-            var stroke = surface.Stroke.Length > 0 ? new Pen(Brush(surface.Stroke), 1 / scale) : null;
+            var stroke = surface.Stroke.Length > 0 ? new Pen(Brush(surface.Stroke), surface.Thickness / scale) : null;
             var radius = Math.Min(surface.Radius, box.Height / 2);
-            if (surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar) dc.DrawRoundedRectangle(Brush(surface.Fill), surface.Decoration == NodeDecoration.Box ? stroke : null, new(box.X, box.Y, box.Width, box.Height), radius, radius);
+            if (surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar or NodeDecoration.TopBar) dc.DrawRoundedRectangle(Brush(surface.Fill), surface.Decoration == NodeDecoration.Box ? stroke : null, new(box.X, box.Y, box.Width, box.Height), radius, radius);
             if (surface.Decoration == NodeDecoration.Underline) dc.DrawLine(stroke, new(box.X, box.Y + box.Height), new(box.X + box.Width, box.Y + box.Height));
             if (surface.Decoration == NodeDecoration.AccentBar) dc.DrawLine(new Pen(Brush(surface.Stroke), 3 / scale), new(box.X, box.Y), new(box.X, box.Y + box.Height));
+            if (surface.Decoration == NodeDecoration.TopBar) dc.DrawLine(new Pen(Brush(surface.Stroke), 3 / scale), new(box.X, box.Y), new(box.X + box.Width, box.Y));
             var text = new Pen(Brush(surface.Text), 1.4 / scale);
             dc.DrawLine(text, new(box.X + 12, box.Y + 16), new(box.X + box.Width - 12, box.Y + 16));
             dc.DrawLine(text, new(box.X + 12, box.Y + 27), new(box.X + box.Width - 28, box.Y + 27));

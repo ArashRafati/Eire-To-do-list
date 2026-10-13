@@ -71,3 +71,8 @@ Build on Windows under a standard user account with the exact commands in
 `README.md` / `scripts/build-windows.ps1`, without changing execution policy.
 The portable release is self-contained and requests `asInvoker`. If company
 policy blocks the unsigned executable, use the normal IT approval process.
+
+Version 3.6 expands the galleries to 21 colour packs, 15 node designs and ten
+hierarchy layouts without changing the application brand palette or logo. New
+shape strokes and layout directions are shared by gallery previews, WPF and PDF.
+The close dialog uses the original SUMAPP PNG and existing semantic theme.

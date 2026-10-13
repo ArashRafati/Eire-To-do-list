@@ -44,6 +44,7 @@ internal sealed partial class ChartWorkspace : UserControl
         ribbon = sharedRibbon;
         var first = ribbon.Group("Home", "Diagram"); first.Children.Add(diagrams); Add(first, "New diagram", NewDiagram, true); Add(first, "Settings / rename", RenameDiagram); Add(first, "Delete diagram", DeleteDiagram);
         var edit = ribbon.Group("Home", "Edit"); NodeAction(edit, "Edit title", BeginTitle); NodeAction(edit, "Node details", EditNode); NodeAction(edit, "Delete node", DeleteNode);
+        var clipboard = ribbon.Group("Home", "Clipboard"); NodeAction(clipboard,"Copy · Ctrl+C",CopyNodes); Add(clipboard,"Paste · Ctrl+V",PasteNodes); NodeAction(edit,"Show / hide notes",ToggleNotes);
         var history = ribbon.Group("Home", "History"); undoButton = Add(history, "Undo", Undo); redoButton = Add(history, "Redo", Redo);
         var second = ribbon.Group("Insert", "Nodes"); siblingButton = Add(second, "Sibling", () => AddNode(false), true); siblingButton.ToolTip = "Enter: create a sibling, or a linked graph node"; childButton = Add(second, "Child", () => AddNode(true), true); childButton.ToolTip = "Insert: create a child, or a linked graph node";
         unlinkedControls = ribbon.Group("Insert", "Independent node"); Add(unlinkedControls, "Unlinked node", () => AddNode(false, true));
@@ -94,6 +95,7 @@ internal sealed partial class ChartWorkspace : UserControl
         var requested = resetHistory ? saved : chartId ?? saved;
         var selected = items.FirstOrDefault(d => d.Id == requested) ?? items.FirstOrDefault();
         diagrams.ItemsSource = items; diagrams.SelectedItem = selected; chartId = selected?.Id;
+        if (renderedChartId != chartId || resetHistory) selectedNodes.Clear();
         if (resetHistory) { undo.Clear(); redo.Clear(); selectedId = null; }
         if (Current is Diagram chart)
         {
@@ -202,7 +204,8 @@ internal sealed partial class ChartWorkspace : UserControl
         if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart || selectedId is not Guid id) return;
         var parent = chart.Nodes.Single(n => n.Id == id).ParentId;
-        Modify(c => Charts.Delete(c, id)); if (Current?.Nodes.Any(n => n.Id == id) != true) { selectedId = parent; RefreshData(); }
+        var deleting = selectedNodes.Count > 0 ? selectedNodes.ToArray() : new[] { id };
+        Modify(c => { foreach (var node in deleting) if (c.Nodes.Any(n => n.Id == node)) Charts.Delete(c,node); }); if (Current?.Nodes.Any(n => n.Id == id) != true) { selectedId = parent; RefreshData(); }
     }
     private void ToggleFold() => Modify(c => { var n = c.Nodes.Single(n => n.Id == selectedId); n.Collapsed = !n.Collapsed; });
     private void Undo()
@@ -282,21 +285,28 @@ internal sealed partial class ChartWorkspace : UserControl
         {
             var o = nodeIndex[box.Id]; var n = o.Node; var level = nodeLevels[n.Id]; var colours = DiagramAppearance.Colours(chart.Palette);
             var content = new Grid { Margin = new Thickness(11, 7, 11, 7) }; content.RowDefinitions.Add(new() { Height = GridLength.Auto }); content.RowDefinitions.Add(new()); content.RowDefinitions.Add(new() { Height = GridLength.Auto });
-            content.Children.Add(new TextBlock { Text = o.Code, FontFamily = new FontFamily("Consolas"), FontSize = 12, Foreground = Colour(DiagramAppearance.Text(chart, n, level)), FontWeight = FontWeights.SemiBold });
+            var heading = new DockPanel();
+            if (!networkMode && chart.Nodes.Any(child => child.ParentId == n.Id))
+            {
+                var fold = new Button { Content = n.Collapsed ? "+" : "−", Width = 24, Height = 22, MinHeight = 0, Padding = new Thickness(0), Margin = new Thickness(6,0,0,0), Style = (Style)Application.Current.FindResource("RibbonButton"), ToolTip = n.Collapsed ? "Expand child levels" : "Collapse child levels", Foreground = Colour(DiagramAppearance.Text(chart,n,level)) };
+                System.Windows.Automation.AutomationProperties.SetName(fold,n.Collapsed ? "Expand " + n.Title : "Collapse " + n.Title);
+                fold.Click += (_,e) => { Select(n.Id); ToggleFold(); e.Handled=true; }; DockPanel.SetDock(fold,Dock.Right); heading.Children.Add(fold);
+            }
+            heading.Children.Add(new TextBlock { Text = o.Code, FontFamily = new FontFamily("Consolas"), FontSize = 12, Foreground = Colour(DiagramAppearance.Text(chart, n, level)), FontWeight = FontWeights.SemiBold }); content.Children.Add(heading);
             var label = new TextBlock { Text = n.Title, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 1), VerticalAlignment = VerticalAlignment.Top, LineHeight = n.Format.Size * 1.35, LineStackingStrategy = LineStackingStrategy.BlockLineHeight }; FormattingTools.Apply(label, n.Format); label.Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Colour(DiagramAppearance.Text(chart, n, level)); Grid.SetRow(label, 1); content.Children.Add(label); titleViews[n.Id] = (content, label);
-            var preview = string.Join(" ", n.Notes.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+            var preview = n.ShowNotes ? n.Notes : string.Join(" ", n.Notes.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
             var meta = preview.Length > 0 ? preview : n.StartDate.HasValue || n.FinishDate.HasValue ? $"{AustralianDates.Format(n.StartDate)} → {AustralianDates.Format(n.FinishDate)}" : "";
-            var note = new TextBlock { Text = meta, FontSize = 12, Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Colour(DiagramAppearance.Text(chart, n, level)), TextTrimming = TextTrimming.CharacterEllipsis, Visibility = meta.Length == 0 ? Visibility.Collapsed : Visibility.Visible, Margin = new Thickness(0,4,0,0) }; Grid.SetRow(note, 2); content.Children.Add(note);
+            var note = new TextBlock { Text = meta, FontSize = 12, Foreground = Overdue.IsDue(n.FinishDate, n.Completed) ? OverdueBrush : Colour(DiagramAppearance.Text(chart, n, level)), TextWrapping = n.ShowNotes ? TextWrapping.Wrap : TextWrapping.NoWrap, LineHeight = 16.2, LineStackingStrategy = LineStackingStrategy.BlockLineHeight, TextTrimming = n.ShowNotes ? TextTrimming.None : TextTrimming.CharacterEllipsis, Visibility = meta.Length == 0 ? Visibility.Collapsed : Visibility.Visible, Margin = new Thickness(0,4,0,0) }; Grid.SetRow(note, 2); content.Children.Add(note);
             var surface = DiagramAppearance.Surface(chart, n, level); var radius = Math.Min(surface.Radius, Math.Min(box.Width,box.Height)/2);
             var decoration = new Border { Background = surface.Decoration is NodeDecoration.Flat or NodeDecoration.Underline ? Brushes.Transparent : Colour(surface.Fill), CornerRadius = new CornerRadius(radius), IsHitTestVisible = false };
-            if (surface.Stroke.Length > 0) { decoration.BorderBrush = Colour(surface.Stroke); decoration.BorderThickness = surface.Decoration == NodeDecoration.Box ? new Thickness(1) : surface.Decoration == NodeDecoration.Underline ? new Thickness(0,0,0,2) : surface.Decoration == NodeDecoration.AccentBar ? new Thickness(4,0,0,0) : new Thickness(0); }
+            if (surface.Stroke.Length > 0) { decoration.BorderBrush = Colour(surface.Stroke); decoration.BorderThickness = surface.Decoration == NodeDecoration.Box ? new Thickness(surface.Thickness) : surface.Decoration == NodeDecoration.Underline ? new Thickness(0,0,0,2) : surface.Decoration == NodeDecoration.AccentBar ? new Thickness(4,0,0,0) : surface.Decoration == NodeDecoration.TopBar ? new Thickness(0,4,0,0) : new Thickness(0); }
             var nodeBody = new Grid(); nodeBody.Children.Add(decoration); nodeBody.Children.Add(content);
             // A constant interaction outline reserves space so selection never changes wrapping.
             var border = new Border { Width = box.Width, Height = box.Height, Background = Brushes.Transparent, BorderBrush = Brushes.Transparent, BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(radius), Child = nodeBody, Tag = n.Id, ToolTip = n.Title + "\nDouble-click / F2: title. Ctrl+Enter / right-click: details. Drag to move.", Focusable = true };
             AttachNodeInteraction(border, n.Id);
             Canvas.SetLeft(border, box.X); Canvas.SetTop(border, box.Y); canvas.Children.Add(border); nodeViews[n.Id] = border;
         }
-        canvas.Width = opening ? scene.Width : Math.Max(canvas.Width, scene.Width); canvas.Height = opening ? scene.Height : Math.Max(canvas.Height, scene.Height); StopZoomAnimation(); SetZoomVisual(chart.Zoom); zoomLabel.Text = $"{chart.Zoom:P0}"; Select(selectedId);
+        canvas.Width = opening ? scene.Width : Math.Max(canvas.Width, scene.Width); canvas.Height = opening ? scene.Height : Math.Max(canvas.Height, scene.Height); StopZoomAnimation(); SetZoomVisual(chart.Zoom); zoomLabel.Text = $"{chart.Zoom:P0}"; Select(selectedId,true);
         status.Text = $"{chart.Nodes.Count} nodes · Drag space to pan · Ctrl+wheel to zoom";
         status.ToolTip = "Pan: drag empty space, middle-drag, or Space+drag. Wheel pans vertically; Shift+wheel horizontally. Ctrl+wheel zooms. Ctrl+Enter opens node details.";
         if (opening || centring) { centring = true; CentreCanvas(); }
@@ -318,14 +328,16 @@ internal sealed partial class ChartWorkspace : UserControl
         }
 
     }
-    private void Select(Guid? id)
+    private void Select(Guid? id, bool preserve = false)
     {
+        if (!preserve || id.HasValue && !selectedNodes.Contains(id.Value)) { selectedNodes.Clear(); if(id.HasValue) selectedNodes.Add(id.Value); }
+        selectedNodes.RemoveWhere(node => !nodeViews.ContainsKey(node));
         selectedId = id;
         if (id.HasValue && selectedLeadId.HasValue) { selectedLeadId = null; if (networkMode && Current is Diagram graph) DrawLeads(graph, scene.Boxes.ToDictionary(b => b.Id)); }
         formatTools?.Refresh();
         if (Current is not null)
         {
-            foreach (var (node, view) in nodeViews) { view.BorderBrush = node == id ? Ui.Accent : Brushes.Transparent; view.BorderThickness = new Thickness(2); }
+            foreach (var (node, view) in nodeViews) { view.BorderBrush = selectedNodes.Contains(node) ? Ui.Accent : Brushes.Transparent; view.BorderThickness = new Thickness(2); }
         }
         foreach (var button in nodeActions) button.IsEnabled = id.HasValue && Current?.Nodes.Any(n => n.Id == id) == true;
     }
@@ -338,13 +350,20 @@ internal sealed partial class ChartWorkspace : UserControl
             if (id == selectedId && id is Guid selected && nodeViews.TryGetValue(selected, out var view)) view.BringIntoView();
         }, DispatcherPriority.Loaded);
     }
+    internal void ClipboardShortcut(object sender, KeyEventArgs e)
+    {
+        if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is Key.C or Key.V or Key.A) KeyDownChart(sender,e);
+    }
     private void KeyDownChart(object sender, KeyEventArgs e)
     {
         if (freeDragOriginal is not null) { if (e.Key == Key.Escape) { EndFreeDrag(true); Mouse.Capture(null); } e.Handled = true; return; }
         if (IsInsideTextBox(e.OriginalSource as DependencyObject) || e.IsRepeat && e.Key == Key.Enter) return;
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
-            if (e.Key == Key.Enter) { if (selectedLeadId.HasValue) EditSelectedLead(); else EditNode(); e.Handled = true; }
+            if (e.Key == Key.C) { CopyNodes(); e.Handled = true; }
+            else if (e.Key == Key.V) { PasteNodes(); e.Handled = true; }
+            else if (e.Key == Key.A) { selectedNodes.Clear(); selectedNodes.UnionWith(nodeViews.Keys); Select(selectedId ?? selectedNodes.FirstOrDefault(),true); e.Handled = true; }
+            else if (e.Key == Key.Enter) { if (selectedLeadId.HasValue) EditSelectedLead(); else EditNode(); e.Handled = true; }
             else if (e.Key == Key.Z) { Undo(); e.Handled = true; }
             else if (e.Key == Key.Y) { Redo(); e.Handled = true; }
             else if (!networkMode && e.Key == Key.Up && selectedId.HasValue) { Modify(c => Charts.Reorder(c, selectedId.Value, -1)); e.Handled = true; }
@@ -354,6 +373,7 @@ internal sealed partial class ChartWorkspace : UserControl
         if (Keyboard.Modifiers != ModifierKeys.None) return;
         switch (e.Key)
         {
+            case Key.Escape: connectFrom=null; selectedLeadId=null; Select(null); e.Handled=true; break;
             case Key.Space: e.Handled = true; break;
             case Key.Enter: if (NodeInputPolicy.Enter(false,e.IsRepeat) == NodeEnterAction.CreateNode) AddNode(false); e.Handled = true; break;
             case Key.Insert: AddNode(true); e.Handled = true; break;

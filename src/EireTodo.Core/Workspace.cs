@@ -32,9 +32,9 @@ public static class OpenWorkspace
     }
     public static (double X, double Y) Centre(SceneBounds bounds, double originX, double originY, double zoom, double viewportWidth, double viewportHeight)
         => (Math.Max(0, (originX + bounds.X + bounds.Width / 2) * zoom - viewportWidth / 2), Math.Max(0, (originY + bounds.Y + bounds.Height / 2) * zoom - viewportHeight / 2));
-    public static ChartScene CompactGraph(Diagram chart)
+    public static ChartScene CompactGraph(Diagram chart, bool includeCollapsed = false)
     {
-        var raw = ChartGeometry.Arrange(chart); var bounds = Bounds(chart, raw);
+        var raw = ChartGeometry.Arrange(chart,includeCollapsed); var bounds = Bounds(chart, raw);
         var dx = ChartGeometry.Margin - bounds.X; var dy = ChartGeometry.Margin - bounds.Y;
         return new(raw.Boxes.Select(b => b with { X = b.X + dx, Y = b.Y + dy }).ToList(), bounds.Width + 2 * ChartGeometry.Margin, bounds.Height + 2 * ChartGeometry.Margin);
     }

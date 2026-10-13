@@ -4,10 +4,10 @@ using System.Text;
 namespace EireTodo.Core;
 
 // Append values: existing saved numeric palette/design values retain their meaning.
-public enum DiagramPalette { Eire, Ocean, Forest, Violet, Copper, Monochrome, Blueprint, Navy, Cobalt, Emerald, ForestGreen, Amber, Sunset, Coral, Rose, Plum }
-public enum NodeDesign { Tiered, Cards, Rounded, Minimal, Flat, Underlined, Outline, AccentBar, Mixed, Pill }
-public enum NodeDecoration { Box, Flat, Underline, AccentBar }
-public sealed record NodeSurface(string Fill, string Text, string Stroke, double Radius, NodeDecoration Decoration);
+public enum DiagramPalette { Eire, Ocean, Forest, Violet, Copper, Monochrome, Blueprint, Navy, Cobalt, Emerald, ForestGreen, Amber, Sunset, Coral, Rose, Plum, Lagoon, Indigo, Sand, Steel, Olive }
+public enum NodeDesign { Tiered, Cards, Rounded, Minimal, Flat, Underlined, Outline, AccentBar, Mixed, Pill, SoftCards, TopAccent, BoldOutline, CapsuleOutline, BranchCards }
+public enum NodeDecoration { Box, Flat, Underline, AccentBar, TopBar }
+public sealed record NodeSurface(string Fill, string Text, string Stroke, double Radius, NodeDecoration Decoration, double Thickness = 1);
 public sealed record PaletteColours(string Name, string Root, string Branch, string Leaf, string Border, string Lead, string Accent, string Text);
 public static class DiagramAppearance
 {
@@ -27,13 +27,18 @@ public static class DiagramAppearance
         DiagramPalette.Sunset => Pack("Sunset & peach", "#9A3412", "#FFEDD5", "#FFF7ED", "#F97316"),
         DiagramPalette.Coral => Pack("Coral & slate", "#334155", "#FFE4E6", "#FFF1F2", "#E11D48"),
         DiagramPalette.Rose => Pack("Rose & blush", "#831843", "#FCE7F3", "#FDF2F8", "#DB2777"),
+        DiagramPalette.Lagoon => Pack("Lagoon & aqua", "#155E75", "#A5F3FC", "#ECFEFF", "#0E7490"),
+        DiagramPalette.Indigo => Pack("Indigo & periwinkle", "#312E81", "#C7D2FE", "#EEF2FF", "#6366F1"),
+        DiagramPalette.Sand => Pack("Sand & espresso", "#44403C", "#E7E5E4", "#FAF7F0", "#78716C"),
+        DiagramPalette.Steel => Pack("Steel & sky", "#0F172A", "#CBD5E1", "#F1F5F9", "#475569"),
+        DiagramPalette.Olive => Pack("Olive & cream", "#3F6212", "#ECFCCB", "#FEFCE8", "#4D7C0F"),
         DiagramPalette.Plum => Pack("Plum & lavender", "#581C87", "#F3E8FF", "#FAF5FF", "#9333EA"),
         _ => Palette("SUMAPP · default", BrandTheme.DarkTeal, BrandTheme.SoftTeal, BrandTheme.SoftTeal)
     };
     private static PaletteColours Palette(string name, string root, string branch, string leaf) => new(name, root, branch, leaf, BrandTheme.Primary, BrandTheme.Primary, BrandTheme.Accent, BrandTheme.DarkTeal);
     private static PaletteColours Pack(string name, string root, string branch, string leaf, string accent) => new(name, root, branch, leaf, accent, accent, accent, root);
-    public static string DesignName(NodeDesign design) => design switch { NodeDesign.Tiered => "Tiered boxes", NodeDesign.Cards => "Box cards", NodeDesign.Rounded => "Rounded boxes", NodeDesign.Minimal => "Square boxes", NodeDesign.Flat => "Flat", NodeDesign.Underlined => "Flat · underline", NodeDesign.Outline => "Outline boxes", NodeDesign.AccentBar => "Side accent", NodeDesign.Mixed => "Mixed levels", NodeDesign.Pill => "Pill nodes", _ => design.ToString() };
-    public static string DesignDescription(NodeDesign design) => design switch { NodeDesign.Flat => "Text nodes without an enclosing frame", NodeDesign.Underlined => "Flat text nodes with a coloured underline", NodeDesign.Outline => "Neutral boxes with coloured outlines", NodeDesign.AccentBar => "Colour-filled nodes with a left accent bar", NodeDesign.Mixed => "Box root, underlined branches and flat leaves", NodeDesign.Tiered => "Subtle rounded boxes with different corners by level", NodeDesign.Pill => "Colour-filled capsules", _ => "Apply this node shape to the entire diagram" };
+    public static string DesignName(NodeDesign design) => design switch { NodeDesign.Tiered => "Tiered boxes", NodeDesign.Cards => "Box cards", NodeDesign.Rounded => "Rounded boxes", NodeDesign.Minimal => "Square boxes", NodeDesign.Flat => "Flat", NodeDesign.Underlined => "Flat · underline", NodeDesign.Outline => "Outline boxes", NodeDesign.AccentBar => "Side accent", NodeDesign.Mixed => "Mixed levels", NodeDesign.Pill => "Pill nodes", NodeDesign.SoftCards => "Soft cards", NodeDesign.TopAccent => "Top accent", NodeDesign.BoldOutline => "Bold outline", NodeDesign.CapsuleOutline => "Capsule outline", NodeDesign.BranchCards => "Branch cards", _ => design.ToString() };
+    public static string DesignDescription(NodeDesign design) => design switch { NodeDesign.SoftCards => "Light neutral cards with soft rounded corners", NodeDesign.TopAccent => "Colour-filled cards with a top accent rule", NodeDesign.BoldOutline => "Neutral cards with bold coloured outlines", NodeDesign.CapsuleOutline => "Rounded capsule outlines on neutral surfaces", NodeDesign.BranchCards => "Boxed roots and branches with underlined leaves", NodeDesign.Flat => "Text nodes without an enclosing frame", NodeDesign.Underlined => "Flat text nodes with a coloured underline", NodeDesign.Outline => "Neutral boxes with coloured outlines", NodeDesign.AccentBar => "Colour-filled nodes with a left accent bar", NodeDesign.Mixed => "Box root, underlined branches and flat leaves", NodeDesign.Tiered => "Subtle rounded boxes with different corners by level", NodeDesign.Pill => "Colour-filled capsules", _ => "Apply this node shape to the entire diagram" };
     public static NodeSurface Surface(Diagram diagram, ChartNode node, int level)
     {
         var normal = Surface(diagram.Palette, diagram.Design, level);
@@ -43,11 +48,11 @@ public static class DiagramAppearance
     public static NodeSurface Surface(DiagramPalette palette, NodeDesign design, int level)
     {
         var c = Colours(palette);
-        var decoration = design switch { NodeDesign.Flat => NodeDecoration.Flat, NodeDesign.Underlined => NodeDecoration.Underline, NodeDesign.AccentBar => NodeDecoration.AccentBar, NodeDesign.Mixed when level == 2 => NodeDecoration.Underline, NodeDesign.Mixed when level > 2 => NodeDecoration.Flat, _ => NodeDecoration.Box };
-        var flat = decoration is NodeDecoration.Flat or NodeDecoration.Underline || design == NodeDesign.Outline;
+        var decoration = design switch { NodeDesign.TopAccent => NodeDecoration.TopBar, NodeDesign.BranchCards when level > 2 => NodeDecoration.Underline, NodeDesign.Flat => NodeDecoration.Flat, NodeDesign.Underlined => NodeDecoration.Underline, NodeDesign.AccentBar => NodeDecoration.AccentBar, NodeDesign.Mixed when level == 2 => NodeDecoration.Underline, NodeDesign.Mixed when level > 2 => NodeDecoration.Flat, _ => NodeDecoration.Box };
+        var flat = decoration is NodeDecoration.Flat or NodeDecoration.Underline || design is NodeDesign.Outline or NodeDesign.BoldOutline or NodeDesign.CapsuleOutline or NodeDesign.SoftCards;
         var fill = flat ? BrandTheme.Surface : level == 1 ? c.Root : level == 2 ? c.Branch : c.Leaf;
         var text = flat ? c.Text : Contrast(c.Text, fill) >= 4.5 ? c.Text : Contrast(BrandTheme.White, fill) >= Contrast(BrandTheme.Ink, fill) ? BrandTheme.White : BrandTheme.Ink;
-        return new(fill, text, decoration == NodeDecoration.Flat ? "" : c.Border, Radius(design, level), decoration);
+        return new(fill, text, decoration == NodeDecoration.Flat ? "" : c.Border, Radius(design, level), decoration, design == NodeDesign.BoldOutline ? 3 : 1);
     }
     public static double Contrast(string first, string second)
     {
@@ -57,7 +62,7 @@ public static class DiagramAppearance
     public static string Fill(Diagram diagram, ChartNode node, int level) => Surface(diagram, node, level).Fill;
     public static string Text(Diagram diagram, ChartNode node, int level) => Surface(diagram, node, level).Text;
     // Capping capsule corners keeps code and wrapped titles inside the coloured surface.
-    public static double Radius(NodeDesign design, int level) => design switch { NodeDesign.Pill => 24, NodeDesign.Cards => 2, NodeDesign.Rounded => 18, NodeDesign.Flat or NodeDesign.Underlined or NodeDesign.Outline or NodeDesign.AccentBar or NodeDesign.Minimal => 0, _ => level == 1 ? 12 : level == 2 ? 6 : 2 };
+    public static double Radius(NodeDesign design, int level) => design switch { NodeDesign.CapsuleOutline or NodeDesign.Pill => 24, NodeDesign.SoftCards => 12, NodeDesign.BoldOutline => 8, NodeDesign.TopAccent => 3, NodeDesign.BranchCards => 4, NodeDesign.Cards => 2, NodeDesign.Rounded => 18, NodeDesign.Flat or NodeDesign.Underlined or NodeDesign.Outline or NodeDesign.AccentBar or NodeDesign.Minimal => 0, _ => level == 1 ? 12 : level == 2 ? 6 : 2 };
     public static string Fill(Diagram diagram, int level) { var c = Colours(diagram.Palette); return level == 1 ? c.Root : level == 2 ? c.Branch : c.Leaf; }
     public static Dictionary<Guid, int> Levels(Diagram diagram)
     {
@@ -86,10 +91,10 @@ public static class HierarchyDropSlots
             foreach (var node in siblings)
             {
                 var b = boxes[node.Id];
-                result.Add(diagram.Layout == ChartLayout.TopDown ? new(node.Id, NodeDrop.Before, b.X - ChartGeometry.Gap, b.Y - 8, ChartGeometry.Gap, b.Height + 16) : new(node.Id, NodeDrop.Before, b.X - 8, b.Y - ChartGeometry.Gap, b.Width + 16, ChartGeometry.Gap));
+                result.Add(ChartGeometry.IsVertical(diagram.Layout) ? new(node.Id, NodeDrop.Before, b.X - ChartGeometry.Gap, b.Y - 8, ChartGeometry.Gap, b.Height + 16) : new(node.Id, NodeDrop.Before, b.X - 8, b.Y - ChartGeometry.Gap, b.Width + 16, ChartGeometry.Gap));
             }
             var last = boxes[siblings[^1].Id];
-            result.Add(diagram.Layout == ChartLayout.TopDown ? new(last.Id, NodeDrop.After, last.X + last.Width, last.Y - 8, ChartGeometry.Gap, last.Height + 16) : new(last.Id, NodeDrop.After, last.X - 8, last.Y + last.Height, last.Width + 16, ChartGeometry.Gap));
+            result.Add(ChartGeometry.IsVertical(diagram.Layout) ? new(last.Id, NodeDrop.After, last.X + last.Width, last.Y - 8, ChartGeometry.Gap, last.Height + 16) : new(last.Id, NodeDrop.After, last.X - 8, last.Y + last.Height, last.Width + 16, ChartGeometry.Gap));
         }
         return result;
     }

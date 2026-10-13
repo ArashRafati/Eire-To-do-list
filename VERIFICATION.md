@@ -1,12 +1,12 @@
 # Build and verification evidence
 
-Current delivery: version **3.5.1**, including the combined mind-map/WBS module, five layouts,
+Current delivery: version **3.6.0**, including the combined mind-map/WBS module, ten hierarchy layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a bottom-right clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.5 interface.
+Windows acceptance checks or the updated 3.6 interface.
 
 Version 3.3 also adds the corrected SUMAPP wordmark/icon, exact shared brand
 palette, light surfaces, priority states, project deletion and real font-based
@@ -142,3 +142,11 @@ SUMAPP resource PNGs are byte-identical (SHA256 recorded in BRANDING.md). The PE
 inspection checks all nine embedded icon frames against the ICO derived from it
 and verifies the managed resource payloads. These are binary/packaging checks;
 Windows rendering and shell icon caching remain native acceptance checks.
+
+Version 3.6 adds six automated groups (67 total): multi-branch copy/paste with
+fresh identities and deduplication; graph internal leads and destination links;
+atomic rejection at depth/node limits; restart and Undo snapshot persistence;
+complete notes fitting/PDF content; all ten layouts with variable node sizes.
+Existing contrast/persistence/PDF checks now cover all 21 palettes and 15 designs.
+Native Ctrl-click/clipboard focus, collapse-button interaction and all four close
+dialog actions are compiled but must be exercised on Windows using the checklist.

@@ -26,7 +26,7 @@ public static class FreePlacement
         }
         return Resolve(automatic.Boxes.Select(b => Position(b.Id)).ToList());
     }
-    public static LeadPath Connection(NodeBox from, NodeBox to, ChartLayout layout) => LeadGeometry.Route(from,to,layout is ChartLayout.MindMap or ChartLayout.RightTree ? LeadRouting.Curve : LeadRouting.SharpBends);
+    public static LeadPath Connection(NodeBox from, NodeBox to, ChartLayout layout) => LeadGeometry.Route(from,to,layout is ChartLayout.MindMap or ChartLayout.RightTree or ChartLayout.LeftTree ? LeadRouting.Curve : LeadRouting.SharpBends);
     public static ChartScene Move(ChartScene original, Guid id, double x, double y)
     {
         if (!double.IsFinite(x) || !double.IsFinite(y) || Math.Abs(x) > Limit || Math.Abs(y) > Limit) throw new ArgumentException("Choose a finite position within the workspace bounds.");

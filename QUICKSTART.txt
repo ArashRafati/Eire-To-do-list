@@ -1,4 +1,4 @@
-SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.5.1 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.6.0 — PORTABLE WINDOWS WIDGET
 
 1. Unzip SUMAPP-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
@@ -214,3 +214,17 @@ logo selected later changes window icons; changing the Explorer icon needs a reb
 Bundled artwork loads from executable resources rather than Windows file paths.
 Close the failed 3.5 launch, unzip this updated build and run its SUMAPP.exe.
 Keep %LOCALAPPDATA%\EireTodo unchanged; your tasks and diagrams use that folder.
+
+VERSION 3.6
+Ctrl-click selects multiple nodes; Ctrl+A selects visible nodes. Ctrl+C copies
+selected branches (including folded descendants). Select a parent and Ctrl+V
+pastes as children; Esc clears selection for top-level paste.
+Home → Clipboard and node right-click menus provide the same actions. Ctrl+Z
+undoes a paste. Graph copies retain leads between copied nodes.
+Node details → Show complete notes on the canvas wraps the entire notes content.
+Home → Edit → Show / hide notes toggles it for selected nodes.
+The + / − button beside a hierarchy node's WBS code expands/collapses descendants.
+View and Format now have 10 layouts, 21 palettes and 15 node designs.
+When closing: Save persists the live profile; Save As also writes a .sumapp copy.
+Cancel returns to work. Close preserves autosaved changes, discarding only an
+unfinished title and unsaved window settings. Cancelled saves keep the app open.

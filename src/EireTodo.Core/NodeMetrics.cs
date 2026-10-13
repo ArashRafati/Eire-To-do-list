@@ -6,7 +6,7 @@ namespace EireTodo.Core;
 
 public static class NodeMetrics
 {
-    private static readonly ConcurrentDictionary<(string Title, double Size, bool Bold, bool Italic, int Level, bool Meta), (double Width, double Height)> cache = new();
+    private static readonly ConcurrentDictionary<(string Title, double Size, bool Bold, bool Italic, int Level, bool Meta, string Notes), (double Width, double Height)> cache = new();
     public static double Width(double naturalWidth, double fontSize, int level)
     {
         var minimum = level == 1 ? 200 : level == 2 ? 170 : 140;
@@ -14,12 +14,12 @@ public static class NodeMetrics
         var scale = Math.Max(1, fontSize / 22);
         return Math.Ceiling(Math.Clamp(naturalWidth + 28, minimum * scale, maximum * scale));
     }
-    public static double Height(double textHeight, int level, bool metadata) => Math.Ceiling(Math.Max(level == 1 ? 72 : level == 2 ? 64 : 58, 38 + textHeight + (metadata ? 22 : 0)));
+    public static double Height(double textHeight, int level, bool metadata) => Math.Ceiling(Math.Max(level == 1 ? 72 : level == 2 ? 64 : 58, 48 + textHeight + (metadata ? 22 : 0)));
     public static bool HasMetadata(ChartNode node) => !string.IsNullOrWhiteSpace(node.Notes) || node.StartDate.HasValue || node.FinishDate.HasValue;
     // Export geometry uses the same bundled font as the PDF writer, never an estimated character width.
     public static (double Width, double Height) Measure(ChartNode node, int level = 1)
     {
-        var key = (node.Title, node.Format.Size, node.Format.Bold, node.Format.Italic, level, HasMetadata(node));
+        var key = (node.Title, node.Format.Size, node.Format.Bold, node.Format.Italic, level, HasMetadata(node), node.ShowNotes ? node.Notes : "");
         if (cache.Count > 4096) cache.Clear();
         return cache.GetOrAdd(key, _ =>
         {
@@ -29,7 +29,8 @@ public static class NodeMetrics
             var natural = node.Title.Split('\n').Max(line => graphics.MeasureString(line, font).Width);
             var width = Width(natural, node.Format.Size, level);
             var lines = ChartExports.Wrap(graphics, node.Title, font, width - 28).Count();
-            return (width, Height(lines * node.Format.Size * 1.35, level, HasMetadata(node)));
+            var notesHeight = node.ShowNotes && !string.IsNullOrWhiteSpace(node.Notes) ? ChartExports.Wrap(graphics,node.Notes,DiagramPdf.Font(12),width-28).Count()*16.2+6 : 0;
+            return (width, Height(lines * node.Format.Size * 1.35, level, HasMetadata(node)) + notesHeight);
         });
     }
 }

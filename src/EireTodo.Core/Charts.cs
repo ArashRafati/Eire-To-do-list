@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace EireTodo.Core;
 
 public enum AppMode { Todo = 0, Diagram = 1, LegacyWbs = 2, Graph = 3 }
-public enum ChartLayout { MindMap, RightTree, TopDown, LeftToRight, Outline, Freeform }
+public enum ChartLayout { MindMap, RightTree, TopDown, LeftToRight, Outline, Freeform, BottomUp, LeftTree, CompactTree, WideTree, IndentedTree }
 public enum MindMapBranchSide { Auto, Right, Left }
 
 public sealed class ChartNode
@@ -16,6 +16,7 @@ public sealed class ChartNode
     public string Title { get; set; } = "New node";
     public bool Priority { get; set; }
     public string Notes { get; set; } = "";
+    public bool ShowNotes { get; set; }
     public DateOnly? StartDate { get; set; }
     public DateOnly? FinishDate { get; set; }
     public int DurationDays { get; set; } = 1;
@@ -59,6 +60,11 @@ public static class Charts
         ChartLayout.TopDown => "WBS · top down",
         ChartLayout.LeftToRight => "WBS · left to right",
         ChartLayout.Freeform => "Graph · free placement",
+        ChartLayout.BottomUp => "WBS · bottom up",
+        ChartLayout.LeftTree => "Mind map · left tree",
+        ChartLayout.CompactTree => "WBS · compact tree",
+        ChartLayout.WideTree => "WBS · wide tree",
+        ChartLayout.IndentedTree => "Indented tree",
         _ => "Numbered outline"
     };
     public static Diagram Create(string name, ChartLayout layout, Guid? projectId = null)
@@ -230,13 +236,14 @@ public static class ChartGeometry
         List<ChartNode> Kids(Guid? id) => childIndex.GetValueOrDefault(id ?? Guid.Empty) ?? [];
         var widths = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Size(o.Node).Width));
         var heights = outline.GroupBy(o => o.Level - 1).ToDictionary(g => g.Key, g => g.Max(o => Size(o.Node).Height));
-        double Band(Dictionary<int, double> bands, int depth) => Enumerable.Range(0, depth).Sum(i => bands.GetValueOrDefault(i, NodeWidth) + LevelGap);
+        double Band(Dictionary<int, double> bands, int depth) => Enumerable.Range(0, depth).Sum(i => bands.GetValueOrDefault(i, NodeWidth) + (chart.Layout == ChartLayout.CompactTree ? 38 : chart.Layout == ChartLayout.WideTree ? 150 : LevelGap));
+        var gap = chart.Layout == ChartLayout.CompactTree ? 14 : Gap;
         var spans = new Dictionary<(Guid Id, bool Vertical), double>();
         double Span(ChartNode node, bool vertical)
         {
             var key = (node.Id, vertical);
             if (spans.TryGetValue(key, out var cached)) return cached;
-            var size = Math.Max(vertical ? Size(node).Width : Size(node).Height, Kids(node.Id).Sum(n => Span(n, vertical) + Gap) - Gap);
+            var size = Math.Max(vertical ? Size(node).Width : Size(node).Height, Kids(node.Id).Sum(n => Span(n, vertical) + gap) - gap);
             spans[key] = size; return size;
         }
         void Tree(ChartNode node, int depth, double offset, bool vertical, int side)
@@ -246,12 +253,12 @@ public static class ChartGeometry
             var x = vertical ? offset + (span - size.Width) / 2 : side > 0 ? Band(widths, depth) : widths[0] - Band(widths, depth + 1) + LevelGap + widths[depth] - size.Width;
             var y = vertical ? Band(heights, depth) : offset + (span - size.Height) / 2;
             boxes.Add(new(node.Id, x, y, size.Width, size.Height));
-            foreach (var c in Kids(node.Id)) { Tree(c, depth + 1, offset, vertical, side); offset += Span(c, vertical) + Gap; }
+            foreach (var c in Kids(node.Id)) { Tree(c, depth + 1, offset, vertical, side); offset += Span(c, vertical) + gap; }
         }
-        if (chart.Layout == ChartLayout.Outline)
+        if (chart.Layout is ChartLayout.Outline or ChartLayout.IndentedTree)
         {
             double y = 0;
-            foreach (var item in outline) { var size = Size(item.Node); boxes.Add(new(item.Node.Id, (item.Level - 1) * 36, y, size.Width + 160, size.Height)); y += size.Height + 16; }
+            foreach (var item in outline) { var size = Size(item.Node); boxes.Add(new(item.Node.Id, (item.Level - 1) * (chart.Layout == ChartLayout.IndentedTree ? 96 : 36), y, size.Width + (chart.Layout == ChartLayout.IndentedTree ? 0 : 160), size.Height)); y += size.Height + 16; }
         }
         else if (chart.Layout == ChartLayout.MindMap)
         {
@@ -275,19 +282,23 @@ public static class ChartGeometry
         }
         else
         {
-            var vertical = chart.Layout == ChartLayout.TopDown; double offset = 0;
+            var vertical = IsVertical(chart.Layout); double offset = 0;
             foreach (var root in Kids(null)) { Tree(root, 0, offset, vertical, 1); offset += Span(root, vertical) + 90; }
         }
+        if (chart.Layout == ChartLayout.BottomUp && boxes.Count > 0) { var bottom = boxes.Max(b => b.Y + b.Height); boxes = boxes.Select(b => b with { Y = bottom - b.Y - b.Height }).ToList(); }
+        if (chart.Layout == ChartLayout.LeftTree && boxes.Count > 0) { var right = boxes.Max(b => b.X + b.Width); boxes = boxes.Select(b => b with { X = right - b.X - b.Width }).ToList(); }
         if (boxes.Count == 0) return new(boxes, 500, 300);
         var minX = boxes.Min(b => b.X); var minY = boxes.Min(b => b.Y);
         boxes = boxes.Select(b => b with { X = b.X - minX + Margin, Y = b.Y - minY + Margin }).ToList();
         var arranged = new ChartScene(boxes, boxes.Max(b => b.X + b.Width) + Margin, boxes.Max(b => b.Y + b.Height) + Margin);
         return chart.FreeMove ? FreePlacement.Arrange(chart, arranged) : arranged;
     }
+    public static bool IsVertical(ChartLayout layout) => layout is ChartLayout.TopDown or ChartLayout.BottomUp or ChartLayout.CompactTree;
     public static (double X1, double Y1, double X2, double Y2) Connector(NodeBox parent, NodeBox child, ChartLayout layout)
     {
-        if (layout == ChartLayout.TopDown) return (parent.X + parent.Width / 2, parent.Y + parent.Height, child.X + child.Width / 2, child.Y);
-        if (layout == ChartLayout.Outline) return (parent.X + 12, parent.Y + parent.Height, child.X, child.Y + child.Height / 2);
+        if (layout == ChartLayout.BottomUp) return (parent.X + parent.Width / 2, parent.Y, child.X + child.Width / 2, child.Y + child.Height);
+        if (IsVertical(layout)) return (parent.X + parent.Width / 2, parent.Y + parent.Height, child.X + child.Width / 2, child.Y);
+        if (layout is ChartLayout.Outline or ChartLayout.IndentedTree) return (parent.X + 12, parent.Y + parent.Height, child.X, child.Y + child.Height / 2);
         var left = child.X < parent.X;
         return (left ? parent.X : parent.X + parent.Width, parent.Y + parent.Height / 2, left ? child.X + child.Width : child.X, child.Y + child.Height / 2);
     }

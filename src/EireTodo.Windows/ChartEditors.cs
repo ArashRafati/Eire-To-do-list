@@ -42,6 +42,7 @@ internal sealed class NodeEditor : Window
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height - 32);
         var label = new TextBox { Text = node.Title, MaxLength = 100 }; var start = new TextBox { Text = AustralianDates.Format(node.StartDate) }; var finish = new TextBox { Text = AustralianDates.Format(node.FinishDate) };
         var duration = new TextBox { Text = node.DurationDays.ToString(CultureInfo.InvariantCulture) }; var notes = new TextBox { Text = node.Notes, AcceptsReturn = true, AcceptsTab = true, TextWrapping = TextWrapping.Wrap, Height = 155, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxLength = 250000 };
+        var showNotes = new CheckBox { Content = "Show complete notes on the canvas", IsChecked = node.ShowNotes, Margin = new Thickness(0,8,0,0) };
         var completed = new CheckBox { Content = "Completed", IsChecked = node.Completed, Margin = new Thickness(0, 16, 0, 0) };
         var priority = new CheckBox { Content = "Priority", IsChecked = node.Priority, Margin = new Thickness(0, 8, 0, 0) };
         var parent = new ComboBox { ItemTemplate = Ui.DisplayTemplate("Label") }; var forbidden = Charts.Descendants(candidate, id);
@@ -54,12 +55,12 @@ internal sealed class NodeEditor : Window
         var a = Ui.Field("Start · dd/MM/yyyy (optional)", start); a.Margin = new Thickness(0, 0, 6, 0); var z = Ui.Field("Finish · dd/MM/yyyy (optional)", finish); z.Margin = new Thickness(6, 0, 0, 0); Grid.SetColumn(z, 1); dates.Children.Add(a); dates.Children.Add(z); panel.Children.Add(dates);
         if (candidate.Kind == DiagramKind.Hierarchy) panel.Children.Add(Ui.Field("Duration · days (1–3,650)", duration));
         panel.Children.Add(new TextBlock { Text = candidate.Kind == DiagramKind.Network ? "Dates are optional. Unfinished nodes with a finish date before today appear in the overdue log." : "For leaf nodes, both dates override duration. Branch dates roll up from children in planning exports. Diagram links show hierarchy, not scheduling dependencies.", TextWrapping = TextWrapping.Wrap, FontSize = 15, Margin = new Thickness(0, 12, 0, 0) });
-        panel.Children.Add(Ui.Field("Full notes · Ctrl+Enter to save", notes)); panel.Children.Add(completed); panel.Children.Add(priority); panel.Children.Add(Ui.Label(candidate.Kind == DiagramKind.Network ? "Permanent node ID · " + node.Id : "Permanent export ID · " + node.ActivityId)); panel.Children.Add(error);
+        panel.Children.Add(Ui.Field("Full notes · Ctrl+Enter to save", notes)); panel.Children.Add(showNotes); panel.Children.Add(completed); panel.Children.Add(priority); panel.Children.Add(Ui.Label(candidate.Kind == DiagramKind.Network ? "Permanent node ID · " + node.Id : "Permanent export ID · " + node.ActivityId)); panel.Children.Add(error);
         void Commit()
         {
             try
             {
-                var changed = candidate.Clone(); var n = changed.Nodes.Single(n => n.Id == id); n.Title = label.Text.Trim(); n.Notes = notes.Text; n.StartDate = AustralianDates.ParseOptional(start.Text); n.FinishDate = AustralianDates.ParseOptional(finish.Text); n.Completed = completed.IsChecked == true; n.Priority = priority.IsChecked == true;
+                var changed = candidate.Clone(); var n = changed.Nodes.Single(n => n.Id == id); n.Title = label.Text.Trim(); n.Notes = notes.Text; n.ShowNotes = showNotes.IsChecked == true; n.StartDate = AustralianDates.ParseOptional(start.Text); n.FinishDate = AustralianDates.ParseOptional(finish.Text); n.Completed = completed.IsChecked == true; n.Priority = priority.IsChecked == true;
                 if (!int.TryParse(duration.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out var days)) throw new ArgumentException("Enter duration as a whole number of days."); n.DurationDays = days;
                 var parentId = (parent.SelectedItem as ProjectChoice)?.Value;
                 if (n.ParentId != parentId) Charts.Move(changed, id, parentId); Charts.Validate(changed); save(changed); DialogResult = true;

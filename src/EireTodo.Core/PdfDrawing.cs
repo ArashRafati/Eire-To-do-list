@@ -35,7 +35,7 @@ public static class DiagramPdf
         var shortSide = options.Paper == PdfPaper.A4 ? 595.276 : 841.89; var longSide = options.Paper == PdfPaper.A4 ? 841.89 : 1190.551;
         var width = options.Orientation == PdfOrientation.Landscape ? longSide : shortSide; var height = options.Orientation == PdfOrientation.Landscape ? shortSide : longSide;
         const double margin = 28, top = 64; var areaWidth = width-2*margin; var areaHeight = height-top-margin;
-        var scene = diagram.Kind == DiagramKind.Network || diagram.FreeMove ? OpenWorkspace.CompactGraph(diagram) : ChartGeometry.Arrange(diagram,true);
+        var scene = diagram.Kind == DiagramKind.Network || diagram.FreeMove ? OpenWorkspace.CompactGraph(diagram,true) : ChartGeometry.Arrange(diagram,true);
         var scale = options.FitToPaper ? Math.Min(1,Math.Min(areaWidth/Math.Max(1,scene.Width),areaHeight/Math.Max(1,scene.Height))) : .75;
         var tileWidth = areaWidth/scale; var tileHeight = areaHeight/scale;
         var columns = options.FitToPaper ? 1 : Math.Max(1,(int)Math.Ceiling(scene.Width/tileWidth)); var rows = options.FitToPaper ? 1 : Math.Max(1,(int)Math.Ceiling(scene.Height/tileHeight));
@@ -49,11 +49,11 @@ public static class DiagramPdf
                 if (diagram.FreeMove)
                 {
                     var route = FreePlacement.Connection(from,box,diagram.Layout);
-                    chartMarks.Add(new PdfLine(LeadGeometry.Vertices(route),colours.Lead,1.5,diagram.Layout is ChartLayout.MindMap or ChartLayout.RightTree)); continue;
+                    chartMarks.Add(new PdfLine(LeadGeometry.Vertices(route),colours.Lead,1.5,diagram.Layout is ChartLayout.MindMap or ChartLayout.RightTree or ChartLayout.LeftTree)); continue;
                 }
                 var c = ChartGeometry.Connector(from,box,diagram.Layout);
-                if (diagram.Layout is ChartLayout.MindMap or ChartLayout.RightTree) chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new((c.X1+c.X2)/2,c.Y1),new((c.X1+c.X2)/2,c.Y2),new(c.X2,c.Y2)],colours.Lead,1.5,true));
-                else if (diagram.Layout == ChartLayout.TopDown) chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new(c.X1,(c.Y1+c.Y2)/2),new(c.X2,(c.Y1+c.Y2)/2),new(c.X2,c.Y2)],colours.Lead));
+                if (diagram.Layout is ChartLayout.MindMap or ChartLayout.RightTree or ChartLayout.LeftTree) chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new((c.X1+c.X2)/2,c.Y1),new((c.X1+c.X2)/2,c.Y2),new(c.X2,c.Y2)],colours.Lead,1.5,true));
+                else if (ChartGeometry.IsVertical(diagram.Layout)) chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new(c.X1,(c.Y1+c.Y2)/2),new(c.X2,(c.Y1+c.Y2)/2),new(c.X2,c.Y2)],colours.Lead));
                 else chartMarks.Add(new PdfLine([new(c.X1,c.Y1),new((c.X1+c.X2)/2,c.Y1),new((c.X1+c.X2)/2,c.Y2),new(c.X2,c.Y2)],colours.Lead));
             }
         }
@@ -77,9 +77,10 @@ public static class DiagramPdf
         {
             var o=outline[box.Id]; var node=o.Node; var due=Overdue.IsDue(node.FinishDate,node.Completed); var level=levels[node.Id];
             var surface = DiagramAppearance.Surface(diagram,node,level);
-            if(surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar) chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,surface.Fill,surface.Decoration == NodeDecoration.Box ? surface.Stroke : "",Math.Min(surface.Radius, Math.Min(box.Width,box.Height)/2)));
+            if(surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar or NodeDecoration.TopBar) chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,surface.Fill,surface.Decoration == NodeDecoration.Box ? surface.Stroke : "",Math.Min(surface.Radius, Math.Min(box.Width,box.Height)/2),surface.Thickness));
             if(surface.Decoration == NodeDecoration.Underline) chartMarks.Add(new PdfLine([new(box.X,box.Y+box.Height-1),new(box.X+box.Width,box.Y+box.Height-1)],surface.Stroke,2));
             if(surface.Decoration == NodeDecoration.AccentBar) chartMarks.Add(new PdfLine([new(box.X+2,box.Y),new(box.X+2,box.Y+box.Height)],surface.Stroke,4));
+            if(surface.Decoration == NodeDecoration.TopBar) chartMarks.Add(new PdfLine([new(box.X,box.Y+2),new(box.X+box.Width,box.Y+2)],surface.Stroke,4));
             chartMarks.Add(new PdfText(box.X+11,box.Y+19,o.Code,12,DiagramAppearance.Text(diagram,node,level)));
             var format=node.Format; var font=Font(format.Size,format.Bold,format.Italic,format.Underline); var lines=ChartExports.Wrap(graphics,node.Title,font,box.Width-28).ToList();
             for(var i=0;i<lines.Count;i++)
@@ -87,6 +88,12 @@ public static class DiagramPdf
                 var length=graphics.MeasureString(lines[i],font).Width;
                 var x=format.Alignment==TextJustification.Centre?box.X+(box.Width-length)/2:format.Alignment==TextJustification.Right?box.X+box.Width-12-length:box.X+12;
                 chartMarks.Add(new PdfText(x,box.Y+29+format.Size+i*format.Size*1.35,lines[i],format.Size,DiagramAppearance.Text(diagram,node,level),format.Bold,format.Italic,format.Underline));
+            }
+            if (node.ShowNotes && !string.IsNullOrWhiteSpace(node.Notes))
+            {
+                var notes = ChartExports.Wrap(graphics,node.Notes,Font(12),box.Width-28).ToList();
+                var y = box.Y + 38 + lines.Count * format.Size * 1.35;
+                for (var i = 0; i < notes.Count; i++) chartMarks.Add(new PdfText(box.X+12,y+i*16.2,notes[i],12,surface.Text));
             }
         }
         var pages=new List<PdfSheet>();

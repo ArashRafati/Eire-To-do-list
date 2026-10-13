@@ -75,6 +75,7 @@ internal sealed partial class ChartWorkspace
         }
         catch (Exception ex) { status.Text = "Title NOT saved. Keep this field open and retry: " + ex.Message; inline.BorderBrush = OverdueBrush; return false; }
     }
+    internal bool DiscardForClose() { zoomSaveTimer.Stop(); zoomPending = false; return FinishInlineEdit(true); }
     public bool FinishInlineEdit(bool discardPending = false)
     {
         if (freeDragOriginal is not null) EndFreeDrag(discardPending);
@@ -104,7 +105,13 @@ internal sealed partial class ChartWorkspace
             if (id == from) { status.Text = "Choose a different target node."; return false; }
             Modify(c => GraphCreation.Connect(c, from, id, Direction, Routing), false); connectFrom = null; Select(id); return false;
         }
-        Select(id);
+        if ((Keyboard.Modifiers & ModifierKeys.Control) != 0)
+        {
+            if (!selectedNodes.Add(id)) selectedNodes.Remove(id);
+            selectedId = selectedNodes.Contains(id) ? id : selectedNodes.Cast<Guid?>().FirstOrDefault();
+            Select(selectedId,true); viewport.Focus(); return false;
+        }
+        Select(id,selectedNodes.Contains(id));
         if (painter.Copied is TextFormat format)
         {
             if (Current is Diagram chart && Try(() => { var candidate = chart.Clone(); candidate.Nodes.Single(n => n.Id == id).Format = format.Clone(); Commit(candidate); })) { painter.Clear(); RefreshData(); }
@@ -117,7 +124,7 @@ internal sealed partial class ChartWorkspace
         Point? pressed = null; Point original = default; bool moved = false;
         border.MouseLeftButtonDown += (_, e) =>
         {
-            if (e.OriginalSource is TextBox || IsInsideTextBox(e.OriginalSource as DependencyObject)) return;
+            if (IsInsideButton(e.OriginalSource as DependencyObject) || e.OriginalSource is TextBox || IsInsideTextBox(e.OriginalSource as DependencyObject)) return;
             if (!ClickNode(id)) { e.Handled = true; return; }
             viewport.Focus();
             if (e.ClickCount == 2) { BeginTitle(); e.Handled = true; return; }
@@ -146,7 +153,7 @@ internal sealed partial class ChartWorkspace
         };
         border.LostMouseCapture += (_, _) => { if (pressed.HasValue && freeDragOriginal is not null) { pressed = null; EndFreeDrag(true); } if (pressed.HasValue && networkMode) { pressed = null; if (moved) Render(); } };
         border.AllowDrop = !networkMode && Current?.FreeMove != true;
-        NodeDrop Position(DragEventArgs e) { var point = e.GetPosition(border); var fraction = Current?.Layout == ChartLayout.TopDown ? point.X / border.ActualWidth : point.Y / border.ActualHeight; return fraction < .28 ? NodeDrop.Before : fraction > .72 ? NodeDrop.After : NodeDrop.Child; }
+        NodeDrop Position(DragEventArgs e) { var point = e.GetPosition(border); var fraction = Current is Diagram active && ChartGeometry.IsVertical(active.Layout) ? point.X / border.ActualWidth : point.Y / border.ActualHeight; return fraction < .28 ? NodeDrop.Before : fraction > .72 ? NodeDrop.After : NodeDrop.Child; }
         border.DragOver += (_, e) =>
         {
             var drag = e.Data.GetData(DragFormat) as NodeDrag;
@@ -157,18 +164,19 @@ internal sealed partial class ChartWorkspace
             if (point.Y < 35) viewport.ScrollToVerticalOffset(viewport.VerticalOffset - 15); else if (point.Y > viewport.ActualHeight - 35) viewport.ScrollToVerticalOffset(viewport.VerticalOffset + 15);
             if (valid) { var drop = Position(e); border.BorderBrush = Ui.Accent; border.BorderThickness = drop == NodeDrop.Before ? new Thickness(1, 5, 1, 1) : drop == NodeDrop.After ? new Thickness(1, 1, 1, 5) : new Thickness(4); status.Text = drop == NodeDrop.Child ? "Drop: move branch inside this node" : "Drop: move branch " + (drop == NodeDrop.Before ? "before" : "after") + " this node"; }
         };
-        border.DragLeave += (_, _) => Select(selectedId);
+        border.DragLeave += (_, _) => Select(selectedId,true);
         border.Drop += (_, e) =>
         {
             if (e.Data.GetData(DragFormat) is NodeDrag drag && Current?.Id == drag.Diagram) { selectedId = drag.Node; var drop = Position(e); Modify(c => Charts.MoveRelative(c, drag.Node, id, drop)); ScrollToSelection(); } e.Handled = true;
         };
         var menu = new ContextMenu();
-        void Item(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => { Select(id); action(); }; menu.Items.Add(item); }
+        void Item(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => { Select(id,selectedNodes.Contains(id)); action(); }; menu.Items.Add(item); }
         Item("Node details · Ctrl+Enter", EditNode); Item("Edit title · F2", BeginTitle);
         if (networkMode) Item("Connect from this node…", StartConnection);
         else { Item("Move before / after…", MoveSelected); Item("Add sibling · Enter", () => AddNode(false)); Item("Add child · Insert", () => AddNode(true)); }
-        Item("Delete node", DeleteNode); border.ContextMenu = menu;
-        border.PreviewMouseRightButtonDown += (_, e) => { if (!FinishInlineEdit()) e.Handled = true; else Select(id); };
+        Item("Copy selected nodes · Ctrl+C",CopyNodes); Item("Paste as children · Ctrl+V",PasteNodes); Item("Show / hide full notes",ToggleNotes);
+        Item("Delete selected nodes", DeleteNode); border.ContextMenu = menu;
+        border.PreviewMouseRightButtonDown += (_, e) => { if (!FinishInlineEdit()) e.Handled = true; else Select(id,selectedNodes.Contains(id)); };
     }
     private static bool IsInsideTextBox(DependencyObject? source)
     {

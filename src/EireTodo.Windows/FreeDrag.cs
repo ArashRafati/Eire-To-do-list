@@ -65,15 +65,15 @@ internal sealed partial class ChartWorkspace
         if (free)
         {
             var route = FreePlacement.Connection(from,to,layout);
-            using (var context = geometry.Open()) { context.BeginFigure(new(route.X1,route.Y1),false,false); if (layout is ChartLayout.MindMap or ChartLayout.RightTree) context.BezierTo(new(route.C1X,route.C1Y),new(route.C2X,route.C2Y),new(route.X2,route.Y2),true,false); else foreach(var point in LeadGeometry.Vertices(route).Skip(1)) context.LineTo(new(point.X,point.Y),true,false); }
+            using (var context = geometry.Open()) { context.BeginFigure(new(route.X1,route.Y1),false,false); if (layout is ChartLayout.MindMap or ChartLayout.RightTree or ChartLayout.LeftTree) context.BezierTo(new(route.C1X,route.C1Y),new(route.C2X,route.C2Y),new(route.X2,route.Y2),true,false); else foreach(var point in LeadGeometry.Vertices(route).Skip(1)) context.LineTo(new(point.X,point.Y),true,false); }
             geometry.Freeze(); return geometry;
         }
         var c = ChartGeometry.Connector(from,to,layout);
         using (var context = geometry.Open())
         {
             context.BeginFigure(new(c.X1,c.Y1),false,false);
-            if (layout is ChartLayout.MindMap or ChartLayout.RightTree) context.BezierTo(new((c.X1+c.X2)/2,c.Y1),new((c.X1+c.X2)/2,c.Y2),new(c.X2,c.Y2),true,false);
-            else if (layout == ChartLayout.TopDown) { context.LineTo(new(c.X1,(c.Y1+c.Y2)/2),true,false); context.LineTo(new(c.X2,(c.Y1+c.Y2)/2),true,false); context.LineTo(new(c.X2,c.Y2),true,false); }
+            if (layout is ChartLayout.MindMap or ChartLayout.RightTree or ChartLayout.LeftTree) context.BezierTo(new((c.X1+c.X2)/2,c.Y1),new((c.X1+c.X2)/2,c.Y2),new(c.X2,c.Y2),true,false);
+            else if (ChartGeometry.IsVertical(layout)) { context.LineTo(new(c.X1,(c.Y1+c.Y2)/2),true,false); context.LineTo(new(c.X2,(c.Y1+c.Y2)/2),true,false); context.LineTo(new(c.X2,c.Y2),true,false); }
             else { context.LineTo(new((c.X1+c.X2)/2,c.Y1),true,false); context.LineTo(new((c.X1+c.X2)/2,c.Y2),true,false); context.LineTo(new(c.X2,c.Y2),true,false); }
         }
         geometry.Freeze(); return geometry;

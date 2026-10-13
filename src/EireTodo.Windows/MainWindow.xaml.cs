@@ -129,6 +129,7 @@ public partial class MainWindow : Window
             DependencyPropertyDescriptor.FromProperty(DataGridColumn.WidthProperty, typeof(DataGridColumn))
                 .AddValueChanged(column, (_, _) => QueueSettings());
         Loaded += (_, _) => { EnsureVisible(); UpdateControlsViewport(); };
+        PreviewKeyDown += (_,e) => { if (AppModules.FromSelector(ModeSelector.SelectedIndex) != AppMode.Todo) chartWorkspace.ClipboardShortcut(this,e); };
         Closing += OnClosing;
     }
 
@@ -478,17 +479,27 @@ public partial class MainWindow : Window
         }
     }
     private void RetrySettingsClick(object sender, RoutedEventArgs e) { SaveWindowSettings(); lastOverdueRefresh = default; ClockTick(); }
+    internal bool CaptureClosing { get; set; }
+    private bool closeApproved;
     private void OnClosing(object? sender, CancelEventArgs e)
     {
-        if (!chartWorkspace.FinishInlineEdit()) { e.Cancel = true; return; }
-        settingsTimer.Stop(); filterTimer.Stop(); clockTimer.Stop();
-        if (!SaveWindowSettings())
+        if (CaptureClosing || closeApproved) { settingsTimer.Stop(); filterTimer.Stop(); clockTimer.Stop(); return; }
+        e.Cancel = true;
+        bool SaveForClose()
         {
-            var close = MessageBox.Show(this, "Window settings could not be saved. Task changes already saved remain safe.\n\nClose without saving these window settings?", "Unsaved window settings", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
-            e.Cancel = close != MessageBoxResult.Yes;
-            if (e.Cancel) clockTimer.Start();
+            if (!chartWorkspace.FinishInlineEdit() || !SaveWindowSettings()) return false;
+            return TryAction(() => service.Change(_ => { }));
         }
+        bool SaveAsForClose()
+        {
+            if (!SaveForClose()) return false;
+            var file = new SaveFileDialog { Title = "Save SUMAPP workspace before closing", Filter = "SUMAPP file (*.sumapp)|*.sumapp", FileName = "SUMAPP-" + DateTime.Now.ToString("yyyyMMdd-HHmm") + ".sumapp", DefaultExt = ".sumapp", AddExtension = true };
+            return file.ShowDialog(this) == true && TryAction(() => service.Export(file.FileName));
+        }
+        var dialog = new CloseWorkspaceDialog(SaveForClose,SaveAsForClose,chartWorkspace.DiscardForClose) { Owner = this };
+        if (dialog.ShowDialog() == true) { closeApproved = true; e.Cancel = false; settingsTimer.Stop(); filterTimer.Stop(); clockTimer.Stop(); }
     }
+
     private void ApplyTaskFormat(TextFormat format)
     {
         if (TaskGrid.SelectedItem is not TaskRow row) return;

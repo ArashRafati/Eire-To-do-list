@@ -108,7 +108,12 @@ def thumbnail(example, x, y, width, height):
             parts.append(f'<path d="{path}" fill="none" stroke="{d["Colour"]}" stroke-width="{1.2/scale}"/>')
     return parts+['</g>']
 
-H=1410
+colour_rows=(len(gallery['Colours'])+3)//4
+styles_heading=302+colour_rows*127+28
+styles_start=styles_heading+16
+layouts_heading=styles_start+((len(gallery['Styles'])+4)//5)*127+40
+layouts_start=layouts_heading+16
+H=layouts_start+((len(gallery['Layouts'])+4)//5)*178+110
 s=frame('MIND MAP / WBS','Format')
 s += [text(26,177,'Node designs',size=14,bold=True),text(708,177,'Colour combinations',size=14,bold=True)]
 for i,index in enumerate([0,4,5,8]):
@@ -117,19 +122,19 @@ for i,index in enumerate([0,4,5,8]):
 for i,index in enumerate([0,7,15]):
     item=gallery['Colours'][index];x=708+i*176
     s += thumbnail(item['Example'],x,184,148,40)+[text(x+8,240,item['Name'],size=12)]
-s += [text(1280,207,'▾ All options',T['DarkTeal'],16,True),text(24,286,'16 colour combinations',T['DarkTeal'],23,True),text(1050,284,'Each pack colours the nodes and connections',size=16)]
+s += [text(1280,207,'▾ All options',T['DarkTeal'],16,True),text(24,286,str(len(gallery['Colours']))+' colour combinations',T['DarkTeal'],23,True),text(1050,284,'Each pack colours the nodes and connections',size=16)]
 for i,item in enumerate(gallery['Colours']):
     x=24+(i%4)*390;y=302+(i//4)*127
     s += [rect(x,y,376,115,'#FFFFFF'),text(x+14,y+25,item['Name'],size=17,bold=True)]
     s += thumbnail(item['Example'],x+14,y+34,347,72)
-s.append(text(24,839,'10 node designs',T['DarkTeal'],23,True))
+s.append(text(24,styles_heading,str(len(gallery['Styles']))+' node designs',T['DarkTeal'],23,True))
 for i,item in enumerate(gallery['Styles']):
-    x=24+(i%5)*312;y=854+(i//5)*127
+    x=24+(i%5)*312;y=styles_start+(i//5)*127
     s += [rect(x,y,298,115,'#FFFFFF'),text(x+12,y+25,item['Name'],size=17,bold=True)]
     s += thumbnail(item['Example'],x+12,y+34,274,72)
-s.append(text(24,1148,'5 diagram layouts · View tab',T['DarkTeal'],23,True))
+s.append(text(24,layouts_heading,str(len(gallery['Layouts']))+' diagram layouts · View tab',T['DarkTeal'],23,True))
 for i,item in enumerate(gallery['Layouts']):
-    x=24+i*312;y=1163
+    x=24+(i%5)*312;y=layouts_start+(i//5)*178
     s += [rect(x,y,298,170,'#FFFFFF'),text(x+12,y+25,item['Name'],size=15,bold=True)]
     s += thumbnail(item['Example'],x+12,y+36,274,120)
 save('SUMAPP-diagram-gallery-design',s)

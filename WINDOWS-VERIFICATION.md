@@ -272,3 +272,30 @@ not establish native UI or Windows launch behaviour.
     using the existing profile and custom desktop logo. Run --capture-previews
     to check decoded default branding before the temporary chosen-PNG step.
     Existing projects/tasks/diagrams and saved window settings must remain.
+
+28. **Multi-node clipboard.** Ctrl-click several hierarchy nodes, including a
+    parent and child; Ctrl+C, select another parent, Ctrl+V. Confirm descendants
+    appear once, as children, with fresh WBS numbers and preserved notes/dates/
+    formatting. Repeat paste, Undo/Redo, restart, copy between diagrams, copy folded
+    branches and select all visible nodes with Ctrl+A. Plain text fields must keep
+    their native text Ctrl+C/V. Test Home → Clipboard and right-click actions.
+    Graph copies must preserve internal labelled/ported/double leads; external
+    leads remain outside the copied group. Pasted graph nodes link from the chosen
+    destination and appear clear of existing nodes. Invalid/over-limit paste must
+    show an error and preserve the prior file and canvas.
+29. **Full notes and folds.** Add several paragraphs and enable Show complete
+    notes on the canvas in node details. Check wrapping with no ellipses, resizing,
+    layout/format changes, all new styles, restart, backup and fitted PDF preview.
+    Click − / + beside the WBS code: underlying levels hide/reappear, data remains,
+    and copied/exported descendants are retained. Leaf nodes have no fold button.
+30. **Close dialog.** Try Save, Save As, Cancel and Close with an active title edit
+    and changed window settings. Cancelled file dialogs and failed profile/file
+    writes must leave the app open and visibly report errors. Save As copies all
+    data; profile autosave continues. Close retains already autosaved edits. Escape
+    and the dialog's caption close return to the main window. Confirm the theme,
+    original logo and typography match other dialogs; normal main-window closing
+    always asks (automated isolated visual capture alone omits this prompt).
+31. **Expanded galleries.** View shows all ten hierarchy layouts, with no Graph
+    freeform entry. Format shows 21 palettes and 15 node designs. Verify thumbnail
+    selections, tooltips, compact ribbon access and overflow scrolling. Compare
+    the five new layouts and five new design surfaces to their fitted PDF previews.

@@ -16,7 +16,7 @@ internal sealed partial class ChartWorkspace
         var excluded = Charts.Descendants(chart, moving);
         foreach (var slot in HierarchyDropSlots.Create(chart, scene).Where(s => !excluded.Contains(s.Target)))
         {
-            var vertical = chart.Layout == ChartLayout.TopDown;
+            var vertical = ChartGeometry.IsVertical(chart.Layout);
             var marker = new Border { Width = vertical ? 3 : Math.Max(8, slot.Width - 12), Height = vertical ? Math.Max(8,slot.Height - 12) : 3, Background = Ui.Accent, Opacity = .45, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
             var zone = new Border { Width = slot.Width, Height = slot.Height, Background = Brushes.Transparent, Child = marker, AllowDrop = true };
             Canvas.SetLeft(zone, slot.X); Canvas.SetTop(zone, slot.Y); Panel.SetZIndex(zone, 5);

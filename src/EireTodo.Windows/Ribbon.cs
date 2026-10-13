@@ -153,6 +153,8 @@ internal sealed class RibbonBar : Border
             lower.Contains("log") || lower.Contains("detail") ? "M5,3 L19,3 L19,21 L5,21 Z M9,8 L15,8 M9,12 L15,12 M9,16 L13,16" :
             lower.Contains("fold") || lower.Contains("indent") ? "M3,5 L21,5 M9,11 L21,11 M9,17 L21,17 M2,10 L6,13 L2,16" :
             lower.Contains("filter") ? "M3,4 L21,4 L14,12 L14,20 L10,18 L10,12 Z" : "M4,4 L20,4 L20,20 L4,20 Z M8,8 L16,8 M8,12 L16,12 M8,16 L12,16";
+        if (lower.StartsWith("copy")) motif = "M8,3 L21,3 L21,16 M3,8 L16,8 L16,21 L3,21 Z";
+        if (lower.StartsWith("paste")) motif = "M8,3 L16,3 L16,7 L8,7 Z M8,5 L4,5 L4,21 L20,21 L20,5 L16,5 M8,12 L16,12 M8,16 L16,16";
         var icon = new System.Windows.Shapes.Path { Data = Geometry.Parse(motif), Width = 16, Height = 16, Stretch = Stretch.Uniform, StrokeThickness = 1.25, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, Margin = new Thickness(0,0,5,0) };
         icon.SetBinding(System.Windows.Shapes.Shape.StrokeProperty,new System.Windows.Data.Binding("Foreground") { Source = button });
         var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(icon); row.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center }); button.Content = row;
