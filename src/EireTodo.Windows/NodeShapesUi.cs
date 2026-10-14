@@ -33,6 +33,6 @@ internal sealed partial class ChartWorkspace
     {
         if(!FinishInlineEdit()||Current is not Diagram chart)return;var count=0;
         if(!Try(()=>{var candidate=chart.Clone();count=GraphConnections.Unlink(candidate,selectedNodes);Commit(candidate);}))return;
-        selectedLeadId=null;RefreshData();status.Text=$"Removed {count} links · Nodes retained · Ctrl+Z restores links.";
+        selectedLeadId=null;connectFrom=null;RefreshData();status.Text=$"Removed {count} links · Nodes retained · Ctrl+Z restores links.";
     }
 }

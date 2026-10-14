@@ -45,6 +45,10 @@ internal static class ShapeRegisterChecks
                     var point=NodeShapes.Port(box,side);Assert(point.X>=box.X-1&&point.X<=box.X+box.Width+1&&point.Y>=box.Y-1&&point.Y<=box.Y+box.Height+1);
                     var lead=LeadGeometry.Route(box,target,routing,fromSide:side);Assert(Math.Abs(lead.X1-point.X)<.001&&Math.Abs(lead.Y1-point.Y)<.001);
                 }
+                var automatic=LeadGeometry.Route(box,target,LeadRouting.Curve);
+                Assert(Math.Abs(automatic.LabelX-(automatic.X1+3*automatic.C1X+3*automatic.C2X+automatic.X2)/8)<.001);
+                Assert(Math.Abs(automatic.LabelY-(automatic.Y1+3*automatic.C1Y+3*automatic.C2Y+automatic.Y2)/8)<.001);
+                Assert(automatic.LabelAngle>=-90&&automatic.LabelAngle<=90);
                 if(shape==NodeShape.Trapezoid)Assert(Math.Abs(NodeShapes.Port(box,LeadSide.Right).X-(box.X+.9*box.Width))<.001);
             }
         });

@@ -131,7 +131,21 @@ public static class LeadGeometry
         }
         var first=Attach(from,path.X1,path.Y1,fromSide);var last=Attach(to,path.X2,path.Y2,toSide);
         var bends=path.Bends?.ToList();if(bends is not null){bends[0]=first;bends[^1]=last;}
-        return path with {X1=first.X,Y1=first.Y,X2=last.X,Y2=last.Y,Bends=bends};
+        if(from.Shape==NodeShape.Design&&to.Shape==NodeShape.Design)return path;
+        double labelX,labelY,angle;
+        if(routing==LeadRouting.Curve)
+        {
+            labelX=(first.X+3*path.C1X+3*path.C2X+last.X)/8;labelY=(first.Y+3*path.C1Y+3*path.C2Y+last.Y)/8;
+            angle=Math.Atan2(-first.Y-path.C1Y+path.C2Y+last.Y,-first.X-path.C1X+path.C2X+last.X)*180/Math.PI;
+        }
+        else
+        {
+            var vertices=bends??new List<LeadPoint>{first,new(path.C1X,path.C1Y),new(path.C2X,path.C2Y),last};
+            var longest=vertices.Zip(vertices.Skip(1),(a,b)=>(A:a,B:b,Length:Math.Pow(a.X-b.X,2)+Math.Pow(a.Y-b.Y,2))).MaxBy(s=>s.Length);
+            labelX=(longest.A.X+longest.B.X)/2;labelY=(longest.A.Y+longest.B.Y)/2;angle=Math.Atan2(longest.B.Y-longest.A.Y,longest.B.X-longest.A.X)*180/Math.PI;
+        }
+        if(angle>90)angle-=180;if(angle< -90)angle+=180;
+        return path with {X1=first.X,Y1=first.Y,X2=last.X,Y2=last.Y,Bends=bends,LabelX=labelX,LabelY=labelY,LabelAngle=angle};
     }
     private static LeadPath RouteBase(NodeBox from,NodeBox to,LeadRouting routing,int lane,IReadOnlyCollection<NodeBox>? obstacles,LeadSide fromSide,LeadSide toSide)
     {
