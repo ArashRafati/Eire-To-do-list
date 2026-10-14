@@ -10,7 +10,7 @@
     <AssemblyName>SUMAPP</AssemblyName>
     <Product>SUMAPP</Product>
     <Title>SUMAPP</Title>
-    <Version>3.7.1</Version>
+    <Version>3.8.0</Version>
     <StartupObject>EireTodo.Windows.Startup</StartupObject>
     <ApplicationIcon>Assets/AppIcon.ico</ApplicationIcon>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -21,7 +21,7 @@
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
-  <ItemGroup><Resource Include="Assets/AppIcon.ico" /><Resource Include="Assets/AppIcon.png" /><Resource Include="Assets/SumappLogo.png" /><Resource Include="Assets/EireLogo.png" /></ItemGroup>
+  <ItemGroup><Resource Include="Assets/AppIcon.ico" /><Resource Include="Assets/AppIcon.png" /><Resource Include="Assets/SumappLogo.png" /></ItemGroup>
   <ItemGroup><Resource Include="../EireTodo.Core/Assets/*.ttf" Link="Assets/%(Filename)%(Extension)" /></ItemGroup>
   <ItemGroup><ProjectReference Include="../EireTodo.Core/EireTodo.Core.csproj" GlobalPropertiesToRemove="RuntimeIdentifier;SelfContained;PublishSingleFile" /></ItemGroup>
 </Project>

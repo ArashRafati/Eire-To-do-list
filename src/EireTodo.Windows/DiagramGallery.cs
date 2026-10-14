@@ -16,7 +16,7 @@ internal sealed class DiagramGallery : StackPanel
     private readonly DiagramGalleryKind kind;
     private readonly Action<int> choose;
     private readonly StackPanel strip = new() { Orientation = Orientation.Horizontal };
-    private readonly TextBlock caption = new() { FontSize = 12, Foreground = Ui.Ink, Margin = new Thickness(0, 3, 0, 0) };
+    private readonly TextBlock caption = new() { FontSize = 11, Foreground = Ui.Ink, Margin = new Thickness(0, 1, 0, 0) };
     private readonly Popup popup = new() { StaysOpen = false, AllowsTransparency = true, Placement = PlacementMode.Bottom };
     private DiagramPalette palette;
     private NodeDesign design;
@@ -29,7 +29,7 @@ internal sealed class DiagramGallery : StackPanel
     {
         this.kind = kind; this.choose = choose;
         count = kind == DiagramGalleryKind.Styles ? Enum.GetValues<NodeDesign>().Length : kind == DiagramGalleryKind.Colours ? Enum.GetValues<DiagramPalette>().Length : Enum.GetValues<ChartLayout>().Count(l => l != ChartLayout.Freeform);
-        Width = 428; MinHeight = 76; Margin = new Thickness(0, 0, 4, 0);
+        Width = 428; MinHeight = 72; Margin = new Thickness(0, 0, 4, 0);
         Children.Add(strip); Children.Add(caption);
         Unloaded += (_, _) => popup.IsOpen = false;
         IsEnabledChanged += (_, _) => { if (!IsEnabled) popup.IsOpen = false; };
@@ -59,9 +59,9 @@ internal sealed class DiagramGallery : StackPanel
     {
         var label = ItemName(index);
         var panel = new StackPanel();
-        panel.Children.Add(new DiagramThumbnail(kind == DiagramGalleryKind.Colours ? (DiagramPalette)index : palette, kind == DiagramGalleryKind.Styles ? (NodeDesign)index : design, kind == DiagramGalleryKind.Layouts ? (ChartLayout)index : layout) { Width = width - 12, Height = compact ? 22 : 46 });
+        panel.Children.Add(new DiagramThumbnail(kind == DiagramGalleryKind.Colours ? (DiagramPalette)index : palette, kind == DiagramGalleryKind.Styles ? (NodeDesign)index : design, kind == DiagramGalleryKind.Layouts ? (ChartLayout)index : layout) { Width = width - 12, Height = compact ? 19 : 46 });
         panel.Children.Add(new TextBlock { Text = label, FontSize = 12, Foreground = Ui.Ink, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 2, 0, 0), MaxWidth = width - 12, MaxHeight = 30 });
-        var button = new Button { Content = panel, Width = width, Height = compact ? 62 : 84, Padding = new Thickness(3), Margin = new Thickness(0, 0, 4, 0), Style = (Style)Application.Current.FindResource("RibbonButton"), BorderThickness = new Thickness(1), BorderBrush = index == selected ? Ui.Accent : Brushes.Transparent, Background = index == selected ? Ui.Brush("SoftTeal") : Brushes.Transparent, ToolTip = label + "\n" + (kind == DiagramGalleryKind.Styles ? DiagramAppearance.DesignDescription((NodeDesign)index) : kind == DiagramGalleryKind.Colours ? "Choose a diagram palette. Multi-colour packs deliberately colour existing graph nodes; new nodes keep the default until styled. Priority and overdue highlights remain visible." : "Arrange all visible nodes using this layout.") };
+        var button = new Button { Content = panel, Width = width, Height = compact ? 60 : 84, Padding = new Thickness(3), Margin = new Thickness(0, 0, 4, 0), Style = (Style)Application.Current.FindResource("RibbonButton"), BorderThickness = new Thickness(1), BorderBrush = index == selected ? Ui.Accent : Brushes.Transparent, Background = index == selected ? Ui.Brush("SoftTeal") : Brushes.Transparent, ToolTip = label + "\n" + (kind == DiagramGalleryKind.Styles ? DiagramAppearance.DesignDescription((NodeDesign)index) : kind == DiagramGalleryKind.Colours ? "Choose a diagram palette. Multi-colour packs deliberately colour existing graph nodes; new nodes keep the default until styled. Priority and overdue highlights remain visible." : "Arrange all visible nodes using this layout.") };
         AutomationProperties.SetName(button, label); AutomationProperties.SetItemStatus(button, index == selected ? "Selected" : "Available");
         ToolTipService.SetInitialShowDelay(button, 400);
         button.Click += (_, _) => { popup.IsOpen = false; choose(index); };

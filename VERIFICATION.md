@@ -1,6 +1,6 @@
 # Build and verification evidence
 
-Current delivery: version **3.7.1**, including the combined mind-map/WBS module, ten hierarchy layouts,
+Current delivery: version **3.8.0**, including the combined mind-map/WBS module, ten hierarchy layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a bottom-right clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
@@ -189,3 +189,26 @@ The 228 KiB launcher uses adjacent DLLs; no single-file extraction is required.
 The complete folder is around 157 MB uncompressed. Package checks verify every
 application/runtime file and the versioned executable against the published files.
 Native Windows startup, elapsed launch time and taskbar interaction remain unrun.
+
+## 3.8 evidence
+
+91 Core groups pass (eleven new groups). Checks exercise interior shape sizing
+with 12–48 px text/full notes, mixed shapes in all ten hierarchy layouts, graph
+spacing with a retained anchor, outline ports on all four sides, clipboard
+appearance, restart/backup and CSV/XML shape fields, complete shaped PDF text,
+unlink-all without deleting nodes, all eight register palette contrasts, saved
+register/ribbon settings, one-time company-logo migration and invalid-data
+atomicity. Existing 34 diagram palettes and 15 node designs remain compatible.
+
+Resource uniqueness and self-contained Windows builds pass. Binary inspection
+checks original SUMAPP resources/icons, removed Eire header, standard-user/DPI
+manifest and complete adjacent runtime files. Independent PyMuPDF reads all twelve
+shape-choice PDFs and verifies complete titles/notes plus vector drawing content.
+Independent scheduling CSV/MSPDI/P6 parsing and logo PDF header checks pass.
+
+Native capture now includes original SUMAPP/no Eire header, mixed shapes, charcoal
+register, compact ribbons in all modules, and fixed organisation-logo overlap
+fading. It compiles but has not run on Windows. Native ribbon polish, smoothness,
+DPI, actual mouse/keyboard interaction and launch require the acceptance checklist.
+The user's supplied screenshot confirms an earlier release rendered on Windows;
+it does not validate this updated release.

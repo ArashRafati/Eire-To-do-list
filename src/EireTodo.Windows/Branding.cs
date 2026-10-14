@@ -21,10 +21,4 @@ internal static class Branding
         frame.Freeze(); return frame;
     }
 
-    // Compact emblem prepared from the supplied inline artwork; the workspace label is UI text.
-    internal static void ApplyEireLogo(Image logo, TextBlock pending)
-    {
-        logo.Source = LoadBundledImage("EireLogo.png"); logo.Visibility = Visibility.Visible;
-        pending.Text = "Eire";
-    }
 }

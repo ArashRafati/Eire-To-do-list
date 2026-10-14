@@ -55,6 +55,7 @@ public static class DiagramAppearance
     public static NodeSurface Surface(Diagram diagram, ChartNode node, int level)
     {
         var normal = Surface(diagram.Palette, diagram.Design, diagram.Kind == DiagramKind.Network ? 2 : level);
+        if(NodeShapes.Resolve(diagram,node)!=NodeShape.Design) normal=normal with {Decoration=NodeDecoration.Box,Stroke=normal.Stroke.Length==0?Colours(diagram.Palette).Border:normal.Stroke};
         if (node.FillColour is string colour) normal = NodeColours.Apply(normal,colour);
         // Priority and overdue remain visible in every colour pack and node style.
         return Overdue.IsDue(node.FinishDate, node.Completed) ? normal with { Fill = BrandTheme.ErrorSurface, Text = BrandTheme.Error, Stroke = BrandTheme.Error, Decoration = NodeDecoration.Box } : node.Priority ? normal with { Fill = BrandTheme.Yellow, Text = BrandTheme.Black, Decoration = NodeDecoration.Box } : normal;

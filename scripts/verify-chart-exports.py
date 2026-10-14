@@ -134,3 +134,13 @@ for orientation in ['Portrait', 'Landscape']:
                 assert not logo.intersects(fitz.Rect(line['bbox'])), 'Text overlaps organisation logo'
     assert 'Client document' in ''.join(page.get_text() for page in document)
     print('PASS independent organisation PDF:', orientation, len(document), 'pages, decoded image size/placement and clear text header')
+
+# Every explicit shape must keep complete labels/notes inside the vector-export page.
+for file in sorted(folder.glob('shape-*.pdf')):
+    document = fitz.open(file)
+    assert len(document) == 1
+    text = ' '.join(document[0].get_text().split())
+    assert 'Engineering review' in text and 'Complete notes' in text
+    assert 'First note paragraph' in text and 'Second note paragraph' in text
+    assert document[0].get_drawings(), file.name
+print('PASS independent shape PDFs: all 12 choices retain full titles/notes and readable vector shapes')

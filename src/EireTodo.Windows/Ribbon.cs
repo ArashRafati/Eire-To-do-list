@@ -33,20 +33,24 @@ internal sealed class RibbonBar : Border
         public List<FrameworkElement> Shortcuts { get; } = [];
     }
     private bool compact;
-    private bool? userCollapsed;
+    public RibbonDisplayMode DisplayMode { get; private set; }
+    public Action<RibbonDisplayMode>? DisplayModeChanged { get; set; }
+    private Button pin=null!;
+    public void SetDisplayMode(RibbonDisplayMode value,bool notify=false)
+    {DisplayMode=value;ApplyCollapse();if(notify)DisplayModeChanged?.Invoke(value);}
     public RibbonBar()
     {
         Background = (Brush)Application.Current.FindResource("PanelBrush"); BorderBrush = (Brush)Application.Current.FindResource("LineBrush"); BorderThickness = new Thickness(0,0,0,1); Margin = new Thickness(0, 0, 0, 4);
         var root = new DockPanel(); var heading = new DockPanel(); DockPanel.SetDock(heading, Dock.Top);
         summaryScroll = new ScrollViewer { Content = summary, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Visibility = Visibility.Collapsed }; DockPanel.SetDock(summaryScroll, Dock.Top);
-        fold = Ui.Button("⌃", (_, _) => { userCollapsed = pages.Visibility == Visibility.Visible; ApplyCollapse(); }); fold.Style = (Style)Application.Current.FindResource("RibbonButton"); fold.ToolTip = "Compact commands / full ribbon. Double-click a tab to toggle."; fold.Width = 30; fold.MinHeight = 28; fold.Padding = new Thickness(0); DockPanel.SetDock(fold, Dock.Right); heading.Children.Add(fold); fileButton = Ui.Button("File",(_,_) => OpenFile()); fileButton.Style=(Style)Application.Current.FindResource("RibbonButton"); fileButton.FontWeight=FontWeights.SemiBold; fileButton.Foreground=Ui.Brush("DarkTeal"); fileButton.MinHeight=30; fileButton.Padding=new Thickness(14,3,14,3); fileButton.ToolTip="Save, open, import and export · Alt+F"; DockPanel.SetDock(fileButton,Dock.Left); heading.Children.Add(fileButton); heading.Children.Add(tabs); root.Children.Add(heading); root.Children.Add(summaryScroll); root.Children.Add(pages); Child = root;
+        fold = Ui.Button("⌃", (_, _) => { SetDisplayMode(pages.Visibility==Visibility.Visible?RibbonDisplayMode.Compact:RibbonDisplayMode.Pinned,true); }); fold.Style = (Style)Application.Current.FindResource("RibbonButton"); fold.ToolTip = "Collapse to minimal tools / expand and pin. Double-click a tab to toggle."; fold.Width = 30; fold.MinHeight = 28; fold.Padding = new Thickness(0); DockPanel.SetDock(fold, Dock.Right); heading.Children.Add(fold); pin=Ui.Button("⌖",(_,_)=>SetDisplayMode(RibbonDisplayMode.Pinned,true));pin.Style=(Style)Application.Current.FindResource("RibbonButton");pin.Width=28;pin.MinHeight=28;pin.Padding=new Thickness(0);pin.ToolTip="Pin the full ribbon in all modules";DockPanel.SetDock(pin,Dock.Right);heading.Children.Add(pin); fileButton = Ui.Button("File",(_,_) => OpenFile()); fileButton.Style=(Style)Application.Current.FindResource("RibbonButton"); fileButton.FontWeight=FontWeights.SemiBold; fileButton.Foreground=Ui.Brush("DarkTeal"); fileButton.MinHeight=30; fileButton.Padding=new Thickness(14,3,14,3); fileButton.ToolTip="Save, open, import and export · Alt+F"; DockPanel.SetDock(fileButton,Dock.Left); heading.Children.Add(fileButton); heading.Children.Add(tabs); root.Children.Add(heading); root.Children.Add(summaryScroll); root.Children.Add(pages); Child = root;
         foreach (var name in new[] { "Home", "Insert", "Format", "View" })
         {
             var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 4, 2, 2) }; panels[name] = panel;
             var scroller = new ScrollViewer { Content = panel, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Visibility = Visibility.Collapsed, Tag = name }; pages.Children.Add(scroller);
             scroller.PreviewMouseWheel += (_, e) => { if (Keyboard.Modifiers == ModifierKeys.Shift) { scroller.ScrollToHorizontalOffset(scroller.HorizontalOffset - e.Delta); e.Handled = true; } };
             var button = Ui.Button(name, (_, _) => Show(name)); button.Style = (Style)Application.Current.FindResource("RibbonButton"); button.FontSize = 14; button.MinHeight = 30; button.Padding = new Thickness(9, 3, 9, 3); button.ToolTip = name + " commands"; button.BorderThickness = new Thickness(0, 0, 0, 2);
-            button.PreviewMouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) { userCollapsed = pages.Visibility == Visibility.Visible; ApplyCollapse(); e.Handled = true; } };
+            button.PreviewMouseLeftButtonDown += (_, e) => { if (e.ClickCount == 2) { SetDisplayMode(pages.Visibility==Visibility.Visible?RibbonDisplayMode.Compact:RibbonDisplayMode.Pinned,true); e.Handled = true; } };
             buttons[name] = button; tabs.Children.Add(button);
         }
         Show("Home");
@@ -62,7 +66,7 @@ internal sealed class RibbonBar : Border
     public void SetCompact(bool value) { compact = value; ApplyCollapse(); }
     private void ApplyCollapse()
     {
-        var collapsed = userCollapsed ?? compact; pages.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible; summaryScroll.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed; fold.Content = collapsed ? "⌄" : "⌃"; if (collapsed) BuildSummary();
+        var collapsed = DisplayMode==RibbonDisplayMode.Compact || DisplayMode==RibbonDisplayMode.Automatic&&compact; pages.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible; summaryScroll.Visibility = collapsed ? Visibility.Visible : Visibility.Collapsed; fold.Content = collapsed ? "⌄" : "⌃";pin.Foreground=DisplayMode==RibbonDisplayMode.Pinned?Ui.Accent:Ui.Ink; if (collapsed) BuildSummary();
     }
     public void Show(string name)
     {
@@ -112,7 +116,7 @@ internal sealed class RibbonBar : Border
 
                 command.SetBinding(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, new Binding("IsChecked") { Source = source, Mode = BindingMode.TwoWay }); command.SetBinding(IsEnabledProperty,new Binding("IsEnabled") { Source = source }); summary.Children.Add(command);
             }
-            if (Descendants<FormattingTools>(group.Controls).Any()) Action(summary,"Fonts",() => { userCollapsed = false; ApplyCollapse(); Show("Format"); });
+            if (Descendants<FormattingTools>(group.Controls).Any()) Action(summary,"Fonts",() => { SetDisplayMode(RibbonDisplayMode.Pinned,true); Show("Format"); });
         }
     }
     private static bool InsideFormatting(DependencyObject element)
@@ -132,8 +136,8 @@ internal sealed class RibbonBar : Border
     }
     public WrapPanel Group(string tab, string caption)
     {
-        var content = new DockPanel(); var label = new TextBlock { Text = caption.ToUpperInvariant(), FontSize = 10.5, Foreground = Ui.Brush("SecondaryTextBrush"), Margin = new Thickness(3, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Left }; DockPanel.SetDock(label, Dock.Bottom); content.Children.Add(label);
-        var controls = new WrapPanel { Orientation = Orientation.Vertical, Height = 80 }; content.Children.Add(controls);
+        var content = new DockPanel(); var label = new TextBlock { Text = caption.ToUpperInvariant(), FontSize = 10, Foreground = Ui.Brush("DarkTeal"), Margin = new Thickness(3, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Left }; DockPanel.SetDock(label, Dock.Bottom); content.Children.Add(label);
+        var controls = new WrapPanel { Orientation = Orientation.Vertical, Height = 76 }; content.Children.Add(controls);
         var border = new Border { Child = content, BorderBrush = (Brush)Application.Current.FindResource("LineBrush"), BorderThickness = new Thickness(0, 0, 1, 0), Padding = new Thickness(0, 0, 12, 0), Margin = new Thickness(0, 0, 12, 0) };
         var state = new GroupState { View = border, Controls = controls, Scope = scope, Tab = tab }; border.Tag = state; groups.Add(state); panels[tab].Children.Add(border); SetScope(activeScope); return controls;
     }
@@ -151,7 +155,7 @@ internal sealed class RibbonBar : Border
     public static void Label(Button button,string caption)
     {
         var text = caption.Replace("_", "").Replace("+ ", ""); var lower = text.ToLowerInvariant();
-        var motif = lower.Contains("delete") ? "M5,6 L19,6 M8,6 L8,20 L17,20 L17,6 M10,3 L15,3 M10,10 L10,17 M14,10 L14,17" :
+        var motif = lower.Contains("unlink") ? "M3,10 C3,4 9,3 12,7 M21,14 C21,20 15,21 12,17 M8,12 L16,12 M9,4 L15,20" : lower.Contains("delete") ? "M5,6 L19,6 M8,6 L8,20 L17,20 L17,6 M10,3 L15,3 M10,10 L10,17 M14,10 L14,17" :
             lower.Contains("undo") || lower.Contains("earlier") ? "M8,5 L3,10 L8,15 M3,10 L15,10 Q22,10 20,19" :
             lower.Contains("redo") || lower.Contains("later") ? "M16,5 L21,10 L16,15 M21,10 L9,10 Q2,10 4,19" :
             lower.Contains("font") || lower.Contains("format") || lower.Contains("paint") ? "M4,4 L19,4 L19,10 L4,10 Z M15,10 L15,14 L11,14 L11,21" :
@@ -166,9 +170,9 @@ internal sealed class RibbonBar : Border
             lower.Contains("filter") ? "M3,4 L21,4 L14,12 L14,20 L10,18 L10,12 Z" : "M4,4 L20,4 L20,20 L4,20 Z M8,8 L16,8 M8,12 L16,12 M8,16 L12,16";
         if (lower.StartsWith("copy")) motif = "M8,3 L21,3 L21,16 M3,8 L16,8 L16,21 L3,21 Z";
         if (lower.StartsWith("paste")) motif = "M8,3 L16,3 L16,7 L8,7 Z M8,5 L4,5 L4,21 L20,21 L20,5 L16,5 M8,12 L16,12 M8,16 L16,16";
-        var icon = new System.Windows.Shapes.Path { Data = Geometry.Parse(motif), Width = 16, Height = 16, Stretch = Stretch.Uniform, StrokeThickness = 1.25, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, Margin = new Thickness(0,0,5,0) };
-        icon.SetBinding(System.Windows.Shapes.Shape.StrokeProperty,new System.Windows.Data.Binding("Foreground") { Source = button });
-        var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(icon); row.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center }); button.Content = row;
+        var icon = new System.Windows.Shapes.Path { Data = Geometry.Parse(motif), Width = 14, Height = 14, Stretch = Stretch.Uniform, StrokeThickness = 1.1, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, Margin = new Thickness(0,0,5,0) };
+        icon.Stroke=Ui.Brush(lower.Contains("delete")?"#B42318":lower.StartsWith("copy")||lower.StartsWith("paste")?"#2563EB":lower.Contains("shape")||lower.Contains("organise")?"#7C3AED":lower.Contains("import")||lower.Contains("export")?"#B45309":"#039690");
+        var row = new StackPanel { Orientation = Orientation.Horizontal }; row.Children.Add(icon); row.Children.Add(new TextBlock { Text = text, FontSize=13, VerticalAlignment = VerticalAlignment.Center }); button.Content = row;
         button.ToolTip = text + TooltipDetail(lower); System.Windows.Automation.AutomationProperties.SetName(button,text); ToolTipService.SetInitialShowDelay(button,450); ToolTipService.SetShowDuration(button,20000);
     }
     private static string TooltipDetail(string text) => text.Contains("delete node") ? "\nRemove the selected node and its branch immediately. Undo restores it." : text.Contains("delete lead") ? "\nRemove the selected lead. Nodes stay in place. Undo restores it." : text.Contains("sibling") ? "\nEnter outside title editing creates a node at the same level." : text.Contains("child") ? "\nInsert creates a node below the selection." : text.Contains("linked") ? "\nEnter / Insert creates a node linked from the graph selection." : text.Contains("lead label") ? "\nSelect a lead, then edit its label, direction and endpoints. F2 also opens this editor." : text.Contains("fit") ? "\nFit and centre the entire diagram in the workspace." : text.Contains("format painter") ? "\nCopy the selected text style, then click the destination task or node." : text.Contains("export") ? "\nExport the full diagram. PDF opens a paper preview first." : text.Contains("details") ? "\nEdit the full notes, dates and status. Shortcut: Ctrl+Enter." : "\n" + text + " for the current selection or diagram.";

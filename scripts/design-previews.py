@@ -12,7 +12,7 @@ root = Path(__file__).resolve().parents[1]
 fixture = json.loads((root / 'artifacts/export-checks/SUMAPP-design.json').read_text())
 T = fixture['Theme']
 logo = base64.b64encode((root / 'src/EireTodo.Windows/Assets/SumappLogo.png').read_bytes()).decode()
-eire = base64.b64encode((root / 'src/EireTodo.Windows/Assets/EireLogo.png').read_bytes()).decode()
+shapes = json.loads((root / 'artifacts/export-checks/SUMAPP-shapes.json').read_text())
 gallery = json.loads((root / 'artifacts/export-checks/SUMAPP-gallery.json').read_text())
 out = root / 'previews'
 out.mkdir(exist_ok=True)
@@ -30,8 +30,16 @@ def pdf_text(d):
 def rect(x, y, w, h, fill, stroke='', radius=4):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" fill="{fill}" stroke="{stroke or "none"}" stroke-width="1"/>'
 
+def node_shape(d):
+    if d['Shape']==2: return rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],10)
+    c=d['Contour'];start=c['Start'];path='M'+str(start['X'])+' '+str(start['Y'])
+    for segment in c['Segments']:
+        end=segment['End'];a=segment.get('Control1');b=segment.get('Control2')
+        path+=(' C'+str(a['X'])+' '+str(a['Y'])+' '+str(b['X'])+' '+str(b['Y'])+' '+str(end['X'])+' '+str(end['Y'])) if a else (' L'+str(end['X'])+' '+str(end['Y']))
+    return f'<path d="{path} Z" fill="{d["Fill"]}" stroke="{d["Stroke"]}" stroke-width="{d["Thickness"]}"/>'
+
 def frame(module, active_tab='Home'):
-    s = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{W}" height="{H}">', rect(0,0,W,H,T['Surface']),rect(0,0,W,48,T['Black'],radius=0),rect(0,0,W,3,T['Yellow'],radius=0),rect(10,8,34,34,'#FFFFFF'), f'<image x="12" y="10" width="30" height="30" xlink:href="data:image/png;base64,{logo}"/>',text(54,33,'SUMAPP','#FFFFFF',20,True),rect(W-228,12,94,28,'#FFFFFF'),f'<image x="{W-222}" y="14" width="24" height="24" xlink:href="data:image/png;base64,{eire}"/>',text(W-190,33,'Eire',size=16,bold=True)]
+    s = [f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{W}" height="{H}">', rect(0,0,W,H,T['Surface']),rect(0,0,W,48,T['Black'],radius=0),rect(0,0,W,3,T['Yellow'],radius=0),rect(10,8,34,34,'#FFFFFF'), f'<image x="12" y="10" width="30" height="30" xlink:href="data:image/png;base64,{logo}"/>',text(54,33,'SUMAPP','#FFFFFF',20,True)]
     for x,label in [(W-120,'−'),(W-80,'□'),(W-40,'×')]:s.append(text(x+13,32,label,'#FFFFFF',17))
     for x,label in [(8,'File'),(76,'Home'),(144,'Insert'),(212,'Format'),(280,'View')]:
         s += [rect(x,48,68,30,T['DarkTeal'] if label==active_tab else T['Surface'],radius=2),text(x+10,69,label,'#FFFFFF' if label==active_tab else T['Ink'],14,True)]
@@ -59,7 +67,7 @@ def save(name, parts):
 
 s=frame('TO-DO')
 s += [rect(12,162,190,28,T['Surface'],T['DarkTeal']),text(22,182,'To-do     ⌄',T['Ink'],14),text(12,245,'APPLICATION',size=11)]
-action(s,225,182,'Add task',True); action(s,225,216,'Edit / notes',icon='doc'); action(s,422,182,'Delete',icon='trash'); action(s,422,216,'Projects',icon='doc')
+action(s,225,182,'Add task',True); action(s,225,216,'Edit / notes',icon='doc'); action(s,422,182,'Delete',icon='trash'); action(s,422,216,'Projects',icon='doc');action(s,660,182,'Colour presets…',icon='doc');action(s,660,216,'Row design…',icon='doc')
 s += [text(225,245,'EDIT',size=11),text(422,245,'PROJECTS',size=11)]
 s += [rect(12,267,W-24,107,'#FFFFFF'),text(25,288,'PROJECT VIEW',size=14,bold=True),rect(25,298,200,40,'#FFFFFF',T['DarkTeal']),text(37,324,'All projects',size=17),text(241,288,'SEARCH TASK',size=14,bold=True),rect(241,298,220,40,'#FFFFFF',T['DarkTeal']),rect(480,309,22,22,'#FFFFFF',T['DarkTeal']),text(512,326,'Hide completed',size=16)]
 action(s,683,324,'Clear filters',icon='doc');s.append(text(27,363,'⌄  More filters · notes, category, status and dates',size=16))
@@ -86,7 +94,8 @@ scene=fixture['Scene'];scale=min(1.2,(W-100)/scene['Width'],570/scene['Height'])
 s.append(f'<g transform="translate({dx} {dy}) scale({scale})">')
 for mark in fixture['Marks']:
     d=mark['Data'];kind=mark['Kind']
-    if kind=='PdfBox':s.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
+    if kind=='PdfNodeShape':s.append(node_shape(d))
+    elif kind=='PdfBox':s.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
     elif kind=='PdfText':s.append(pdf_text(d))
     elif kind=='PdfLine':
         points=d['Points'];p='M'+str(points[0]['X'])+' '+str(points[0]['Y'])
@@ -105,7 +114,8 @@ scene=graph_fixture['Scene'];scale=min(1.2,(W-100)/scene['Width'],570/scene['Hei
 s.append(f'<g transform="translate({dx} {dy}) scale({scale})">')
 for mark in graph_fixture['Marks']:
     d=mark['Data'];kind=mark['Kind']
-    if kind=='PdfBox':s.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
+    if kind=='PdfNodeShape':s.append(node_shape(d))
+    elif kind=='PdfBox':s.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
     elif kind=='PdfText':s.append(pdf_text(d))
     elif kind=='PdfLine':
         points=d['Points'];p='M'+str(points[0]['X'])+' '+str(points[0]['Y'])
@@ -113,7 +123,7 @@ for mark in graph_fixture['Marks']:
         else:p+=' '+' '.join('L'+str(q['X'])+' '+str(q['Y']) for q in points[1:])
         s.append(f'<path d="{p}" fill="none" stroke="{d["Colour"]}" stroke-width="{d["Thickness"]}"/>')
 s += ['</g>',text(16,855,'5 nodes · Multi-colour package applied · Drag space to pan · Ctrl+wheel to zoom',size=15)]
-s += [rect(16,267,112,112,'#FFFFFF'),f'<image x="22" y="273" width="100" height="100" xlink:href="data:image/png;base64,{eire}"/>']
+s += [rect(16,267,112,112,'#FFFFFF'),f'<image x="22" y="273" width="100" height="100" xlink:href="data:image/png;base64,{logo}"/>']
 save('SUMAPP-graph-design',s)
 
 def thumbnail(example, x, y, width, height):
@@ -121,7 +131,8 @@ def thumbnail(example, x, y, width, height):
     parts=[f'<g transform="translate({dx} {dy}) scale({scale})">']
     for mark in example['Marks']:
         d=mark['Data'];kind=mark['Kind']
-        if kind=='PdfBox':parts.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
+        if kind=='PdfNodeShape':parts.append(node_shape(d))
+        elif kind=='PdfBox':parts.append(rect(d['X'],d['Y'],d['Width'],d['Height'],d['Fill'],d['Stroke'],d['Radius']))
         elif kind=='PdfText':
             # At thumbnail scale, clear line motifs illustrate text without illegible micro-labels.
             if d['Size']>12:parts.append(f'<path d="M{d["X"]} {d["Y"]-5} h75" stroke="{d["Colour"]}" stroke-width="{1.4/scale}"/>')
@@ -163,3 +174,16 @@ for i,item in enumerate(gallery['Layouts']):
     s += thumbnail(item['Example'],x+12,y+36,274,120)
 save('SUMAPP-diagram-gallery-design',s)
 print('Design previews rendered from Core geometry and tokens; not Windows screenshots:',out)
+
+# Explicit node-shape and register colour galleries use the same exported geometry/tokens.
+H=1100
+s=frame('GRAPH','Format')
+s += [text(24,177,'Selected node shape  ▾     Diagram shape  ▾',size=14),text(700,177,'Colour presets  ▾     Row design  ▾',size=14),text(24,287,'11 node shapes · selected nodes or whole diagram',T['DarkTeal'],24,True)]
+for i,item in enumerate(shapes['Shapes'][1:]):
+    x=24+(i%4)*390;y=310+(i//4)*170
+    s += [rect(x,y,376,158,'#FFFFFF'),text(x+14,y+26,item['Name'],size=17,bold=True)]+thumbnail(item['Example'],x+14,y+34,345,112)
+s += [text(24,860,'8 register colour presets · 4 row designs',T['DarkTeal'],24,True)]
+for i,c in enumerate(shapes['Registers']):
+    x=24+(i%4)*390;y=885+(i//4)*72
+    s += [rect(x,y,376,62,c['Background']),rect(x,y,376,22,c['Header']),text(x+10,y+16,c['Name'],c['HeaderText'],13,True),rect(x,y+22,376,19,c['Row']),text(x+10,y+36,'Engineering review',c['Text'],12),rect(x,y+41,376,19,c['Alternate']),text(x+10,y+55,'Fabrication task',c['Text'],12)]
+save('SUMAPP-shapes-register-design',s)

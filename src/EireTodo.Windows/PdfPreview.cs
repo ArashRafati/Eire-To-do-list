@@ -105,6 +105,8 @@ internal sealed class PdfSheetVisual : FrameworkElement
                     context.PushTransform(new TranslateTransform(text.X,text.Y));context.PushTransform(new RotateTransform(text.Angle));
                     if(text.Backdrop.Length>0)context.DrawRectangle(Colour(text.Backdrop),null,new Rect(x-4,-text.Size,formatted.WidthIncludingTrailingWhitespace+8,text.Size*1.4));
                     context.DrawText(formatted,new Point(x,-formatted.Baseline));context.Pop();context.Pop();break;
+                case PdfNodeShape shape:
+                    context.DrawGeometry(Colour(shape.Fill),new Pen(Colour(shape.Stroke),shape.Thickness),NodeShapeDrawing.Geometry(shape.Shape,shape.Width,shape.Height,shape.X,shape.Y));break;
                 case PdfBox box:
                     context.DrawRoundedRectangle(Colour(box.Fill),box.Stroke.Length>0?new Pen(Colour(box.Stroke),box.Thickness):null,new Rect(box.X,box.Y,box.Width,box.Height),box.Radius,box.Radius);break;
                 case PdfLine line:

@@ -45,7 +45,7 @@ public static class NetworkCharts
     public static ChartNode Add(Diagram chart, Guid? anchor, bool connected, string title = "New node", bool doubleHeaded = false, LeadRouting routing = LeadRouting.Curve, TextFormat? format = null, bool preferLeft = false)
     {
         if (chart.Kind != DiagramKind.Network || chart.Nodes.Count >= Charts.MaxNodes) throw new ArgumentException("Cannot add a network node to this diagram.");
-        var node = new ChartNode { Number = chart.NextNumber++, Order = chart.Nodes.Count, Title = title, Format = format?.Clone() ?? new() };
+        var node = new ChartNode { Number = chart.NextNumber++, Order = chart.Nodes.Count, Title = title, Format = format?.Clone() ?? new(),Shape=chart.Nodes.FirstOrDefault(n=>n.Id==anchor)?.Shape };
         var around = chart.Nodes.FirstOrDefault(n => n.Id == anchor);
         var x = around?.X ?? 40; var y = around?.Y ?? 40;
         var levels = DiagramAppearance.Levels(chart);
@@ -93,12 +93,7 @@ public sealed record LeadPath(double X1, double Y1, double C1X, double C1Y, doub
 public sealed record LeadPoint(double X, double Y);
 public static class LeadGeometry
 {
-    public static LeadPoint Port(NodeBox box, LeadSide side) => side switch
-    {
-        LeadSide.Top => new(box.X + box.Width / 2, box.Y), LeadSide.Right => new(box.X + box.Width, box.Y + box.Height / 2),
-        LeadSide.Bottom => new(box.X + box.Width / 2, box.Y + box.Height), LeadSide.Left => new(box.X, box.Y + box.Height / 2),
-        _ => throw new ArgumentException("Choose a node side.")
-    };
+    public static LeadPoint Port(NodeBox box, LeadSide side) => side==LeadSide.Auto?throw new ArgumentException("Choose a node side."):NodeShapes.Port(box,side);
     public static IReadOnlyList<LeadPoint> Vertices(LeadPath path) => path.Bends ?? [new(path.X1, path.Y1), new(path.C1X, path.C1Y), new(path.C2X, path.C2Y), new(path.X2, path.Y2)];
     private static LeadPath PortRoute(NodeBox from, NodeBox to, LeadRouting routing, int lane, LeadSide first, LeadSide last)
     {
@@ -126,6 +121,19 @@ public static class LeadGeometry
         return new(a.X,a.Y,b.X,b.Y,c.X,c.Y,z.X,z.Y,(longest.First.X+longest.Second.X)/2,(longest.First.Y+longest.Second.Y)/2,labelAngle) { Bends = points };
     }
     public static LeadPath Route(NodeBox from, NodeBox to, LeadRouting routing, int lane = 0, IReadOnlyCollection<NodeBox>? obstacles = null, LeadSide fromSide = LeadSide.Auto, LeadSide toSide = LeadSide.Auto)
+    {
+        var path=RouteBase(from,to,routing,lane,obstacles,fromSide,toSide);
+        LeadPoint Attach(NodeBox box,double x,double y,LeadSide side)
+        {
+            if(box.Shape==NodeShape.Design)return new(x,y);
+            if(side==LeadSide.Auto)side=new[]{(LeadSide.Left,Math.Abs(x-box.X)/box.Width),(LeadSide.Right,Math.Abs(x-box.X-box.Width)/box.Width),(LeadSide.Top,Math.Abs(y-box.Y)/box.Height),(LeadSide.Bottom,Math.Abs(y-box.Y-box.Height)/box.Height)}.MinBy(p=>p.Item2).Item1;
+            return NodeShapes.Port(box,side);
+        }
+        var first=Attach(from,path.X1,path.Y1,fromSide);var last=Attach(to,path.X2,path.Y2,toSide);
+        var bends=path.Bends?.ToList();if(bends is not null){bends[0]=first;bends[^1]=last;}
+        return path with {X1=first.X,Y1=first.Y,X2=last.X,Y2=last.Y,Bends=bends};
+    }
+    private static LeadPath RouteBase(NodeBox from,NodeBox to,LeadRouting routing,int lane,IReadOnlyCollection<NodeBox>? obstacles,LeadSide fromSide,LeadSide toSide)
     {
         if (fromSide != LeadSide.Auto || toSide != LeadSide.Auto) return PortRoute(from, to, routing, lane, fromSide, toSide);
         var horizontal = Math.Abs(to.X + to.Width / 2 - from.X - from.Width / 2) >= Math.Abs(to.Y + to.Height / 2 - from.Y - from.Height / 2);

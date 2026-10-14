@@ -24,13 +24,16 @@ internal static class VisualCapture
             var titles = new[] { "Steel fabrication BOQ", "Guide rail", "Chain hooks", "Chain supports", "Pipe supports", "DN100 Stub Pipe vent from Drain Valve — stainless steel fabrication and supports" };
             for (var i = 0; i < titles.Length; i++) service.SaveTask(new() { ProjectId = project, Description = titles[i], Category = i == 0 ? "Procurement" : "Fabrication", Notes = "Review drawing and confirm dimensions.\nRecord engineering comments here.", Priority = i == 0, Completed = i == 1, FinishDate = DateOnly.FromDateTime(DateTime.Today.AddDays(i == 2 ? -2 : 4 + i)) });
             var chart = Charts.Create("SOU001 · Mechanical items", ChartLayout.MindMap, project);
+            chart.Shape=NodeShape.RoundedRectangle;
             var fabrication = Charts.Add(chart, chart.Nodes[0].Id, true, "Fabrication");
             var procurement = Charts.Add(chart, chart.Nodes[0].Id, true, "Procurement"); procurement.Priority = true;
             foreach (var title in titles.Skip(1)) Charts.Add(chart, fabrication.Id, true, title);
+            fabrication.Shape=NodeShape.Diamond;
             var notesNode = Charts.Add(chart, procurement.Id, true, titles[0]); notesNode.ShowNotes = true; notesNode.Notes = "Review drawing and confirm dimensions.\nRecord engineering comments here.\nComplete notes stay visible on the canvas."; service.SaveDiagram(chart);
             var graph = NetworkCharts.Create("Engineering graph"); var doc = graph.Nodes[0]; doc.Title="Client document";
             GraphCreation.Add(graph,doc.Id,"SUMAPP project intelligence"); GraphCreation.Add(graph,doc.Id,"Incoming document",LeadDirection.Incoming);
-            using(var image=Application.GetResourceStream(Branding.BundledUri("EireLogo.png"))!.Stream) using(var bytes=new MemoryStream()) { image.CopyTo(bytes);graph.OrganisationLogoPng=bytes.ToArray(); }
+            using(var image=Application.GetResourceStream(Branding.BundledUri("SumappLogo.png"))!.Stream) using(var bytes=new MemoryStream()) { image.CopyTo(bytes);graph.OrganisationLogoPng=bytes.ToArray(); }
+            graph.Shape=NodeShape.RoundedRectangle;graph.Nodes[1].Shape=NodeShape.Circle;graph.Nodes[2].Shape=NodeShape.Cloud;NodeShapes.MakeRoom(graph);
             graph.OrganisationLogoWidth=100; service.SaveDiagram(graph);
             var settings = service.Data.Settings; settings.Width = 1280; settings.Height = 850; settings.Opacity = 1; settings.SelectedDiagramId = chart.Id; settings.SelectedNetworkId=graph.Id; service.SaveSettings(settings);
             // Exercise resource loading without any Assets folder beside the working directory.
@@ -38,20 +41,19 @@ internal static class VisualCapture
             window = new MainWindow(service, directory); Application.Current.MainWindow = window; window.Show();
             Assert(window.Icon is BitmapSource icon && icon.PixelWidth > 0 && icon.PixelHeight > 0,"Bundled startup icon failed to decode");
             Assert(((Image)window.FindName("SumappLogo")).Source is BitmapSource brand && brand.PixelWidth > 0,"Bundled startup logo failed to decode");
-            Assert(((Image)window.FindName("EireLogo")).Source is BitmapSource company && company.PixelWidth > 0,"Bundled Eire logo failed to decode");
-            var logo = Application.GetResourceStream(Branding.BundledUri("SumappLogo.png"))!;
-            using (logo.Stream) using (var original = new MemoryStream()) { logo.Stream.CopyTo(original); window.CaptureLogo(original.ToArray()); }
-            Assert(ReferenceEquals(((Image)window.FindName("SumappLogo")).Source,window.Icon),"Chosen logo and window icon differ");
+            Assert(window.FindName("EireLogo") is null,"Eire header branding was not removed");
             await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-to-do.png"));
+            window.CaptureRegisterStyle(RegisterPalette.Charcoal,RegisterLayout.Compact);await Settle(window);Save(window,Path.Combine(destination,"SUMAPP-to-do-charcoal.png"));window.CaptureRegisterStyle(RegisterPalette.Sumapp,RegisterLayout.Comfortable);
             window.CaptureMode(AppMode.Diagram); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-mind-map.png"));
             var workspace = Descendants<ChartWorkspace>(window).Single(); workspace.CaptureRibbon("Format"); await Settle(window); workspace.CaptureCheckRibbon(); Save(window, Path.Combine(destination, "SUMAPP-diagram-gallery.png"));
             Assert(Descendants<DiagramThumbnail>(window).Count(t => t.IsVisible && t.ActualWidth > 0 && t.ActualHeight > 0) >= 6, "Diagram gallery previews missing");
             workspace.CaptureRibbon("View"); await Settle(window); Save(window, Path.Combine(destination, "SUMAPP-layout-gallery.png"));
             window.CaptureMode(AppMode.Graph); workspace.CaptureRibbon("Home");await Settle(window);workspace.CaptureCheckLogoVisibility(false);Save(window,Path.Combine(destination,"SUMAPP-graph.png"));
+            foreach(var mode in new[]{AppMode.Todo,AppMode.Diagram,AppMode.Graph}){window.CaptureMode(mode);workspace.CaptureRibbon("Home");window.CaptureRibbonMode(RibbonDisplayMode.Compact);await Settle(window);Save(window,Path.Combine(destination,"SUMAPP-compact-"+mode+".png"));window.CaptureRibbonMode(RibbonDisplayMode.Pinned);await Settle(window);workspace.CaptureCheckRibbon();}
             var previousPan=workspace.CapturePanUnderLogo();await Settle(window);workspace.CaptureCheckLogoVisibility(true);workspace.CaptureRestorePan(previousPan);await Settle(window);workspace.CaptureCheckLogoVisibility(false);
             window.CaptureMode(AppMode.Diagram);workspace.CaptureRibbon("Format");await Settle(window);
-            var eire = (Image)window.FindName("EireLogo"); Assert(eire.Source is not null && eire.IsVisible, "Eire header artwork missing");
-            var results = new List<string> { "Native Windows WPF captures; isolated sample data; current user account.", "To-do, mind-map, Format gallery and View layout images captured at 1280 × 850 logical pixels.", "PASS startup and decoded bundled ICO / SUMAPP / Eire artwork from an empty working folder before selecting a custom logo.", "PASS visible gallery thumbnails and bundled Eire header logo.", "PASS fixed graph organisation logo fades during pan overlap and reappears after restoring clear background." };
+            Assert(window.FindName("EireLogo") is null,"Eire header artwork must be absent");
+            var results = new List<string> { "Native Windows WPF captures; isolated sample data; current user account.", "To-do, mind-map, Format gallery and View layout images captured at 1280 × 850 logical pixels.", "PASS startup and decoded bundled ICO / SUMAPP artwork from an empty working folder with the original application brand.", "PASS visible gallery thumbnails and original SUMAPP brand and absent Eire header.", "PASS fixed graph organisation logo fades during pan overlap and reappears after restoring clear background." };
             foreach (var size in new[] { new Size(520, 400), new Size(940, 620), new Size(1440, 900) })
             {
                 window.Width = size.Width; window.Height = size.Height; await Settle(window);

@@ -1,16 +1,16 @@
-SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.7.1 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.8.0 — PORTABLE WINDOWS WIDGET
 
-1. Unzip SUMAPP-3.7.1-Windows-x64.zip to a folder you can write to, such as
+1. Unzip SUMAPP-3.8.0-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
    Extract ALL files. Keep the DLLs/runtime folders beside the executable.
-2. Double-click SUMAPP-3.7.1.exe. No installer, runtime installation, account,
+2. Double-click SUMAPP-3.8.0.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
 
 UPDATING: Back up your data first. Close the running app, unzip the new release, then run the
-new SUMAPP-3.7.1.exe. Your tasks, projects and preferences are read from the same
+new SUMAPP-3.8.0.exe. Your tasks, projects and preferences are read from the same
 profile data folder (%LOCALAPPDATA%\EireTodo). The update needs no manual data
 migration. SUMAPP uses readable neutral surfaces, teal actions and its corrected
-logo/icon. The Eire header uses the supplied emblem beside the Eire workspace label.
+logo/icon. The Eire header badge is removed; company branding is on the diagram canvas.
 If a previously pinned shortcut keeps an old icon, unpin it and pin the
 updated executable through the normal Windows menu.
 
@@ -192,7 +192,7 @@ preserved. Priority is available in task/node details. Node sizing now follows
 actual text measurements and reflows after title editing/format changes.
 
 WINDOWS SCREENSHOTS: From the app folder in a normal PowerShell window, run:
-.\SUMAPP-3.7.1.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
+.\SUMAPP-3.8.0.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
 This uses isolated temporary sample data and leaves your actual profile intact.
 It saves real WPF to-do/mind-map/gallery PNGs and visual-checks.txt. This command cannot
 be tested in the Linux cloud environment. See BRANDING.md for current limitations.
@@ -208,14 +208,14 @@ Profile autosave continues. Open saved copy restores after confirmation and back
 The supplied GitHub symbol-only PNG is embedded unchanged in the header resources
 and used to derive all nine executable icon sizes. See BRANDING.md for provenance.
 
-File → Application logo lets you select your original desktop image.
-It updates the header and window/taskbar icons and is preserved in data/backups.
-The default embedded Explorer icon already uses the supplied GitHub PNG. A custom
-logo selected later changes window icons; changing the Explorer icon needs a rebuild.
+The original SUMAPP application logo remains fixed. Format → Organisation logo
+lets you select your company PNG for the current diagram.
+Organisation branding is saved with the diagram and backups. It does not change
+the original SUMAPP header, executable or window/taskbar icons.
 
 3.5.1 STARTUP FIX
 Bundled artwork loads from executable resources rather than Windows file paths.
-Close the failed 3.5 launch, unzip this updated build and run its SUMAPP-3.7.1.exe.
+Close the failed 3.5 launch, unzip this updated build and run its SUMAPP-3.8.0.exe.
 Keep %LOCALAPPDATA%\EireTodo unchanged; your tasks and diagrams use that folder.
 
 VERSION 3.6
@@ -254,9 +254,9 @@ Format > Organisation logo uploads a PNG for this graph. It stays top left and
 fades while diagram content overlaps, returning when clear. Workspace and export
 size sliders are independent. PDF/print include it in a reserved top-left header.
 Original bytes and sizes are included in the live profile, PC copies and backups.
-This is separate from File > Application logo and SUMAPP's embedded app icon.
+This is separate from the fixed original SUMAPP application icon.
 
-The Linux build passes 80 automated groups and binary/package checks. Windows
+The Linux build passes 91 automated groups and binary/package checks. Windows
 UI behaviour needs WINDOWS-VERIFICATION.md; Linux previews are labelled designs.
 
 VERSION 3.7.1 STARTUP REPAIR
@@ -265,3 +265,30 @@ show a message and write %LOCALAPPDATA%\EireTodo\startup-error.txt.
 Use the new versioned executable inside the newly extracted complete folder.
 Do not delete your existing profile. The app launcher is smaller, but the runtime
 files are still included so no separate installation is needed.
+
+VERSION 3.8: LOGOS, SHAPES, UNLINKING AND REGISTER DESIGNS
+The Eire header logo is removed. SUMAPP always uses its original logo/icon.
+Format > Organisation logo > Upload / settings puts your selected PNG in the
+fixed top-left canvas area under the ribbon (Graph and WBS/mind-map). It fades
+over nodes/leads/labels during panning and returns when clear. Workspace and PDF
+size controls are separate; PDF/print reserve a clear top-left header. Legacy
+custom app logos move once to the remembered graph/WBS when no company logo
+is already set. Their bytes and existing diagram branding stay preserved.
+
+Insert > Connections > Unlink all removes every incoming/outgoing/double/parallel
+lead for the selected graph nodes. Right-click exposes the same command. Nodes
+stay intact; Undo restores the connections.
+
+Format > Shapes > Selected node shape or Diagram shape offers rectangle, rounded
+rectangle, square, diamond, circle, ellipse, trapezoid, cloud, hexagon, triangle
+and parallelogram. Use design retains existing design appearance. Use diagram
+shape clears an individual override. A whole-diagram choice clears overrides.
+Text/notes remain inside the shape; graph neighbours adjust to make room.
+
+To-do > Format > Register design: eight colour presets and four row designs
+(Comfortable, Compact, Bordered, Minimal). Selection/overdue colours remain clear.
+The full ribbon can be pinned; collapse shows minimal tools under the active tab.
+Double-click a tab to toggle. The mode and register choices survive restart.
+
+91 Core check groups and resource/export/binary checks pass. Native Windows
+mouse/keyboard/fading/DPI tests remain in WINDOWS-VERIFICATION.md.

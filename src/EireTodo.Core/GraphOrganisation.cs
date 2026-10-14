@@ -43,7 +43,7 @@ public static class GraphOrganisation
                     layers[layer]=layers[layer].OrderBy(Centre).ThenBy(id=>index[id].Order).ThenBy(id=>index[id].Number).ToList();for(var i=0;i<layers[layer].Count;i++)positions[layers[layer][i]]=i;
                 }
             }
-            var sizes=component.ToDictionary(id=>id,id=>measure(index[id],2));
+            var sizes=component.ToDictionary(id=>id,id=>NodeShapes.Expand(measure(index[id],2),NodeShapes.Resolve(chart,index[id])));
             if(sizes.Values.Any(s=>!double.IsFinite(s.Width)||!double.IsFinite(s.Height)||s.Width<=0||s.Height<=0))throw new ArgumentException("Node measurements are invalid.");
             var boxes=new List<NodeBox>();double bandY=0,blockWidth=0;var first=0;var band=0;
             while(first<layers.Count)
@@ -54,7 +54,7 @@ public static class GraphOrganisation
                 for(var l=first;l<last;l++)
                 {
                     var width=layers[l].Max(id=>sizes[id].Width);var columnHeight=layers[l].Sum(id=>sizes[id].Height)+36*(layers[l].Count-1);var y=bandY+(height-columnHeight)/2;
-                    foreach(var id in layers[l]){var size=sizes[id];boxes.Add(new(id,band%2==0?x:span-x-width,y,size.Width,size.Height));y+=size.Height+36;}x+=width+96;
+                    foreach(var id in layers[l]){var size=sizes[id];boxes.Add(new(id,band%2==0?x:span-x-width,y,size.Width,size.Height) {Shape=NodeShapes.Resolve(chart,index[id])});y+=size.Height+36;}x+=width+96;
                 }
                 blockWidth=Math.Max(blockWidth,span);bandY+=height+110;first=last;band++;
             }

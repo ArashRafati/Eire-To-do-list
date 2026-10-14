@@ -1,5 +1,16 @@
 # Changes
 
+## 3.8.0 — organisation branding, shapes and refined ribbons
+
+- Remove Eire header branding and preserve the authoritative SUMAPP icon/header artwork.
+- Place organisation logos in the fixed top-left canvas area in Graph and WBS/mind-map, fade on content overlap, independently size viewport/export, and retain PDF header clear space.
+- Migrate legacy custom app branding once to remembered diagram workspaces without replacing existing company logos; retain original bytes.
+- Add unlink-all for selected graph nodes with one Undo snapshot and no node deletion.
+- Add eleven explicit shapes for selected nodes or the whole diagram, measured interior space, shaped lead ports, clipboard/persistence, graph space adjustment and vector PDF/preview output.
+- Add eight register palettes and four row designs with normal/selected/overdue contrast checks.
+- Refine ribbon grouping, flat controls and coloured vector motifs; save pinned/compact states across modules.
+- Add eleven Core groups (91 total), extend export verification and native capture/checklists; keep native Windows execution status unrun here.
+
 ## 3.7.1 — silent startup repair and versioned portable packaging
 
 - Remove duplicate ListBox/ListBoxItem resource registrations that could fail before the startup handler.

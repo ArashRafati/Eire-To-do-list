@@ -1,20 +1,20 @@
-# SUMAPP Windows download — version 3.7.1
+# SUMAPP Windows download — version 3.8.0
 
-Download `SUMAPP-3.7.1-Windows-x64.zip`, unzip it into a writable folder and double-click
-`SUMAPP-3.7.1.exe`. Runtime and SUMAPP artwork/icon are bundled; no installation,
+Download `SUMAPP-3.8.0-Windows-x64.zip`, unzip it into a writable folder and double-click
+`SUMAPP-3.8.0.exe`. Runtime and SUMAPP artwork/icon are bundled; no installation,
 network, account or elevation is required. Existing data/settings stay under
 `%LOCALAPPDATA%\EireTodo`. Close the previous executable before updating.
 
 This build contains the exact neutral/teal/yellow colour system, supplied original SUMAPP
 symbol/icon, light readable surfaces, atomic project deletion, priority states
 and real font-based node sizing. It adds thumbnail galleries for 15 designs,
-34 colour packs and 10 layouts, plus the supplied Eire emblem in the header.
+34 colour packs and 10 layouts, with the original SUMAPP brand and no Eire header badge.
 
-`SUMAPP-3.7.1-Source.zip` includes source, tests, scripts, the original logo and instructions;
-`SUMAPP-3.7.1-SHA256SUMS.txt` records both archive hashes. These downloads are delivered through
+`SUMAPP-3.8.0-Source.zip` includes source, tests, scripts, the original logo and instructions;
+`SUMAPP-3.8.0-SHA256SUMS.txt` records both archive hashes. These downloads are delivered through
 GitHub as an alternative to the failing chat artifact route.
 
-80 core check groups pass. The Windows standard-user manifest, icon resources and
+91 core check groups pass. The Windows standard-user manifest, icon resources and
 bundled runtime were inspected. Native WPF, taskbar/Explorer rendering and Windows
 non-elevated launch remain unrun in the Linux environment. `BRANDING.md` and
 `WINDOWS-VERIFICATION.md` describe exact capture/build/acceptance commands.
@@ -27,8 +27,8 @@ in the source package; see BRANDING.md. Free move, compact ribbon,
 PC copies and bottom-right clock are included. Native Windows UI checks remain
 unrun in Linux.
 
-Use File → Application logo to select your original desktop file for
-header/window/taskbar branding. Its original bytes are saved in data and backups.
+SUMAPP uses its original header/window/taskbar artwork. Use Format → Organisation
+logo for your company PNG in the fixed canvas corner and PDF header.
 
 3.5.1 fixes the reported startup icon-path error. Re-extract the updated ZIP
 and launch its executable. Keep your existing profile folder unchanged.
@@ -49,4 +49,9 @@ and adds early error reporting. This is a folder-based portable release: extract
 ALL files and keep the DLLs/runtime folders beside the executable. The launcher
 is around 228 KiB; runtime files remain included, avoiding native-library
 extraction at launch. Native launch speed still requires Windows verification.
-The older unversioned SUMAPP ZIPs are superseded by the 3.7.1 files above.
+The older unversioned SUMAPP ZIPs are superseded by the versioned 3.8 files above.
+
+3.8 adds eleven selected-node/diagram shapes, unlink-all, fixed canvas organisation
+branding in Graph/WBS, eight register colour presets, four row designs and saved
+pinned/compact ribbons. Existing data, company logos and legacy original bytes
+are preserved. The older ZIPs are superseded by the versioned 3.8 files above.

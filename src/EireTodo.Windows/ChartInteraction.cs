@@ -182,9 +182,9 @@ internal sealed partial class ChartWorkspace
             create.Items.Add(Item("Unlinked",()=>AddNode(false,true)));
         }
         else { create.Items.Add(Item("Sibling",()=>AddNode(false),"Enter"));create.Items.Add(Item("Child",()=>AddNode(true),"Insert")); }
-        menu.Items.Add(create); if(networkMode){menu.Items.Add(Item("Connect one existing node…",StartConnection));menu.Items.Add(Item("Connect multiple nodes…",ConnectMultiple));}else menu.Items.Add(Item("Move before / after…",MoveSelected));
+        menu.Items.Add(create); if(networkMode){menu.Items.Add(Item("Connect one existing node…",StartConnection));menu.Items.Add(Item("Connect multiple nodes…",ConnectMultiple));menu.Items.Add(Item("Unlink all from / to",UnlinkNodes));}else menu.Items.Add(Item("Move before / after…",MoveSelected));
         WorkspaceMenus.Section(menu,"Clipboard");menu.Items.Add(Item("Copy selected nodes",CopyNodes,"Ctrl+C"));menu.Items.Add(Item(networkMode?"Paste linked nodes":"Paste as children",PasteNodes,"Ctrl+V"));
-        WorkspaceMenus.Section(menu,"Appearance");menu.Items.Add(Item("Show / hide full notes",ToggleNotes));if(networkMode)menu.Items.Add(Item("Colour selected nodes…",ColourSelectedNodes));
+        WorkspaceMenus.Section(menu,"Appearance");menu.Items.Add(Item("Shape selected nodes…",()=>ChooseShape(false)));menu.Items.Add(Item("Show / hide full notes",ToggleNotes));if(networkMode)menu.Items.Add(Item("Colour selected nodes…",ColourSelectedNodes));
         menu.Items.Add(new Separator());menu.Items.Add(Item("Delete selected nodes",DeleteNode,"Delete",true));border.ContextMenu=menu;
         border.PreviewMouseRightButtonDown += (_, e) => { if (!FinishInlineEdit()) e.Handled = true; else {if(networkMode&&selectedNodes.Count>1)selectedNodes.Add(id);Select(id,selectedNodes.Contains(id));} };
     }

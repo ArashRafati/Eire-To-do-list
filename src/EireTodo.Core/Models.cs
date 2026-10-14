@@ -39,6 +39,9 @@ public sealed class WindowSettings
     public Guid? SelectedDiagramId { get; set; }
     public Guid? SelectedNetworkId { get; set; }
     public bool ShowOverdueLog { get; set; }
+    public RegisterPalette RegisterPalette { get; set; }
+    public RegisterLayout RegisterLayout { get; set; }
+    public RibbonDisplayMode RibbonMode { get; set; }
     public Dictionary<string, double> ColumnWidths { get; set; } = [];
 }
 
@@ -51,6 +54,7 @@ public sealed class DataDocument
     public List<Diagram> Diagrams { get; set; } = [];
     public List<OverdueEntry> OverdueLog { get; set; } = [];
     public byte[] BrandLogoPng { get; set; } = [];
+    public bool OrganisationBrandMigrated { get; set; }
     [JsonRequired] public WindowSettings Settings { get; set; } = new();
     public DataDocument Clone() => JsonSerializer.Deserialize<DataDocument>(JsonSerializer.Serialize(this, JsonOptions), JsonOptions)!;
     public static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true, PropertyNameCaseInsensitive = true };
@@ -114,6 +118,7 @@ public static class Validation
             if (chart.ProjectId.HasValue && !data.Projects.Any(p => p.Id == chart.ProjectId)) throw new ArgumentException("A diagram refers to a missing project.");
         }
         Overdue.Validate(data.OverdueLog);
+        if (!Enum.IsDefined(data.Settings.RegisterPalette)||!Enum.IsDefined(data.Settings.RegisterLayout)||!Enum.IsDefined(data.Settings.RibbonMode))throw new ArgumentException("Invalid register or ribbon appearance.");
         if (!Enum.IsDefined(data.Settings.ActiveMode)) throw new ArgumentException("Invalid app mode.");
         if (data.Categories.Any(c => c is null)) throw new ArgumentException("A category is invalid.");
         var s = data.Settings;

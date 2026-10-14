@@ -28,7 +28,7 @@ Back up existing app data first if you have used it before.
    Cancel leaves data intact. Blank/duplicate destinations and save failures
    must not remove projects or reassign tasks partially.
 0. **Native sample screenshots.** From the extracted app folder in PowerShell:
-   `.\SUMAPP-3.7.1.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"`.
+   `.\SUMAPP-3.8.0.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"`.
    Inspect all four PNGs and `visual-checks.txt`. The command uses isolated sample data
    and checks header/View visibility at 520×400, 940×620 and 1440×900, and long
    title sizing across three fonts at 12–48 px. Actual user data is not touched.
@@ -348,3 +348,34 @@ If a startup error appears, read %LOCALAPPDATA%\EireTodo\startup-error.txt.
 Do not delete data or bypass company security policy. Test resource-error
 reporting with a source-level intentionally duplicated resource in a separate
 disposable developer build; the repaired release should not contain duplicates.
+
+## 3.8 acceptance (supersedes earlier custom-app-logo instructions)
+
+- Extract every file and run SUMAPP-3.8.0.exe under the normal account. Verify
+  original SUMAPP header/window/taskbar/icon and no Eire header badge. Existing
+  custom app logos should move once to the remembered graph/WBS only when no
+  company logo was already set. Removing a company logo must stay removed after
+  restart. Retain original task/project/diagram data throughout.
+- In Graph and WBS, Format > Organisation logo uploads the chosen PNG in the
+  marked top-left canvas area under the ribbon. Change screen/export sizes
+  independently; pan/zoom nodes, leads and labels under it and check smooth fade
+  and return. Switch modules/diagrams: no stale graph leads should hide a WBS logo.
+  Check portrait/landscape PDF/print with clear top-left logo space on every page.
+- Select a graph node/group with incoming/outgoing/double/parallel leads. Unlink
+  all must remove incident leads while preserving nodes and unrelated links.
+  Undo/Redo, restart and copy/paste remain functional.
+- Apply each of eleven shapes individually and to whole graph/WBS diagrams.
+  Check full titles/notes at 12/17/48 px, four side ports, curved/sharp connections,
+  hierarchy placement, free movement, graph space adjustment and fitted PDF.
+  Reset an individual override; a whole-diagram choice applies to all nodes.
+- To-do Format > Register design: inspect all eight palettes and four layouts.
+  Verify dark-register dates/notes/secondary information/checkboxes, hover,
+  selection, focus, priority and overdue readability. Filters/sorting/column
+  widths/status editing must continue to work. Save/restart retains preferences.
+- In all modules, pin the full ribbon, collapse it and switch tabs using the
+  compact tools. Commands, font controls and gallery popups must work. Check
+  saved mode after restart, Ctrl keyboard shortcuts, hover descriptions and
+  100/150/200% scaling at narrow/maximised sizes.
+- Run --capture-previews for native samples including mixed shapes, charcoal
+  register, compact ribbons and logo overlap checks. These captures were not
+  executed in the Linux build environment.

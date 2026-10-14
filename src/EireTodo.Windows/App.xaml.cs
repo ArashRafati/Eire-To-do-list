@@ -46,6 +46,15 @@ public partial class App : Application
             }
             // Verify a writable data file on first run, before accepting edits.
             if (!File.Exists(store.DataPath)) store.Save(data);
+            if(!data.OrganisationBrandMigrated&&data.BrandLogoPng.Length>0&&data.Diagrams.Count>0)
+            {
+                var branded=data.Clone();
+                if(OrganisationBranding.MigrateLegacyLogo(branded))
+                {
+                    try{store.Save(branded);data=branded;}
+                    catch(IOException ex){MessageBox.Show("The original SUMAPP brand is restored, but the previous custom logo could not be saved as organisation branding. Your existing profile remains available. Choose a smaller organisation PNG under Format.\n\n"+ex.Message,"Organisation logo not saved",MessageBoxButton.OK,MessageBoxImage.Warning);}
+                }
+            }
             var window = new MainWindow(new TodoService(store, data), directory);
             MainWindow = window;
             window.Show();

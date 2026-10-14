@@ -5,6 +5,49 @@ The Windows x64 release bundles its runtime beside the versioned executable; use
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Organisation branding, node shapes and register styles — version 3.8.0
+
+The **original SUMAPP logo and icon stay fixed**. The Eire header emblem/label
+are removed. **Format → Organisation logo → Upload / settings** controls the
+selected diagram's logo in the top-left canvas area just below the ribbon.
+It stays fixed while panning, fades over nodes/connections/labels and returns
+when clear. Workspace/export sizes remain independent, with original proportions
+and PNG bytes preserved. PDF/print reserve a top-left logo header on every page.
+This works in Graph and mind-map/WBS. A previous custom application logo is
+moved once to the remembered graph/WBS when no organisation logo is already set;
+existing per-diagram logos and original legacy bytes remain preserved.
+
+**Insert → Connections → Unlink all**, or right-click → Unlink all from / to,
+removes every incoming/outgoing/double/parallel link for the selected graph nodes.
+Nodes, titles, notes and unrelated leads stay intact. Undo restores the batch.
+
+**Format → Shapes** offers selected-node and whole-diagram choices in both
+Graph and mind-map/WBS: rectangle, rounded rectangle, square, diamond, circle,
+ellipse, trapezoid, cloud, hexagon, triangle and parallelogram. Use design retains
+the existing 15 node designs; Use diagram shape clears an individual override.
+Whole-diagram choices clear overrides. Text/notes reserve interior space, layouts
+use the actual larger bounds, graph neighbours make room, and connection ports
+follow the shaped outlines. Shape selections persist, survive copying/backup and
+share vector contours with PDF/preview. Graph CSV/XML include shape choices.
+
+**To-do → Format → Register design** offers eight colour presets: SUMAPP,
+Blueprint, Sage, Charcoal, Amber, Plum, Coral and Slate. Comfortable, Compact,
+Bordered and Minimal row designs are independent. Headers, rows, selection,
+secondary labels and overdue text stay readable, including the dark preset.
+Sorting, filters, adjustable columns, task formatting and data remain unchanged.
+
+All modules share finer flat controls, smaller coloured vector motifs and grouped
+commands. The pin button keeps the full ribbon open; the collapse button shows
+minimal tools below the selected tab. Tabs remain visible and tooltips identify
+commands. Double-clicking a tab toggles modes. This setting is saved globally.
+
+Download **SUMAPP-3.8.0-Windows-x64.zip**, extract every file, and run
+**SUMAPP-3.8.0.exe** alongside its bundled runtime. Source:
+**SUMAPP-3.8.0-Source.zip**. Existing `%LOCALAPPDATA%\EireTodo` data is preserved.
+91 Core groups plus resource/binary/export checks pass. Native Windows interaction
+still requires the updated acceptance checklist. [Shape/register design preview](previews/SUMAPP-shapes-register-design.png)
+is a labelled Core render, not a native Windows screenshot.
+
 ## Startup repair and portable folder — version 3.7.1
 
 The 3.7 resources registered implicit ListBox and ListBoxItem styles twice. These

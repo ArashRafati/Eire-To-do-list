@@ -80,7 +80,14 @@ public sealed class TaskEditor : Window
 
 internal static class Ui
 {
-    internal static System.Windows.Media.Brush Brush(string key) => (System.Windows.Media.Brush)Application.Current.FindResource(key);
+    private static readonly Dictionary<string,System.Windows.Media.Brush> colourBrushes=new(StringComparer.OrdinalIgnoreCase);
+    internal static System.Windows.Media.Brush Brush(string key)
+    {
+        if(!key.StartsWith('#'))return (System.Windows.Media.Brush)Application.Current.FindResource(key);
+        if(colourBrushes.TryGetValue(key,out var cached))return cached;
+        if(!NodeColours.IsValid(key))throw new ArgumentException("Use a six-digit colour.");
+        var brush=new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(key));brush.Freeze();colourBrushes[key]=brush;return brush;
+    }
     internal static System.Windows.Media.Brush Accent => Brush("PrimaryTeal");
     internal static System.Windows.Media.Brush Ink => Brush("TextBrush");
     internal static System.Windows.Media.Brush Error => Brush("ErrorBrush");

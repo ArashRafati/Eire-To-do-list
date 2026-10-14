@@ -10,7 +10,7 @@ public static class NodeClipboard
         var ids = source.Kind == DiagramKind.Hierarchy ? chosen.SelectMany(id => Charts.Descendants(source,id)).ToHashSet() : chosen;
         var copy = source.Clone(); copy.Id = Guid.NewGuid(); copy.ProjectId = null;
         copy.Nodes.RemoveAll(n => !ids.Contains(n.Id));
-        foreach (var n in copy.Nodes) if (n.ParentId is Guid p && !ids.Contains(p)) n.ParentId = null;
+        foreach (var n in copy.Nodes) {if (n.ParentId is Guid p && !ids.Contains(p)) n.ParentId = null;n.Shape??=source.Shape;}
         copy.Leads.RemoveAll(l => !ids.Contains(l.From) || !ids.Contains(l.To));
         Charts.Validate(copy); return copy;
     }

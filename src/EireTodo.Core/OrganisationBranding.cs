@@ -32,6 +32,19 @@ public static class NodeColours
 
 public static class OrganisationBranding
 {
+    public static bool MigrateLegacyLogo(DataDocument data)
+    {
+        if(data.OrganisationBrandMigrated || data.BrandLogoPng.Length==0 || data.Diagrams.Count==0)return false;
+        // Move the old global override to the remembered workspace, not every
+        // diagram: duplicating a large PNG across all charts can fill the profile.
+        foreach(var kind in Enum.GetValues<DiagramKind>())
+        {
+            var selected=kind==DiagramKind.Network?data.Settings.SelectedNetworkId:data.Settings.SelectedDiagramId;
+            var diagram=data.Diagrams.FirstOrDefault(d=>d.Kind==kind&&d.Id==selected)??data.Diagrams.FirstOrDefault(d=>d.Kind==kind);
+            if(diagram is not null&&diagram.OrganisationLogoPng.Length==0)diagram.OrganisationLogoPng=data.BrandLogoPng.ToArray();
+        }
+        data.OrganisationBrandMigrated=true;return true;
+    }
     public static void Validate(Diagram diagram)
     {
         LogoAsset.Validate(diagram.OrganisationLogoPng);

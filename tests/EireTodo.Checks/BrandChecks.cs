@@ -157,6 +157,7 @@ internal static class BrandChecks
         graph.OrganisationLogoPng = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory,"TestLogo.png"));
         graph.OrganisationLogoWidth = 100; graph.ExportLogoWidth = 90;
         NodeColours.ApplyPackage(graph,DiagramPalette.MixTealOrange);
+        graph.Shape=NodeShape.RoundedRectangle;graph.Nodes[2].Shape=NodeShape.Diamond;graph.Nodes[4].Shape=NodeShape.Circle;
         GraphOrganisation.Organise(graph,preferredWidth:1000);
         var graphDrawing = DiagramPdf.Compose(graph,new(IncludeDetails:false));
         File.WriteAllText(Path.Combine(directory,"SUMAPP-graph-design.json"),JsonSerializer.Serialize(new { Scene=OpenWorkspace.CompactGraph(graph,true), Chart=graph, Marks=graphDrawing.Pages[0].Layers[1].Marks.Select(m=>new { Kind=m.GetType().Name, Data=(object)m }) },DataDocument.JsonOptions));

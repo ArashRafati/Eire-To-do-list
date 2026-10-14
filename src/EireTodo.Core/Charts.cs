@@ -16,6 +16,7 @@ public sealed class ChartNode
     public string Title { get; set; } = "New node";
     public string? FillColour { get; set; }
     public bool ColourFromPreset { get; set; }
+    public NodeShape? Shape { get; set; }
     public bool Priority { get; set; }
     public string Notes { get; set; } = "";
     public bool ShowNotes { get; set; }
@@ -41,6 +42,7 @@ public sealed class Diagram
     public ChartLayout Layout { get; set; } = ChartLayout.MindMap;
     public DiagramPalette Palette { get; set; }
     public NodeDesign Design { get; set; }
+    public NodeShape Shape { get; set; }
     public byte[] OrganisationLogoPng { get; set; } = [];
     public double OrganisationLogoWidth { get; set; } = 140;
     public double ExportLogoWidth { get; set; } = 90;
@@ -80,12 +82,12 @@ public static class Charts
     public static void Validate(Diagram chart)
     {
         if (chart is null || chart.Id == Guid.Empty || string.IsNullOrWhiteSpace(chart.Name) || chart.Name.Length > 100 ||
-            !Enum.IsDefined(chart.Layout) || !Enum.IsDefined(chart.Palette) || !Enum.IsDefined(chart.Design) || chart.Nodes is null || chart.Nodes.Count > MaxNodes ||
+            !Enum.IsDefined(chart.Layout) || !Enum.IsDefined(chart.Palette) || !Enum.IsDefined(chart.Design) || !Enum.IsDefined(chart.Shape) || chart.Nodes is null || chart.Nodes.Count > MaxNodes ||
             chart.ScheduleStart.Year < 1900 || chart.ScheduleStart.Year > 2090 || !double.IsFinite(chart.Zoom) || chart.Zoom < .2 || chart.Zoom > 2)
             throw new ArgumentException("Invalid diagram: use a name up to 100 characters and no more than 1,000 nodes.");
         OrganisationBranding.Validate(chart);
         if (chart.Nodes.Any(n => n is null || n.Id == Guid.Empty || n.Number < 1 || n.Number > 1000000 || n.Order < 0 ||
-            n.FillColour is not null && !NodeColours.IsValid(n.FillColour) || string.IsNullOrWhiteSpace(n.Title) || n.Title.Length > 100 || n.Notes is null || n.Notes.Length > 250000 ||
+            n.Shape.HasValue && !Enum.IsDefined(n.Shape.Value) || n.FillColour is not null && !NodeColours.IsValid(n.FillColour) || string.IsNullOrWhiteSpace(n.Title) || n.Title.Length > 100 || n.Notes is null || n.Notes.Length > 250000 ||
             !Enum.IsDefined(n.MindMapSide) || n.DurationDays < 1 || n.DurationDays > 3650 || n.StartDate?.Year < 1900 || n.FinishDate?.Year < 1900 ||
             n.StartDate?.Year > 2090 || n.FinishDate?.Year > 2100 || n.StartDate.HasValue && n.FinishDate < n.StartDate) ||
             chart.Nodes.Select(n => n.Id).Distinct().Count() != chart.Nodes.Count ||
@@ -142,7 +144,7 @@ public static class Charts
         var position = child || selected is null ? siblings.Count : siblings.FindIndex(n => n.Id == selected.Id) + 1;
         for (var i = 0; i < siblings.Count; i++) siblings[i].Order = i < position ? i : i + 1;
         if (child && selected is not null) selected.Collapsed = false;
-        var node = new ChartNode { ParentId = parentId, Order = position, Number = chart.NextNumber++, Title = title.Trim() };
+        var node = new ChartNode { ParentId = parentId, Order = position, Number = chart.NextNumber++, Title = title.Trim(), Shape=selected?.Shape };
         chart.Nodes.Add(node); Validate(chart); MindMapPlacement.AssignSides(chart); return node;
     }
     public static HashSet<Guid> Descendants(Diagram chart, Guid id)
@@ -211,7 +213,7 @@ public static class Charts
     }
 }
 
-public sealed record NodeBox(Guid Id, double X, double Y, double Width, double Height);
+public sealed record NodeBox(Guid Id, double X, double Y, double Width, double Height) { public NodeShape Shape { get; init; } }
 public sealed record ChartScene(List<NodeBox> Boxes, double Width, double Height);
 
 public static class ChartGeometry
@@ -222,12 +224,13 @@ public static class ChartGeometry
     // Subtree spans reserve space for every leaf; siblings cannot overlap even at uneven depths.
     public static ChartScene Arrange(Diagram chart, bool includeCollapsed = false, Func<ChartNode, int, (double Width, double Height)>? measure = null)
     {
-        measure ??= Measure;
+        var raw = measure ?? Measure;
+        measure = (node,level) => NodeShapes.Expand(raw(node,level),NodeShapes.Resolve(chart,node));
         if (chart.Kind == DiagramKind.Network)
         {
             Charts.Validate(chart);
             var levels = DiagramAppearance.Levels(chart);
-            var free = chart.Nodes.Select(n => { var s = measure(n, levels[n.Id]); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height); }).ToList();
+            var free = chart.Nodes.Select(n => { var s = measure(n, levels[n.Id]); return new NodeBox(n.Id, n.X!.Value, n.Y!.Value, s.Width, s.Height) {Shape=NodeShapes.Resolve(chart,n)}; }).ToList();
             var index = free.ToDictionary(b => b.Id);
             var routes = chart.Leads.Select(l => LeadGeometry.Route(index[l.From], index[l.To], l.Routing, obstacles: free, fromSide: l.FromSide, toSide: l.ToSide)).ToList();
             return new(free, Math.Max(500, free.Select(b => b.X + b.Width + Margin).Concat(routes.Select(p => Math.Max(p.C1X, p.C2X) + Margin)).DefaultIfEmpty(0).Max()), Math.Max(300, free.Select(b => b.Y + b.Height + Margin).Concat(routes.Select(p => Math.Max(p.C1Y, p.C2Y) + Margin)).DefaultIfEmpty(0).Max()));
@@ -293,15 +296,21 @@ public static class ChartGeometry
         }
         if (chart.Layout == ChartLayout.BottomUp && boxes.Count > 0) { var bottom = boxes.Max(b => b.Y + b.Height); boxes = boxes.Select(b => b with { Y = bottom - b.Y - b.Height }).ToList(); }
         if (chart.Layout == ChartLayout.LeftTree && boxes.Count > 0) { var right = boxes.Max(b => b.X + b.Width); boxes = boxes.Select(b => b with { X = right - b.X - b.Width }).ToList(); }
-        if (boxes.Count == 0) return new(boxes, 500, 300);
+        if (boxes.Count == 0) return new(boxes.Select(b=>b with {Shape=NodeShapes.Resolve(chart,chart.Nodes.Single(n=>n.Id==b.Id))}).ToList(), 500, 300);
         var minX = boxes.Min(b => b.X); var minY = boxes.Min(b => b.Y);
-        boxes = boxes.Select(b => b with { X = b.X - minX + Margin, Y = b.Y - minY + Margin }).ToList();
+        boxes = boxes.Select(b => b with { X = b.X - minX + Margin, Y = b.Y - minY + Margin, Shape=NodeShapes.Resolve(chart,chart.Nodes.Single(n=>n.Id==b.Id)) }).ToList();
         var arranged = new ChartScene(boxes, boxes.Max(b => b.X + b.Width) + Margin, boxes.Max(b => b.Y + b.Height) + Margin);
         return chart.FreeMove ? FreePlacement.Arrange(chart, arranged) : arranged;
     }
     public static bool IsVertical(ChartLayout layout) => layout is ChartLayout.TopDown or ChartLayout.BottomUp or ChartLayout.CompactTree;
     public static (double X1, double Y1, double X2, double Y2) Connector(NodeBox parent, NodeBox child, ChartLayout layout)
     {
+        if(parent.Shape!=NodeShape.Design||child.Shape!=NodeShape.Design)
+        {
+            var vertical=IsVertical(layout)||layout==ChartLayout.BottomUp;var reverse=vertical?layout==ChartLayout.BottomUp:child.X<parent.X;
+            var a=NodeShapes.Port(parent,vertical?(reverse?LeadSide.Top:LeadSide.Bottom):(reverse?LeadSide.Left:LeadSide.Right));
+            var b=NodeShapes.Port(child,vertical?(reverse?LeadSide.Bottom:LeadSide.Top):(reverse?LeadSide.Right:LeadSide.Left));return(a.X,a.Y,b.X,b.Y);
+        }
         if (layout == ChartLayout.BottomUp) return (parent.X + parent.Width / 2, parent.Y, child.X + child.Width / 2, child.Y + child.Height);
         if (IsVertical(layout)) return (parent.X + parent.Width / 2, parent.Y + parent.Height, child.X + child.Width / 2, child.Y);
         if (layout is ChartLayout.Outline or ChartLayout.IndentedTree) return (parent.X + 12, parent.Y + parent.Height, child.X, child.Y + child.Height / 2);

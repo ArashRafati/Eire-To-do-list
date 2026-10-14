@@ -2,6 +2,11 @@ namespace EireTodo.Core;
 
 public static class GraphConnections
 {
+    public static int Unlink(Diagram graph,IEnumerable<Guid> nodes)
+    {
+        Charts.Validate(graph);var ids=nodes.ToHashSet();if(graph.Kind!=DiagramKind.Network||ids.Count==0||ids.Any(id=>!graph.Nodes.Any(n=>n.Id==id)))throw new ArgumentException("Select existing graph nodes.");
+        return graph.Leads.RemoveAll(l=>ids.Contains(l.From)||ids.Contains(l.To));
+    }
     public static int ConnectMany(Diagram graph,Guid anchor,IEnumerable<Guid> targets,LeadDirection direction,LeadRouting routing,string label="",bool parallel=false)
     {
         Charts.Validate(graph);var ids=targets.Distinct().ToList();

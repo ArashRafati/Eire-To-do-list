@@ -18,9 +18,9 @@ internal sealed class OrganisationLogoEditor : Window
     }
     internal OrganisationLogoEditor(Diagram candidate,Action<Diagram> save)
     {
-        Ui.ApplyWindowStyle(this); Title="Graph organisation logo"; Width=570; Height=590; MinHeight=400; MaxHeight=Math.Max(400,SystemParameters.WorkArea.Height-32); WindowStartupLocation=WindowStartupLocation.CenterOwner;
+        Ui.ApplyWindowStyle(this); Title="Diagram organisation logo"; Width=570; Height=590; MinHeight=400; MaxHeight=Math.Max(400,SystemParameters.WorkArea.Height-32); WindowStartupLocation=WindowStartupLocation.CenterOwner;
         var panel=new StackPanel(); panel.Children.Add(new TextBlock { Text="Organisation branding",FontSize=22,FontWeight=FontWeights.SemiBold });
-        panel.Children.Add(new TextBlock { Text="A fixed logo in the top-left of this graph. It fades out while nodes or leads pass behind it. PDF/print exports reserve a clear header area for the logo.",TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,12,0,12),FontSize=15 });
+        panel.Children.Add(new TextBlock { Text="A fixed logo in the top-left of this diagram. It fades out while nodes or leads pass behind it. PDF/print exports reserve a clear header area for the logo.",TextWrapping=TextWrapping.Wrap,Margin=new Thickness(0,12,0,12),FontSize=15 });
         var image=new Image { Stretch=Stretch.Uniform,HorizontalAlignment=HorizontalAlignment.Left };
         var preview=new Border { Child=image,Background=Brushes.White,Padding=new Thickness(8),HorizontalAlignment=HorizontalAlignment.Left,Margin=new Thickness(0,0,0,10) }; panel.Children.Add(preview);
         var error=new TextBlock { Foreground=Ui.Error,TextWrapping=TextWrapping.Wrap };
@@ -49,13 +49,13 @@ internal sealed class OrganisationLogoEditor : Window
 internal sealed partial class ChartWorkspace
 {
     private readonly Image organisationImage=new() { Stretch=Stretch.Uniform,IsHitTestVisible=false };
-    private readonly Border organisationOverlay=new() { Background=Brushes.White,Padding=new Thickness(6),CornerRadius=new CornerRadius(3),Margin=new Thickness(14),HorizontalAlignment=HorizontalAlignment.Left,VerticalAlignment=VerticalAlignment.Top,IsHitTestVisible=false,Visibility=Visibility.Collapsed };
+    private readonly Border organisationOverlay=new() { Background=Brushes.White,Padding=new Thickness(6),CornerRadius=new CornerRadius(3),Margin=new Thickness(2,14,14,14),HorizontalAlignment=HorizontalAlignment.Left,VerticalAlignment=VerticalAlignment.Top,IsHitTestVisible=false,Visibility=Visibility.Collapsed };
     private byte[] lastOrganisationLogo=[];
     private bool logoCovered;
     private long lastLogoFrame;
     private void ManageOrganisationLogo()
     {
-        if(!FinishInlineEdit() || Current is not Diagram chart || !networkMode) return;
+        if(!FinishInlineEdit() || Current is not Diagram chart ) return;
         if(new OrganisationLogoEditor(chart.Clone(),Commit) { Owner=OwnerWindow }.ShowDialog()==true) RefreshData();
     }
     private void InitialiseOrganisationLogo(Grid stage)
@@ -67,7 +67,7 @@ internal sealed partial class ChartWorkspace
     private void RefreshOrganisationLogo()
     {
         var chart=Current;
-        if(!networkMode || chart is null || chart.OrganisationLogoPng.Length==0) { organisationOverlay.Visibility=Visibility.Collapsed;return; }
+        if(chart is null || chart.OrganisationLogoPng.Length==0) { organisationOverlay.Visibility=Visibility.Collapsed;return; }
         try
         {
             if(!chart.OrganisationLogoPng.AsSpan().SequenceEqual(lastOrganisationLogo)) { organisationImage.Source=OrganisationLogoEditor.Decode(chart.OrganisationLogoPng); lastOrganisationLogo=chart.OrganisationLogoPng; }
@@ -77,9 +77,9 @@ internal sealed partial class ChartWorkspace
     }
     private void OrganisationFrame(object? sender,EventArgs e)
     {
-        if(organisationOverlay.Visibility!=Visibility.Visible || !networkMode) return;
+        if(!organisationOverlay.IsVisible) return;
         var now=Environment.TickCount64;if(now-lastLogoFrame<30)return;lastLogoFrame=now;
-        var logo=new Rect(14,14,organisationImage.Width+12,organisationImage.Height+12);
+        var logo=new Rect(2,14,organisationImage.Width+12,organisationImage.Height+12);
         var covered=false;
         foreach(var view in nodeViews.Values)
         {
@@ -90,7 +90,7 @@ internal sealed partial class ChartWorkspace
         {
             var world=new Rect((logo.X+viewport.HorizontalOffset)/displayZoom,(logo.Y+viewport.VerticalOffset)/displayZoom,logo.Width/displayZoom,logo.Height/displayZoom);
             var rectangle=new RectangleGeometry(world);
-            foreach(var visual in leadViews)
+            foreach(var visual in leadViews.Concat<UIElement>(hierarchyPaths.Values))
             {
                 if(visual is System.Windows.Shapes.Path path && path.Data is Geometry data)
                 {

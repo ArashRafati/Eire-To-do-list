@@ -13,8 +13,8 @@ Run `python3 scripts/package-brand.py assets/teal-folded-hexagon.png` before a
 source rebuild to regenerate icon frames. These assets are already embedded in
 the delivered executable; no external logo file is needed when running it.
 Default window/header artwork loads through absolute WPF pack resource streams,
-so launch does not depend on the current folder. File → Application logo
-remains available for a user-selected override stored with their data.
+so launch does not depend on the current folder. Version 3.8 keeps the original
+SUMAPP artwork fixed; company PNGs are chosen under Format → Organisation logo.
 
 SUMAPP is the application name, executable/product name, left header brand and
 window/taskbar/shortcut icon source. The nine-resolution ICO contains 16, 20,
@@ -23,13 +23,14 @@ and uniform scaling, preserving logo proportions and clear space. Internal
 namespace/export identifiers and the `%LOCALAPPDATA%\EireTodo` data directory
 remain compatible with existing saved tasks and diagrams.
 
-**Eire header asset:** the compact yellow-square/three-black-bars emblem was
-prepared from the user's attached inline reference with the image editing tool,
-cropping the empty right section. It is bundled as `Assets/EireLogo.png`, scaled
-uniformly at 24 px on a small neutral backing, alongside the ordinary UI label
-“Eire”. No new company lettering or symbol was invented. The original attachment
-binary was not exposed to the workspace; this prepared PNG rendition is not a
-byte-identical archival copy. A later accessible original can replace this asset.
+**Eire header removed in 3.8:** the former prepared emblem is retained only as
+a legacy source/test asset. It is not embedded as application header branding.
+The original SUMAPP artwork, proportions, transparency and icon frames remain
+unchanged. Company branding uses the user's selected PNG on the canvas, with
+independent viewport/export sizes and overlap fading; no replacement logo is
+invented. Existing per-diagram company logos stay intact. Previous custom app
+logo bytes are retained and moved once to remembered graph/WBS organisation
+branding when those diagrams have no logo.
 
 Exact brand colours live in `BrandTheme.cs` for geometry/export rendering and
 the semantic resources at the start of `App.xaml` for WPF components. Typography,
@@ -47,8 +48,9 @@ states need the native Windows checklist; compilation cannot establish them.
 
 `previews/SUMAPP-to-do-design.png` and `previews/SUMAPP-mind-map-design.png` are
 clearly labelled **design previews**, rendered from the shared Core geometry and
-brand tokens. `SUMAPP-diagram-gallery-design.png` shows all sixteen colour packs,
-ten designs and five layouts. They show sample data and Eire branding. They are not WPF
+brand tokens. `SUMAPP-diagram-gallery-design.png` shows all 34 colour packs,
+fifteen designs and ten layouts. The shape/register gallery shows eleven explicit
+shapes and eight register colour presets. They show sample data and original SUMAPP branding. They are not WPF
 screenshots. Run `bash scripts/setup-cloud.sh` and then
 `python3 scripts/design-previews.py` to regenerate them (optional PyMuPDF needed).
 
@@ -56,13 +58,14 @@ For actual Windows screenshots, unzip the app and run this in a normal PowerShel
 window, from its folder:
 
 ```powershell
-.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
+.\SUMAPP-3.8.0.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
 ```
 
 This opens the real WPF app with disposable sample data, captures both views,
 checks the header and View tab at three window sizes and measures long titles
 in Segoe UI/Arial/Consolas at 12–48 px. It also captures the Format and View
-galleries and checks the Eire resource and thumbnail visibility. It saves four
+galleries and checks original SUMAPP/removed Eire header, compact ribbons,
+charcoal register, logo overlap and thumbnail visibility. It saves multiple
 PNGs and `visual-checks.txt`.
 It never opens the normal profile. This command has compiled but cannot execute
 in the Linux environment. See `WINDOWS-VERIFICATION.md` for interactive checks.

@@ -54,7 +54,8 @@ public sealed class TaskRow
     public FontStyle FontStyle => Task.Format.Italic ? FontStyles.Italic : FontStyles.Normal;
     public TextAlignment Alignment => Task.Format.Alignment == TextJustification.Centre ? TextAlignment.Center : Task.Format.Alignment == TextJustification.Right ? TextAlignment.Right : TextAlignment.Left;
     public TextDecorationCollection? Decorations => Task.Format.Underline ? TextDecorations.Underline : null;
-    public double RowHeight => Math.Max(58, Task.Format.Size * 1.7 + 28);
+    public double RegisterMinimum { get; init; }=58;
+    public double RowHeight => Math.Max(RegisterMinimum, Task.Format.Size * 1.7 + (RegisterMinimum<58?16:28));
 }
 
 public partial class MainWindow : Window
@@ -84,7 +85,6 @@ public partial class MainWindow : Window
         this.service = service;
         this.dataDirectory = dataDirectory;
         InitializeComponent();
-        Branding.ApplyEireLogo(EireLogo, EireLogoPending);
         ApplyChosenLogo();
         overdueView = new OverdueView(service, ToggleOverdue); OverdueHost.Content = overdueView;
         ribbon = new RibbonBar();
@@ -102,6 +102,7 @@ public partial class MainWindow : Window
         var projects = ribbon.Group("Home", "Projects"); RibbonBar.Prepare((Control)commands[3]); projects.Children.Add(commands[3]);
         RibbonBar.Action(ribbon.Group("Insert", "New task"), "Add task", () => AddClick(this, new()), true);
         taskFormatTools = new FormattingTools(() => (TaskGrid.SelectedItem as TaskRow)?.Task.Format, ApplyTaskFormat, painter); ribbon.Group("Format", "Text").Children.Add(taskFormatTools);
+        AddRegisterTools();
         var window = ribbon.Group("View", "Window"); var windowControls = (StackPanel)commands[4]; windowControls.Children.Remove(TopToggle); TopToggle.MinHeight = 28; TopToggle.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(TopToggle); windowControls.Height = 28; windowControls.Margin = new Thickness(0, 0, 8, 4); window.Children.Add(windowControls);
         var view = ribbon.Group("View", "Data"); RibbonBar.Action(view, "Overdue log", ToggleOverdue); RibbonBar.Action(view, "Clear filters", () => ClearFiltersClick(this, new()));
         var settings = ribbon.Group("View", "Settings"); RibbonBar.Action(settings, "Window settings", () => WindowOptionsClick(this, new()));
@@ -114,7 +115,8 @@ public partial class MainWindow : Window
         ChartHost.Children.Add(chartWorkspace);
         settingsTimer.Tick += (_, _) => { settingsTimer.Stop(); SaveWindowSettings(); };
         filterTimer.Tick += (_, _) => { filterTimer.Stop(); ApplyFilters(); };
-        ApplyWindowSettings();
+        ribbon.DisplayModeChanged=value=>{var previous=service.Data.Settings.RibbonMode;if(!TryAction(()=>service.Change(d=>d.Settings.RibbonMode=value)))ribbon.SetDisplayMode(previous);};
+        ApplyWindowSettings();ApplyRegisterAppearance();
         RefreshChoices();
         initialized = true;
         RefreshOverdueView();
@@ -145,6 +147,7 @@ public partial class MainWindow : Window
     private void ApplyWindowSettings()
     {
         var s = service.Data.Settings;
+        ribbon.SetDisplayMode(s.RibbonMode);
         ModeSelector.SelectedIndex = AppModules.SelectorIndex(s.ActiveMode);
         var virtualWidth = SystemParameters.VirtualScreenWidth;
         var virtualHeight = SystemParameters.VirtualScreenHeight;
@@ -241,7 +244,7 @@ public partial class MainWindow : Window
     {
         var selectedId = (TaskGrid.SelectedItem as TaskRow)?.Id;
         var names = service.Data.Projects.ToDictionary(p => p.Id, p => p.DisplayName);
-        var rows = service.Data.Tasks.Where(appliedFilter.Matches).Select(t => new TaskRow { Task = t, Project = names[t.ProjectId] }).ToList();
+        var rows = service.Data.Tasks.Where(appliedFilter.Matches).Select(t => new TaskRow { Task = t, Project = names[t.ProjectId], RegisterMinimum=RegisterAppearance.RowMinimum(service.Data.Settings.RegisterLayout) }).ToList();
         TaskGrid.ItemsSource = rows;
         ApplySort();
         if (selectedId.HasValue) TaskGrid.SelectedItem = rows.FirstOrDefault(r => r.Id == selectedId);
@@ -358,13 +361,13 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog(this) != true) return;
         if (MessageBox.Show(this, "Replace all current data and settings with this backup?\n\nA safety copy of the current data will be kept in the data folder.", "Confirm restore", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
         settingsTimer.Stop();
-        if (TryAction(() => service.Restore(dialog.FileName)))
+        if (TryAction(() => {service.Restore(dialog.FileName);if(!service.Data.OrganisationBrandMigrated&&service.Data.BrandLogoPng.Length>0)service.Change(d=>OrganisationBranding.MigrateLegacyLogo(d));}))
         {
             settingsDirty = false;
             initialized = false;
             WindowState = WindowState.Normal;
             ApplyWindowSettings();
-            ApplyChosenLogo();
+            ApplyChosenLogo();ApplyRegisterAppearance();ribbon.SetDisplayMode(service.Data.Settings.RibbonMode);
             RefreshChoices();
             initialized = true;
             chartWorkspace.RefreshData(true);
@@ -462,6 +465,7 @@ public partial class MainWindow : Window
             Left = bounds.Left, Top = bounds.Top, Width = Math.Max(MinWidth, bounds.Width), Height = Math.Max(MinHeight, bounds.Height),
             Opacity = OpacitySlider.Value, AlwaysOnTop = TopToggle.IsChecked == true,
             ActiveMode = AppModules.FromSelector(ModeSelector.SelectedIndex), SelectedDiagramId = service.Data.Settings.SelectedDiagramId, SelectedNetworkId = service.Data.Settings.SelectedNetworkId, ShowOverdueLog = service.Data.Settings.ShowOverdueLog,
+            RegisterPalette=service.Data.Settings.RegisterPalette, RegisterLayout=service.Data.Settings.RegisterLayout, RibbonMode=ribbon.DisplayMode,
             ColumnWidths = TaskGrid.Columns.ToDictionary(c => c.SortMemberPath, c => Math.Clamp(c.ActualWidth, 35, 3000))
         };
         try

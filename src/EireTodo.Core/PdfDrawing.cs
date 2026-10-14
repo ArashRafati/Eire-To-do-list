@@ -10,6 +10,7 @@ public sealed record PdfOptions(PdfPaper Paper = PdfPaper.A4, PdfOrientation Ori
 public abstract record PdfMark;
 public sealed record PdfText(double X, double Y, string Text, double Size, string Colour = "#000000", bool Bold = false, bool Italic = false, bool Underline = false, double Angle = 0, bool Centre = false, string Backdrop = "") : PdfMark;
 public sealed record PdfImage(double X, double Y, double Width, double Height, byte[] Png) : PdfMark;
+public sealed record PdfNodeShape(double X,double Y,double Width,double Height,NodeShape Shape,string Fill,string Stroke,double Thickness=1) : PdfMark { public ShapeContour Contour=>NodeShapes.Contour(Shape,Width,Height,X,Y); }
 public sealed record PdfBox(double X, double Y, double Width, double Height, string Fill, string Stroke = "", double Radius = 0, double Thickness = 1) : PdfMark;
 public sealed record PdfLine(IReadOnlyList<LeadPoint> Points, string Colour, double Thickness = 1.5, bool Curve = false, bool Closed = false, string Fill = "") : PdfMark;
 public sealed record PdfClip(double X, double Y, double Width, double Height);
@@ -78,14 +79,18 @@ public static class DiagramPdf
                 }
             }
         }
-        foreach(var box in scene.Boxes)
+        foreach(var originalBox in scene.Boxes)
         {
+            var box=originalBox;
             var o=outline[box.Id]; var node=o.Node; var due=Overdue.IsDue(node.FinishDate,node.Completed); var level=levels[node.Id];
             var surface = DiagramAppearance.Surface(diagram,node,level);
-            if(surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar or NodeDecoration.TopBar) chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,surface.Fill,surface.Decoration == NodeDecoration.Box ? surface.Stroke : "",Math.Min(surface.Radius, Math.Min(box.Width,box.Height)/2),surface.Thickness));
+            var shape=NodeShapes.Resolve(diagram,node);
+            if(shape!=NodeShape.Design)chartMarks.Add(new PdfNodeShape(box.X,box.Y,box.Width,box.Height,shape,surface.Fill,surface.Stroke,surface.Thickness));
+            else if(surface.Decoration is NodeDecoration.Box or NodeDecoration.AccentBar or NodeDecoration.TopBar) chartMarks.Add(new PdfBox(box.X,box.Y,box.Width,box.Height,surface.Fill,surface.Decoration == NodeDecoration.Box ? surface.Stroke : "",Math.Min(surface.Radius, Math.Min(box.Width,box.Height)/2),surface.Thickness));
             if(surface.Decoration == NodeDecoration.Underline) chartMarks.Add(new PdfLine([new(box.X,box.Y+box.Height-1),new(box.X+box.Width,box.Y+box.Height-1)],surface.Stroke,2));
             if(surface.Decoration == NodeDecoration.AccentBar) chartMarks.Add(new PdfLine([new(box.X+2,box.Y),new(box.X+2,box.Y+box.Height)],surface.Stroke,4));
             if(surface.Decoration == NodeDecoration.TopBar) chartMarks.Add(new PdfLine([new(box.X,box.Y+2),new(box.X+box.Width,box.Y+2)],surface.Stroke,4));
+            var content=NodeShapes.Content(shape,box.Width,box.Height);box=new NodeBox(box.Id,box.X+content.X,box.Y+content.Y,content.Width,content.Height);
             chartMarks.Add(new PdfText(box.X+11,box.Y+19,o.Code,12,DiagramAppearance.Text(diagram,node,level)));
             var format=node.Format; var font=Font(format.Size,format.Bold,format.Italic,format.Underline); var lines=ChartExports.Wrap(graphics,node.Title,font,box.Width-28).ToList();
             for(var i=0;i<lines.Count;i++)
@@ -150,6 +155,11 @@ public static class DiagramPdf
                         break;
                     case PdfText t:
                         var textState=g.Save();g.TranslateTransform(t.X,t.Y);g.RotateTransform(t.Angle);var font=Font(t.Size,t.Bold,t.Italic,t.Underline); var length=g.MeasureString(t.Text,font).Width; var x=t.Centre?-length/2:0; if(t.Backdrop.Length>0)g.DrawRectangle(new XSolidBrush(Colour(t.Backdrop)),x-4,-t.Size,length+8,t.Size*1.4);g.DrawString(t.Text,font,new XSolidBrush(Colour(t.Colour)),new XPoint(x,0));g.Restore(textState);break;
+                    case PdfNodeShape nodeShape:
+                        var contour=NodeShapes.Contour(nodeShape.Shape,nodeShape.Width,nodeShape.Height,nodeShape.X,nodeShape.Y);var shapePath=new XGraphicsPath();var previous=contour.Start;
+                        foreach(var segment in contour.Segments){if(segment.Control1 is {} c1&&segment.Control2 is {} c2)shapePath.AddBezier(new(previous.X,previous.Y),new(c1.X,c1.Y),new(c2.X,c2.Y),new(segment.End.X,segment.End.Y));else shapePath.AddLine(previous.X,previous.Y,segment.End.X,segment.End.Y);previous=segment.End;}shapePath.CloseFigure();
+                        if(nodeShape.Shape==NodeShape.RoundedRectangle)g.DrawRoundedRectangle(new XPen(Colour(nodeShape.Stroke),nodeShape.Thickness),new XSolidBrush(Colour(nodeShape.Fill)),new XRect(nodeShape.X,nodeShape.Y,nodeShape.Width,nodeShape.Height),new XSize(20,20));
+                        else g.DrawPath(new XPen(Colour(nodeShape.Stroke),nodeShape.Thickness),new XSolidBrush(Colour(nodeShape.Fill)),shapePath);break;
                     case PdfBox b:
                         var box=new XRect(b.X,b.Y,b.Width,b.Height);var fill=new XSolidBrush(Colour(b.Fill));var pen=b.Stroke.Length>0?new XPen(Colour(b.Stroke),b.Thickness):null;
                         if(b.Radius>0)g.DrawRoundedRectangle(pen,fill,box,new XSize(b.Radius*2,b.Radius*2));else g.DrawRectangle(pen,fill,box);break;
