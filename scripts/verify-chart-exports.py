@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Optional independent export check: pip install mpxj==16.10.0 JPype1==1.7.1.
-Requires a Java runtime and Poppler pdftotext. Neither is needed by the app.
+Requires a Java runtime, Poppler pdftotext and PyMuPDF. Neither is needed by the app.
 Generate fixtures with the functional runner's --exports-dir option first.
 """
 from pathlib import Path
@@ -118,3 +118,19 @@ for name, landscape in [('preview-landscape.pdf', True), ('preview-portrait.pdf'
     extracted = subprocess.run(['pdftotext', str(folder / name), '-'], check=True, capture_output=True, text=True).stdout
     assert 'Fit to paper' in extracted and 'Delivery' in extracted and 'Feedback cycle' in extracted
 print('PASS independent PDF page checks: fitted A4 landscape / portrait, lead labels and full diagram content')
+
+# Decode the actual organisation images, not just PDF writer metadata.
+import fitz
+for orientation in ['Portrait', 'Landscape']:
+    document = fitz.open(folder / ('organisation-' + orientation + '.pdf'))
+    for page in document:
+        images = page.get_image_info()
+        assert len(images) == 1
+        logo = fitz.Rect(images[0]['bbox'])
+        assert abs(logo.x0 - 28) < .1 and abs(logo.y0 - 28) < .1
+        assert abs(logo.width - 90) < .1 and abs(logo.height - 90) < .1
+        for block in page.get_text('dict')['blocks']:
+            for line in block.get('lines', []):
+                assert not logo.intersects(fitz.Rect(line['bbox'])), 'Text overlaps organisation logo'
+    assert 'Client document' in ''.join(page.get_text() for page in document)
+    print('PASS independent organisation PDF:', orientation, len(document), 'pages, decoded image size/placement and clear text header')

@@ -4,7 +4,7 @@ using System.Text;
 namespace EireTodo.Core;
 
 // Append values: existing saved numeric palette/design values retain their meaning.
-public enum DiagramPalette { Eire, Ocean, Forest, Violet, Copper, Monochrome, Blueprint, Navy, Cobalt, Emerald, ForestGreen, Amber, Sunset, Coral, Rose, Plum, Lagoon, Indigo, Sand, Steel, Olive }
+public enum DiagramPalette { Eire, Ocean, Forest, Violet, Copper, Monochrome, Blueprint, Navy, Cobalt, Emerald, ForestGreen, Amber, Sunset, Coral, Rose, Plum, Lagoon, Indigo, Sand, Steel, Olive, Red, Orange, Grey, Charcoal, RedCharcoal, OrangeGrey, Ember, MixTealOrange, MixRedGrey, MixBlueRed, MixTealViolet, MixForestCopper, MixOceanCoral }
 public enum NodeDesign { Tiered, Cards, Rounded, Minimal, Flat, Underlined, Outline, AccentBar, Mixed, Pill, SoftCards, TopAccent, BoldOutline, CapsuleOutline, BranchCards }
 public enum NodeDecoration { Box, Flat, Underline, AccentBar, TopBar }
 public sealed record NodeSurface(string Fill, string Text, string Stroke, double Radius, NodeDecoration Decoration, double Thickness = 1);
@@ -32,6 +32,19 @@ public static class DiagramAppearance
         DiagramPalette.Sand => Pack("Sand & espresso", "#44403C", "#E7E5E4", "#FAF7F0", "#78716C"),
         DiagramPalette.Steel => Pack("Steel & sky", "#0F172A", "#CBD5E1", "#F1F5F9", "#475569"),
         DiagramPalette.Olive => Pack("Olive & cream", "#3F6212", "#ECFCCB", "#FEFCE8", "#4D7C0F"),
+        DiagramPalette.Red => Pack("Red & pearl", "#991B1B", "#FEE2E2", "#FFF1F2", "#DC2626"),
+        DiagramPalette.Orange => Pack("Orange & cream", "#7C2D12", "#FED7AA", "#FFF7ED", "#EA580C"),
+        DiagramPalette.Grey => Pack("Grey & silver", "#374151", "#E5E7EB", "#F9FAFB", "#6B7280"),
+        DiagramPalette.Charcoal => Pack("Charcoal & ash", "#1F2937", "#D1D5DB", "#F3F4F6", "#4B5563"),
+        DiagramPalette.RedCharcoal => Pack("Red & charcoal", "#27272A", "#FECACA", "#FAFAFA", "#DC2626"),
+        DiagramPalette.OrangeGrey => Pack("Orange & grey", "#374151", "#FFEDD5", "#E5E7EB", "#F97316"),
+        DiagramPalette.Ember => Pack("Red & orange", "#7F1D1D", "#FED7AA", "#FEE2E2", "#EA580C"),
+        DiagramPalette.MixTealOrange => Pack("Teal, orange & ink", "#095F5E", "#FED7AA", "#E2E8F0", "#039690"),
+        DiagramPalette.MixRedGrey => Pack("Red, grey & charcoal", "#991B1B", "#E5E7EB", "#374151", "#DC2626"),
+        DiagramPalette.MixBlueRed => Pack("Blue, red & cream", "#1E3A8A", "#FECACA", "#FEF3C7", "#3B82F6"),
+        DiagramPalette.MixTealViolet => Pack("Teal, violet & gold", "#115E59", "#DDD6FE", "#FDE68A", "#0D9488"),
+        DiagramPalette.MixForestCopper => Pack("Forest, copper & sand", "#14532D", "#FED7AA", "#F5F5DC", "#B45309"),
+        DiagramPalette.MixOceanCoral => Pack("Ocean, coral & lilac", "#164E63", "#FECDD3", "#E9D5FF", "#0891B2"),
         DiagramPalette.Plum => Pack("Plum & lavender", "#581C87", "#F3E8FF", "#FAF5FF", "#9333EA"),
         _ => Palette("SUMAPP · default", BrandTheme.DarkTeal, BrandTheme.SoftTeal, BrandTheme.SoftTeal)
     };
@@ -41,7 +54,8 @@ public static class DiagramAppearance
     public static string DesignDescription(NodeDesign design) => design switch { NodeDesign.SoftCards => "Light neutral cards with soft rounded corners", NodeDesign.TopAccent => "Colour-filled cards with a top accent rule", NodeDesign.BoldOutline => "Neutral cards with bold coloured outlines", NodeDesign.CapsuleOutline => "Rounded capsule outlines on neutral surfaces", NodeDesign.BranchCards => "Boxed roots and branches with underlined leaves", NodeDesign.Flat => "Text nodes without an enclosing frame", NodeDesign.Underlined => "Flat text nodes with a coloured underline", NodeDesign.Outline => "Neutral boxes with coloured outlines", NodeDesign.AccentBar => "Colour-filled nodes with a left accent bar", NodeDesign.Mixed => "Box root, underlined branches and flat leaves", NodeDesign.Tiered => "Subtle rounded boxes with different corners by level", NodeDesign.Pill => "Colour-filled capsules", _ => "Apply this node shape to the entire diagram" };
     public static NodeSurface Surface(Diagram diagram, ChartNode node, int level)
     {
-        var normal = Surface(diagram.Palette, diagram.Design, level);
+        var normal = Surface(diagram.Palette, diagram.Design, diagram.Kind == DiagramKind.Network ? 2 : level);
+        if (node.FillColour is string colour) normal = NodeColours.Apply(normal,colour);
         // Priority and overdue remain visible in every colour pack and node style.
         return Overdue.IsDue(node.FinishDate, node.Completed) ? normal with { Fill = BrandTheme.ErrorSurface, Text = BrandTheme.Error, Stroke = BrandTheme.Error, Decoration = NodeDecoration.Box } : node.Priority ? normal with { Fill = BrandTheme.Yellow, Text = BrandTheme.Black, Decoration = NodeDecoration.Box } : normal;
     }
@@ -67,14 +81,8 @@ public static class DiagramAppearance
     public static Dictionary<Guid, int> Levels(Diagram diagram)
     {
         if (diagram.Kind == DiagramKind.Hierarchy) return Charts.Outline(diagram).ToDictionary(n => n.Node.Id, n => n.Level);
-        var levels = new Dictionary<Guid, int>(); var queue = new Queue<Guid>();
-        var roots = diagram.Nodes.Where(n => !diagram.Leads.Any(l => l.To == n.Id)).ToList();
-        if (roots.Count == 0 && diagram.Nodes.Count > 0) roots.Add(diagram.Nodes.OrderBy(n => n.Order).First());
-        foreach (var root in roots) { levels[root.Id] = 1; queue.Enqueue(root.Id); }
-        var outgoing = diagram.Leads.GroupBy(l => l.From).ToDictionary(g => g.Key, g => g.Select(l => l.To).ToList());
-        while (queue.TryDequeue(out var id)) foreach (var target in outgoing.GetValueOrDefault(id) ?? []) if (!levels.ContainsKey(target)) { levels[target] = Math.Min(32, levels[id] + 1); queue.Enqueue(target); }
-        foreach (var node in diagram.Nodes) levels.TryAdd(node.Id, 1);
-        return levels;
+        // Graph relationships are not hierarchy levels: leads must not resize or recolour cells.
+        return diagram.Nodes.ToDictionary(n => n.Id, _ => 2);
     }
 
 }

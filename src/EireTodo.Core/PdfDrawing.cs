@@ -9,6 +9,7 @@ public enum PdfOrientation { Landscape, Portrait }
 public sealed record PdfOptions(PdfPaper Paper = PdfPaper.A4, PdfOrientation Orientation = PdfOrientation.Landscape, bool FitToPaper = true, bool IncludeDetails = true);
 public abstract record PdfMark;
 public sealed record PdfText(double X, double Y, string Text, double Size, string Colour = "#000000", bool Bold = false, bool Italic = false, bool Underline = false, double Angle = 0, bool Centre = false, string Backdrop = "") : PdfMark;
+public sealed record PdfImage(double X, double Y, double Width, double Height, byte[] Png) : PdfMark;
 public sealed record PdfBox(double X, double Y, double Width, double Height, string Fill, string Stroke = "", double Radius = 0, double Thickness = 1) : PdfMark;
 public sealed record PdfLine(IReadOnlyList<LeadPoint> Points, string Colour, double Thickness = 1.5, bool Curve = false, bool Closed = false, string Fill = "") : PdfMark;
 public sealed record PdfClip(double X, double Y, double Width, double Height);
@@ -34,7 +35,11 @@ public static class DiagramPdf
         using var measureDocument = new PdfDocument(); var measurePage = measureDocument.AddPage(); using var graphics = XGraphics.FromPdfPage(measurePage);
         var shortSide = options.Paper == PdfPaper.A4 ? 595.276 : 841.89; var longSide = options.Paper == PdfPaper.A4 ? 841.89 : 1190.551;
         var width = options.Orientation == PdfOrientation.Landscape ? longSide : shortSide; var height = options.Orientation == PdfOrientation.Landscape ? shortSide : longSide;
-        const double margin = 28, top = 64; var areaWidth = width-2*margin; var areaHeight = height-top-margin;
+        const double margin = 28;
+        var logo = OrganisationBranding.Fit(diagram.OrganisationLogoPng,diagram.ExportLogoWidth,120);
+        var titleX = margin + (logo.Width > 0 ? logo.Width + 14 : 0);
+        var titleLines = ChartExports.Wrap(graphics,diagram.Name,Font(18),width-margin-titleX).ToList();
+        var top = logo.Width > 0 ? Math.Max(logo.Height+margin+16,46+titleLines.Count*22+24) : 64; var areaWidth = width-2*margin; var areaHeight = height-top-margin;
         var scene = diagram.Kind == DiagramKind.Network || diagram.FreeMove ? OpenWorkspace.CompactGraph(diagram,true) : ChartGeometry.Arrange(diagram,true);
         var scale = options.FitToPaper ? Math.Min(1,Math.Min(areaWidth/Math.Max(1,scene.Width),areaHeight/Math.Max(1,scene.Height))) : .75;
         var tileWidth = areaWidth/scale; var tileHeight = areaHeight/scale;
@@ -99,14 +104,14 @@ public static class DiagramPdf
         var pages=new List<PdfSheet>();
         for(var row=0;row<rows;row++)for(var col=0;col<columns;col++)
         {
-            var header=new PdfLayer(); header.Marks.Add(new PdfText(margin,29,diagram.Name,18)); header.Marks.Add(new PdfText(margin,48,$"{Charts.LayoutName(diagram.Layout)} · {(options.FitToPaper?"Fit to paper":$"Tile {row+1}/{rows}, {col+1}/{columns}")} · All nodes",10));
+            var header=Header(); header.Marks.Add(new PdfText(titleX,logo.Width>0?46+titleLines.Count*22:48,$"{Charts.LayoutName(diagram.Layout)} · {(options.FitToPaper?"Fit to paper":$"Tile {row+1}/{rows}, {col+1}/{columns}")} · All nodes",10));
             var layer=new PdfLayer { Scale=scale, X=margin-col*tileWidth*scale+(options.FitToPaper?(areaWidth-scene.Width*scale)/2:0), Y=top-row*tileHeight*scale+(options.FitToPaper?(areaHeight-scene.Height*scale)/2:0), Clip=new(margin,top,areaWidth,areaHeight) }; layer.Marks.AddRange(chartMarks);
             var footer=new PdfLayer(); footer.Marks.Add(new PdfText(margin,height-12,$"SUMAPP · Page {pages.Count+1}",10)); pages.Add(new(width,height,[header,layer,footer]));
         }
         if(options.IncludeDetails)
         {
             PdfLayer? detail=null; double y=0;
-            void NewPage() { detail=new(); detail.Marks.Add(new PdfText(margin,29,diagram.Name+" · details",18)); pages.Add(new(width,height,[detail])); y=60; }
+            void NewPage() { detail=Header(); detail.Marks.Add(new PdfText(titleX,logo.Width>0?46+titleLines.Count*22:48,"Full details",10)); pages.Add(new(width,height,[detail])); y=top; }
             void Paragraph(string text)
             {
                 foreach(var line in ChartExports.Wrap(graphics,text,Font(12),areaWidth)) { if(detail is null||y>height-margin)NewPage(); detail!.Marks.Add(new PdfText(margin,y,line,12)); y+=17; } y+=12;
@@ -115,6 +120,14 @@ public static class DiagramPdf
             foreach(var lead in diagram.Leads)Paragraph($"Lead: {diagram.Nodes.Single(n=>n.Id==lead.From).Title} {(lead.DoubleHeaded?"↔":"→")} {diagram.Nodes.Single(n=>n.Id==lead.To).Title} · {lead.Routing} · {lead.FromSide} / {lead.ToSide}\n{lead.Description}");
         }
         return new(diagram.Name,pages);
+        PdfLayer Header()
+        {
+            var layer=new PdfLayer();
+            if(logo.Width>0) layer.Marks.Add(new PdfImage(margin,margin,logo.Width,logo.Height,diagram.OrganisationLogoPng));
+            if(logo.Width>0) for(int i=0;i<titleLines.Count;i++) layer.Marks.Add(new PdfText(titleX,46+i*22,titleLines[i],18));
+            else layer.Marks.Add(new PdfText(margin,29,diagram.Name,18));
+            return layer;
+        }
         void Arrow(double x,double y,double px,double py) { var angle=Math.Atan2(y-py,x-px)+Math.PI; chartMarks.Add(new PdfLine([new(x,y),new(x+11*Math.Cos(angle+.42),y+11*Math.Sin(angle+.42)),new(x+11*Math.Cos(angle-.42),y+11*Math.Sin(angle-.42))],colours.Accent,1,Closed:true,Fill:colours.Accent)); }
     }
     internal static XFont Font(double size,bool bold=false,bool italic=false,bool underline=false) => new("EireExport",size,(bold?XFontStyleEx.Bold:XFontStyleEx.Regular)|(italic?XFontStyleEx.Italic:XFontStyleEx.Regular)|(underline?XFontStyleEx.Underline:XFontStyleEx.Regular));
@@ -132,6 +145,9 @@ public static class DiagramPdf
                 var state=g.Save(); if(layer.Clip is {} clip)g.IntersectClip(new XRect(clip.X,clip.Y,clip.Width,clip.Height));g.TranslateTransform(layer.X,layer.Y);g.ScaleTransform(layer.Scale);
                 foreach(var mark in layer.Marks)switch(mark)
                 {
+                    case PdfImage image:
+                        using (var logoStream=new MemoryStream(image.Png)) using (var picture=XImage.FromStream(logoStream)) g.DrawImage(picture,image.X,image.Y,image.Width,image.Height);
+                        break;
                     case PdfText t:
                         var textState=g.Save();g.TranslateTransform(t.X,t.Y);g.RotateTransform(t.Angle);var font=Font(t.Size,t.Bold,t.Italic,t.Underline); var length=g.MeasureString(t.Text,font).Width; var x=t.Centre?-length/2:0; if(t.Backdrop.Length>0)g.DrawRectangle(new XSolidBrush(Colour(t.Backdrop)),x-4,-t.Size,length+8,t.Size*1.4);g.DrawString(t.Text,font,new XSolidBrush(Colour(t.Colour)),new XPoint(x,0));g.Restore(textState);break;
                     case PdfBox b:

@@ -89,13 +89,11 @@ public partial class MainWindow : Window
         overdueView = new OverdueView(service, ToggleOverdue); OverdueHost.Content = overdueView;
         ribbon = new RibbonBar();
         RegisterName("ModeSelector", ModeSelector); ModeSelector.SelectionChanged += ModeChanged;
-        var application = ribbon.Group("Home", "Application"); application.Children.Add(ModeSelector);
+        var application = ribbon.Group("Home", "Application"); ModeSelector.Style=(Style)FindResource("RibbonCombo"); application.Children.Add(ModeSelector);
         var modules = new Button { Style = (Style)FindResource("RibbonButton"), Width = 30, Height = 28, Padding = new Thickness(4) };
         RibbonBar.Label(modules,"Modules"); if (modules.Content is StackPanel motif) motif.Children.RemoveAt(motif.Children.Count - 1);
         modules.Click += (_, _) => { var menu = new ContextMenu(); for (var i = 0; i < 3; i++) { var index = i; var item = new MenuItem { Header = ModeSelector.Items[i], IsCheckable = true, IsChecked = ModeSelector.SelectedIndex == i }; item.Click += (_, _) => ModeSelector.SelectedIndex = index; menu.Items.Add(item); } menu.PlacementTarget = modules; menu.IsOpen = true; };
         ribbon.AddShortcut(application, modules);
-        var files = ribbon.Group("Home", "Files"); RibbonBar.Action(files,"Save a copy…",SaveCopy); RibbonBar.Action(files,"Open saved copy…",() => RestoreClick(this,new()));
-        var brand = ribbon.Group("Home", "Brand"); RibbonBar.Action(brand,"Choose logo PNG…",ChooseLogo);
         ribbon.BeginScope("Todo");
         var legacy = (WrapPanel)LegacyActionsCard.Child; LegacyActionsCard.Child = null; LegacyActionsCard.Visibility = Visibility.Collapsed;
         var commands = legacy.Children.Cast<UIElement>().ToList(); legacy.Children.Clear();
@@ -110,6 +108,7 @@ public partial class MainWindow : Window
         TaskRibbonHost.Content = ribbon;
         ribbon.BeginScope("Charts");
         chartWorkspace = new ChartWorkspace(service, dataDirectory, painter, ToggleOverdue, RefreshOverdueView, ribbon);
+        ribbon.FileRequested=ShowFileMenu; PreviewKeyDown+=FileShortcut;
         TaskGrid.PreviewMouseLeftButtonUp += PaintTask;
         clockTimer.Tick += (_, _) => ClockTick(); ClockTick(); clockTimer.Start();
         ChartHost.Children.Add(chartWorkspace);
@@ -136,6 +135,7 @@ public partial class MainWindow : Window
     private void UpdateControlsViewport()
     {
         if (!IsLoaded) return;
+        FileStatus.Visibility=ActualWidth<760?Visibility.Collapsed:Visibility.Visible;
         OfflineBadge.Visibility = ActualWidth < 710 ? Visibility.Collapsed : Visibility.Visible;
         overdueView.MaxHeight = Math.Clamp(ActualHeight * .27, 75, 230);
         // Reserve space for the header, footer and several task rows as controls wrap.

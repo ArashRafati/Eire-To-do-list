@@ -49,7 +49,7 @@ public static class NetworkCharts
         var around = chart.Nodes.FirstOrDefault(n => n.Id == anchor);
         var x = around?.X ?? 40; var y = around?.Y ?? 40;
         var levels = DiagramAppearance.Levels(chart);
-        var size = ChartGeometry.Measure(node, around is null ? 1 : levels[around.Id] + 1);
+        var size = ChartGeometry.Measure(node, 2);
         var occupied = chart.Nodes.Select(n => { var s = ChartGeometry.Measure(n, levels[n.Id]); return new NodeBox(n.Id, n.X ?? 40, n.Y ?? 40, s.Width, s.Height); }).ToList();
         bool Free(double px, double py) => occupied.All(b => px + size.Width + 28 <= b.X || b.X + b.Width + 28 <= px || py + size.Height + 28 <= b.Y || b.Y + b.Height + 28 <= py);
         // Search outward from the selected node; reserve a full cell plus a readable gap.

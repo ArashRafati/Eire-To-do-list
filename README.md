@@ -5,6 +5,52 @@ The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
 
+## Graph workflow and organised tools — version 3.7
+
+**File**, at the top left, groups Save, Save As, Open/import, diagram export,
+backup, application logo and window settings. Ctrl+S saves the live profile;
+Ctrl+Shift+S writes a complete `.sumapp` copy. Autosave continues as before.
+Home keeps application/diagram selection and editing tools. Format uses compact
+font controls and readable two-line gallery labels. Context menus group editing,
+creation/connections, clipboard, appearance and deletion.
+
+In Graph, **Enter creates a peer** after the first Enter confirms any title edit.
+For A → B, Enter on B creates A → C; Enter on A creates C → B. An unlinked node
+creates an unlinked peer. A node with both incoming and outgoing leads gives its
+peer those same sources and targets. Existing nodes stay put. **Insert** creates
+an outgoing node. Right-click → New node offers peer, outgoing, incoming,
+bidirectional and unlinked creation explicitly.
+
+**Insert → Connections → Connect multiple** selects a central node and any number
+of other nodes, with incoming/outgoing/bidirectional arrows, curved/sharp routing,
+an optional label and an explicit parallel-lead option. Equivalent leads are
+skipped by default. **View → Graph layout → Organise graph** uses measured node
+sizes and connections to arrange directed groups, cycles and disconnected nodes.
+It is one Undo step; nodes remain freely draggable afterwards.
+
+Ordinary graph nodes share one default colour. **Format → Selected nodes → Node
+colour** applies a palette swatch or hex colour to the selected nodes. There are
+**34 diagram colour packages**, including red, orange, grey, charcoal and six
+coordinated three-colour combinations. Selecting a multi-colour package colours
+existing graph nodes deliberately; new nodes retain the single default until
+styled. Reapplying the package includes new nodes. Switching to a basic package
+clears package-applied colours while keeping manual overrides. Hierarchies use
+root/branch/leaf colours. Priority and overdue states remain distinct. The **15
+node designs** and **10 hierarchy layouts** remain available with previews.
+
+**Format → Organisation logo** uploads an original PNG per graph. It stays at the
+top left of the viewport, smoothly hides while nodes/leads/labels overlap it, and
+returns when clear. Workspace and export widths are independent; proportions and
+original bytes are preserved. PDF/print reserve a top-left header on every page.
+All-data saves and backups include the logo and sizing. SUMAPP's authoritative
+GitHub artwork remains the executable/application brand.
+
+[Graph design preview](previews/SUMAPP-graph-design.png) ·
+[All designs and colour combinations](previews/SUMAPP-diagram-gallery-design.png).
+These are labelled renders from Core geometry, not native Windows screenshots.
+80 automated groups pass. Native WPF interaction still requires Windows;
+see [WINDOWS-VERIFICATION.md](WINDOWS-VERIFICATION.md).
+
 ## Node clipboard and expanded galleries — version 3.6
 
 Ctrl-click adds/removes nodes from the selection; Ctrl+A selects visible nodes.
@@ -70,12 +116,12 @@ move off to use the existing structural branch drag/drop. Reset positions or
 choose a layout to return to automatic placement. Free positions persist with the
 diagram; Graph retains its existing free movement.
 
-**Home → Files → Save a copy…** writes every project, task, diagram, setting and
+**File → Save As…** writes every project, task, diagram, setting and
 log into one `.sumapp` file in your chosen folder. Live profile autosave continues;
 the copy is a snapshot and does not update automatically. **Open saved copy…**
 restores it after confirmation, preserving a safety backup in the profile folder.
 
-**Home → Brand → Choose logo PNG…** lets you select the original PNG from your
+**File → Application logo…** lets you select the original PNG from your
 own desktop. It is stored byte-for-byte with your data and used in the header and
 window/taskbar icons. All-data copies/backups carry it too. No separate file must
 remain on the desktop after selection. The chooser validates the PNG before
@@ -208,7 +254,7 @@ nodes can cross either side of their original position, including negative
 coordinates. Panning affects the camera rather than saved node positions.
 PDF export includes the diagram, not the large virtual workspace margins.
 
-In **GRAPH**, both **Enter and Insert** create a new node with an outgoing lead
+Historically in 3.1, **Enter and Insert** created a new node with an outgoing lead
 from the selection, then enable its inline title. **Insert → New lead style**
 lets you choose outgoing, incoming or both directions and curved/sharp-bend
 routing. Existing leads remain editable by right-click/double-click. **Unlinked
@@ -241,8 +287,8 @@ header displays the computer's current local date/time in Australian format.
   finish dates are not overdue. The log retains resolved episodes after
   completion, deletion or deadline changes, and notices newly overdue items
   on restart and each minute while the app is open. Its visibility persists.
-- **GRAPH** is a separate module. Enter or Insert creates an
-  automatically positioned node connected from the selection. Choose **Insert
+- **GRAPH** is a separate module. Enter creates a peer sharing the selection's
+  sources/targets; Insert creates an outgoing node. Choose **Insert
   → Connect nodes**, then click the target to add more leads. Any cell may have
   multiple incoming/outgoing leads, including cycles. Drag cells freely; their
   leads follow. Choose curved or sharp-bend leads and outgoing, incoming or both directions.
@@ -255,7 +301,7 @@ retain the Microsoft Project / P6 planning exports. Free-form relationships are
 not interpreted as scheduling dependencies. PDF uses bundled DejaVu fonts for
 portable output and preserves size, weight, italic, underline and alignment;
 Windows font families use this export fallback. All new data is included in
-JSON backup/restore. **Back up before updating and continue using version 3.5;
+JSON backup/restore. **Back up before updating and continue using version 3.7;
 older executables cannot preserve fields added by this release.**
 
 ## Dynamic placement — version 2.1

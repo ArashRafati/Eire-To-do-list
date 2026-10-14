@@ -258,7 +258,7 @@ not establish native UI or Windows launch behaviour.
     proportional rendering and transparency in the header and executable/window/
     taskbar/shortcut icons on Windows. All nine ICO frames derive from this PNG.
 
-26. **Desktop logo picker.** Home → Brand → Choose logo PNG: select the supplied
+26. **Desktop logo picker.** File → Application logo: select the supplied
     transparent desktop file. Verify original proportions in the header, icon
     updates on the window/taskbar/open dialogs, and restart/backup/copy/restore.
     Cancel and damaged/oversized image selection must preserve the previous logo
@@ -299,3 +299,41 @@ not establish native UI or Windows launch behaviour.
     freeform entry. Format shows 21 palettes and 15 node designs. Verify thumbnail
     selections, tooltips, compact ribbon access and overflow scrolling. Compare
     the five new layouts and five new design surfaces to their fitted PDF previews.
+
+## 3.7 native acceptance checks (not executed in Linux)
+
+Earlier version-specific Enter/Files instructions are superseded below.
+
+- At 100%, 150% and 200% display scaling, check Home/Insert/Format/View at narrow,
+  compact and maximised widths. Format font family/size/align/painter controls
+  must remain inside the ribbon; gallery labels wrap. Scroll horizontally to
+  off-screen sections. Collapsed ribbon commands and keyboard focus must work.
+- Open File at top left and verify Save, Save As, Open/import, diagram export and
+  all-data backup, including Ctrl+S/Ctrl+Shift+S/Ctrl+O/Alt+F. Cancelling dialogs
+  must retain work. Save As does not replace autosave.
+- Right-click a graph node: check grouped menus and New node submenu. Confirm
+  incoming new -> selected, outgoing selected -> new, double and unlinked actions.
+  With A -> B, Enter on B must produce A -> C; Enter on A must produce C -> B.
+  Unlinked nodes stay unlinked. Mixed sources/targets copy both patterns. First
+  Enter confirms editing; only the next distinct Enter adds a peer.
+- Connect multiple: choose the central node and several targets; exercise all
+  directions, labels, curve/sharp routing, duplicate skipping and parallel leads.
+  Undo must remove a complete batch. Select/edit/delete individual leads.
+- Organise graph with varied title/note/font sizes, cycles and disconnected
+  components. Check no node overlap and connections/labels still follow. Drag
+  afterwards, Undo/Redo, save/restart; IDs, content and connection topology remain.
+- New graph nodes must share the ordinary colour. Apply each of six multi-colour
+  packages: existing nodes use coordinated hues, new nodes keep default until
+  the package is reapplied. Manually colour a Ctrl-selected group under Format,
+  switch to a basic package and check those manual colours remain. Check all 34
+  previews, flat/underline styles, selected/priority/overdue states and contrast.
+- Upload an organisation PNG per graph, including transparent and wide/tall
+  examples. Adjust viewport/export sizes separately, switch diagrams and restart.
+  Pan nodes/leads/labels under the fixed top-left logo: it should fade smoothly,
+  returning when clear without intercepting selection. Check zoom as well.
+- Preview/save/print portrait and landscape PDFs with logo. Every page should
+  preserve its proportions, use configured export size and leave diagram/title
+  content clear of the logo. Whole-data copies/backups retain original bytes.
+- Run the existing --capture-previews command: it now checks real Format control
+  bounds, company-logo visibility and panning at three window sizes. Inspect its
+  captured PNGs and report Windows/DPI/standard-account results.

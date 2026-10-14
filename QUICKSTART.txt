@@ -1,4 +1,4 @@
-SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.6.0 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.7.0 — PORTABLE WINDOWS WIDGET
 
 1. Unzip SUMAPP-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
@@ -48,7 +48,7 @@ are saved automatically. A disconnected monitor is handled by moving an
 otherwise inaccessible window to the primary display.
 
 MIND MAPS AND WBS
-Click the yellow TO-DO title dropdown to choose MIND MAP / WBS. Both styles
+Use Home > Application > module dropdown to choose MIND MAP / WBS. Both styles
 share one module; choose the layout under View > Diagram layout. Switching
 modules preserves the saved layout.
 Create a diagram, select a cell and press Enter to create a same-level sibling
@@ -61,7 +61,7 @@ notes field makes a new line; Ctrl+Enter saves details.
 New siblings and children automatically reposition the chart with space for
 their branches. New main branches use the less crowded side; existing branches
 keep their side. Balance branches redistributes an existing two-sided map.
-Choose among five layouts; reorder/indent/outdent, fold/unfold, undo/redo,
+Choose among ten hierarchy layouts; reorder/indent/outdent, fold/unfold, undo/redo,
 zoom with the slider or Ctrl+wheel, and use Fit / centre. Pan across large
 charts by dragging empty space or using the wheel. Deleting a node removes its whole branch immediately; Undo restores it. Diagram settings
 include a project and scheduling start; From to-do copies a project's tasks.
@@ -108,14 +108,15 @@ extends while panning. Wheel pans vertically; Shift+wheel pans horizontally;
 Ctrl+wheel zooms around the pointer. View > Canvas > Fit / centre brings the
 whole diagram into view. Panning does not change saved node positions.
 
-Choose GRAPH from the title dropdown and create a diagram.
-With a node selected, BOTH Enter and Insert add a new node and an outgoing
-lead to it, then let you type the title in place. Enter in a title confirms it; a second
-Enter creates the next linked node. Holding Enter does not repeat creation. New cells use available
-space; existing cells stay put. Insert > New lead style offers Outgoing,
-Incoming or Both directions, and Curve or Sharp bends. Insert > Unlinked node
-creates an independent cell. Drag Graph nodes freely above/left of the original
-position as well as right/below; leads follow and signed positions save.
+Choose GRAPH from Home > Application and create a diagram.
+Enter confirms an active title first; the next distinct Enter creates a peer.
+For A -> B, Enter on B creates A -> C (same source); Enter on A creates C -> B
+(same target). An unlinked selection creates another unlinked node. Mixed incoming
+and outgoing leads are both shared with the peer. Existing nodes stay put.
+Insert creates selected -> new. Right-click > New node offers Peer, Outgoing,
+Incoming, Bidirectional and Unlinked commands. Type the title directly in the node.
+Holding Enter does not repeat creation. New nodes use available space.
+Drag Graph nodes freely; leads follow and signed positions save.
 Insert > Connect nodes arms a lead from the selection; click the other node.
 Repeat for multiple incoming/outgoing leads (up to 5,000 per diagram, 1,000 nodes).
 Click a lead to select it; Delete removes it immediately. F2/double-click or
@@ -134,9 +135,9 @@ there is no manual data migration.
 DESIGN, ZOOM AND PDF PREVIEW
 Format > Node designs and Colour combinations display miniature previews.
 Click a thumbnail to apply; click the down-arrow to see the full gallery.
-Choose from 10 designs and 16 colour combinations (10 newly added packs).
+Choose from 15 designs and 34 colour combinations.
 Designs include boxes, flat text, underlines, outlines, side accents and mixed
-levels. View > Diagram layout previews all five hierarchy arrangements.
+levels. View > Diagram layout previews all ten hierarchy arrangements.
 Changes save with each diagram and Undo/Redo can reverse them.
 Tab / Enter / Space selects an option; Escape closes the expanded gallery.
 Nodes are smaller by level and expand vertically to show full wrapped titles.
@@ -200,12 +201,12 @@ Double-click a tab / use the fold icon for compact command icons; hover for help
 View → Placement → Free move: drag any hierarchy node without renumbering.
 Nearby nodes make room. Release saves; Esc cancels; Undo restores the arrangement.
 Turn Free move off for structural branch dragging. Reset positions restores layout.
-Home → Files → Save a copy writes a complete .sumapp snapshot to a chosen folder.
+File → Save As writes a complete .sumapp snapshot to a chosen folder.
 Profile autosave continues. Open saved copy restores after confirmation and backup.
 The supplied GitHub symbol-only PNG is embedded unchanged in the header resources
 and used to derive all nine executable icon sizes. See BRANDING.md for provenance.
 
-Home → Brand → Choose logo PNG lets you select your original desktop image.
+File → Application logo lets you select your original desktop image.
 It updates the header and window/taskbar icons and is preserved in data/backups.
 The default embedded Explorer icon already uses the supplied GitHub PNG. A custom
 logo selected later changes window icons; changing the Explorer icon needs a rebuild.
@@ -224,7 +225,34 @@ undoes a paste. Graph copies retain leads between copied nodes.
 Node details → Show complete notes on the canvas wraps the entire notes content.
 Home → Edit → Show / hide notes toggles it for selected nodes.
 The + / − button beside a hierarchy node's WBS code expands/collapses descendants.
-View and Format now have 10 layouts, 21 palettes and 15 node designs.
+View and Format now have 10 layouts, 34 palettes and 15 node designs.
 When closing: Save persists the live profile; Save As also writes a .sumapp copy.
 Cancel returns to work. Close preserves autosaved changes, discarding only an
 unfinished title and unsaved window settings. Cancelled saves keep the app open.
+
+VERSION 3.7: FILE, GRAPH AND APPEARANCE
+File (top left): Save live profile (Ctrl+S), Save As complete .sumapp copy
+(Ctrl+Shift+S), Open/import (Ctrl+O), diagram export, all-data backup, application
+logo and window settings. Autosave stays active; PC copies are snapshots.
+
+Insert > Connections > Connect multiple: choose a central node and multiple other
+nodes, direction, routing and optional label. Existing equivalent leads are skipped
+unless Allow parallel leads is checked. View > Graph layout > Organise graph
+repositions nodes using connections and occupied area; Undo restores positions.
+
+Format > Selected nodes > Node colour changes selected graph nodes using swatches
+or a hex colour. Ordinary graph nodes have one default colour. Format's 34 diagram
+packages include six multi-colour combinations: teal/orange/ink, red/grey/charcoal,
+blue/red/cream, teal/violet/gold, forest/copper/sand and ocean/coral/lilac. Applying
+these deliberately colours existing graph nodes; newly added nodes retain the
+default. Reapply the package to include them. Basic packages clear preset colours
+and retain manual colours. Priority/overdue highlights are preserved.
+
+Format > Organisation logo uploads a PNG for this graph. It stays top left and
+fades while diagram content overlaps, returning when clear. Workspace and export
+size sliders are independent. PDF/print include it in a reserved top-left header.
+Original bytes and sizes are included in the live profile, PC copies and backups.
+This is separate from File > Application logo and SUMAPP's embedded app icon.
+
+The Linux build passes 80 automated groups and binary/package checks. Windows
+UI behaviour needs WINDOWS-VERIFICATION.md; Linux previews are labelled designs.

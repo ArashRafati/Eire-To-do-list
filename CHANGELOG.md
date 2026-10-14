@@ -1,5 +1,16 @@
 # Changes
 
+## 3.7.0 — graph organisation, connections, branding and colour packages
+
+- Group File actions at the top left, streamline Home/context menus, and correct compact Format controls and wrapping gallery labels.
+- Enter creates a graph peer sharing sources/targets; Insert and explicit context commands create directed or unlinked nodes. Title-confirmation behaviour remains intact.
+- Add bulk incoming/outgoing/bidirectional connections, labels, routing and optional parallel leads.
+- Add Organise graph using actual node sizes, directed components, cycles and disconnected groups; preserve IDs/topology and support Undo.
+- Give graph nodes one ordinary default colour and selected-node palette/hex overrides.
+- Add thirteen palettes: red/orange/grey/charcoal combinations and six coordinated multi-colour packages. Total: 34 palettes, 15 designs and 10 hierarchy layouts. Multi-colour application is deliberate; new graph nodes retain the default colour.
+- Add per-graph organisation PNG, independent viewport/export sizes, overlap fading and reserved PDF/print headers. Preserve original application artwork and existing profile data.
+- Add thirteen automated groups (80 total), publish the Windows x64 app, and extend native Windows capture/checklists without claiming native UI execution on Linux.
+
 ## 3.6.0 — node clipboard, full notes and expanded galleries
 
 - Add Ctrl-click/Ctrl+A multi-selection and Ctrl+C/Ctrl+V branch copying, with deduplicated descendants, fresh IDs, child-level paste and saved Undo. Graph copies preserve internal leads.

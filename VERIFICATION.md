@@ -1,12 +1,12 @@
 # Build and verification evidence
 
-Current delivery: version **3.6.0**, including the combined mind-map/WBS module, ten hierarchy layouts,
+Current delivery: version **3.7.0**, including the combined mind-map/WBS module, ten hierarchy layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a bottom-right clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
 The two user-supplied Windows screenshots demonstrate 1.0 launching and
 rendering, and identify readability/label defects; they do not verify all
-Windows acceptance checks or the updated 3.6 interface.
+Windows acceptance checks or the updated 3.7 interface.
 
 Version 3.3 also adds the corrected SUMAPP wordmark/icon, exact shared brand
 palette, light surfaces, priority states, project deletion and real font-based
@@ -150,3 +150,26 @@ complete notes fitting/PDF content; all ten layouts with variable node sizes.
 Existing contrast/persistence/PDF checks now cover all 21 palettes and 15 designs.
 Native Ctrl-click/clipboard focus, collapse-button interaction and all four close
 dialog actions are compiled but must be exercised on Windows using the checklist.
+
+## Version 3.7 evidence
+
+The final locked setup runs **80 groups, 0 failures**, including thirteen new
+graph/branding groups. They cover uniform graph surfaces/sizes, manual colours
+and contrast, all 34 palettes/15 designs, restart and backup, invalid-data atomicity,
+PNG bytes/aspect/independent sizes, decoded PDF image headers in both orientations,
+organisation with cycles/disconnected groups/1,000 nodes, deterministic geometry,
+peer connection patterns/metadata, bulk connections/parallel leads and explicit
+multi-colour application without automatically recolouring new nodes. Legacy
+enum values and profile directory are preserved.
+
+Windows x64 self-contained publishing and the actual manifest/runtime/icon
+inspection pass. New menu/ribbon, bulk chooser, smooth logo fading, native
+organisation/peer key dispatch and DPI resizing compile successfully but remain
+**unrun on Windows** here. The capture command now checks Format control bounds
+and logo overlap visibility using isolated sample data. The supplied design
+previews are generated from Core drawings and are not substituted for these checks.
+
+Independent MPXJ/CSV/XML/Poppler checks also pass for current fixtures. PyMuPDF
+decodes the organisation image on every landscape/portrait PDF page and verifies
+90 pt proportional sizing, top-left coordinates and no text overlap. These
+checks concern exported files, not WPF rendering or printer output.

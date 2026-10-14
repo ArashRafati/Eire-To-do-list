@@ -14,7 +14,7 @@ internal sealed partial class ChartWorkspace : UserControl
 {
     private readonly TodoService service;
     private readonly string dataDirectory;
-    private readonly ComboBox diagrams = new() { Width = 210, MinHeight = 34, FontSize = 15, ItemTemplate = Ui.DisplayTemplate("Name"), Margin = new Thickness(0, 0, 8, 6) };
+    private readonly ComboBox diagrams = new() { Width = 210, MinHeight = 34, FontSize = 15, ItemTemplate = Ui.DisplayTemplate("Name",14), Margin = new Thickness(0, 0, 8, 6) };
     private DiagramGallery paletteGallery = null!, designGallery = null!, layoutGallery = null!;
     private readonly Canvas canvas = new() { Background = Ui.Brush("Surface") };
     private readonly ScrollViewer viewport = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = true };
@@ -25,6 +25,7 @@ internal sealed partial class ChartWorkspace : UserControl
     private readonly TextBlock zoomLabel = new() { Text = "100%", FontFamily = new FontFamily("Consolas"), VerticalAlignment = VerticalAlignment.Center, FontSize = 15, Margin = new Thickness(0, 0, 8, 6) };
     private readonly Stack<Diagram> undo = new(), redo = new();
     private readonly List<Button> nodeActions = [];
+    private WrapPanel leadPropertyControls=null!, graphLayoutControls=null!, logoControls=null!, nodeColourControls=null!, graphCreationControls=null!;
     private Button undoButton = null!, redoButton = null!, balanceButton = null!;
     private Guid? chartId, selectedId;
     private ChartLayout defaultLayout = ChartLayout.MindMap;
@@ -34,6 +35,8 @@ internal sealed partial class ChartWorkspace : UserControl
     private Dictionary<Guid, Border> nodeViews = [];
     private Guid? renderedChartId;
     private int renderVersion;
+    internal bool HasDiagram => Current is not null;
+    internal void ExportFromFile() => Export();
     private Diagram? Current => service.Data.Diagrams.FirstOrDefault(d => d.Id == chartId);
     private Window OwnerWindow => Window.GetWindow(this);
 
@@ -41,26 +44,31 @@ internal sealed partial class ChartWorkspace : UserControl
     {
         this.service = service; this.dataDirectory = dataDirectory; this.painter = painter; this.changed = changed;
         var root = new Grid(); root.RowDefinitions.Add(new()); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        ribbon = sharedRibbon;
+        ribbon = sharedRibbon; diagrams.Style=(Style)Application.Current.FindResource("RibbonCombo");
         var first = ribbon.Group("Home", "Diagram"); first.Children.Add(diagrams); Add(first, "New diagram", NewDiagram, true); Add(first, "Settings / rename", RenameDiagram); Add(first, "Delete diagram", DeleteDiagram);
         var edit = ribbon.Group("Home", "Edit"); NodeAction(edit, "Edit title", BeginTitle); NodeAction(edit, "Node details", EditNode); NodeAction(edit, "Delete node", DeleteNode);
         var clipboard = ribbon.Group("Home", "Clipboard"); NodeAction(clipboard,"Copy · Ctrl+C",CopyNodes); Add(clipboard,"Paste · Ctrl+V",PasteNodes); NodeAction(edit,"Show / hide notes",ToggleNotes);
         var history = ribbon.Group("Home", "History"); undoButton = Add(history, "Undo", Undo); redoButton = Add(history, "Redo", Redo);
-        var second = ribbon.Group("Insert", "Nodes"); siblingButton = Add(second, "Sibling", () => AddNode(false), true); siblingButton.ToolTip = "Enter: create a sibling, or a linked graph node"; childButton = Add(second, "Child", () => AddNode(true), true); childButton.ToolTip = "Insert: create a child, or a linked graph node";
+        var second = ribbon.Group("Insert", "Nodes"); siblingButton = Add(second, "Sibling", () => {if(networkMode)AddGraphPeer();else AddNode(false);}, true); siblingButton.ToolTip = "Enter: create a sibling / graph peer using the selected connection pattern"; childButton = Add(second, "Child", () => AddNode(true), true); childButton.ToolTip = "Insert: create a child, or a linked graph node";
+        graphCreationControls=ribbon.Group("Insert","Directed nodes");Add(graphCreationControls,"Outgoing node",()=>AddNode(false,graphDirection:LeadDirection.Outgoing));Add(graphCreationControls,"Incoming node",()=>AddNode(false,graphDirection:LeadDirection.Incoming));Add(graphCreationControls,"Bidirectional node",()=>AddNode(false,graphDirection:LeadDirection.Both));
         unlinkedControls = ribbon.Group("Insert", "Independent node"); Add(unlinkedControls, "Unlinked node", () => AddNode(false, true));
-        var leads = ribbon.Group("Insert", "Leads"); leadControls = leads; Add(leads, "Connect nodes", StartConnection, true); Add(leads, "Cancel lead", () => { connectFrom = null; status.Text = "Lead cancelled."; }); Add(leads, "Lead label", EditSelectedLead); Add(leads, "Delete lead", DeleteSelectedLead);
+        var leads = ribbon.Group("Insert", "Connections"); leadControls = leads; Add(leads, "Connect one node", StartConnection, true); Add(leads,"Connect multiple…",ConnectMultiple); Add(leads, "Cancel lead", () => { connectFrom = null; status.Text = "Lead cancelled."; }); var properties=ribbon.Group("Insert","Lead properties"); leadPropertyControls=properties; Add(properties, "Lead label", EditSelectedLead); Add(properties, "Delete lead", DeleteSelectedLead);
         var choices = ribbon.Group("Insert", "New lead style"); leadOptions = choices; choices.Children.Add(leadDirection); choices.Children.Add(leadRouting);
         var copies = ribbon.Group("Insert", "Import tasks"); fromTodoButton = Add(copies, "From to-do…", FromTodo);
         var third = ribbon.Group("View", "Hierarchy"); hierarchyControls = third; NodeAction(third, "Earlier", () => Modify(c => Charts.Reorder(c, selectedId!.Value, -1))); NodeAction(third, "Later", () => Modify(c => Charts.Reorder(c, selectedId!.Value, 1))); NodeAction(third, "Indent", () => Modify(c => Charts.Indent(c, selectedId!.Value))); NodeAction(third, "Outdent", () => Modify(c => Charts.Outdent(c, selectedId!.Value))); NodeAction(third, "Fold / unfold", ToggleFold); Add(third, "Unfold all", () => Modify(c => c.Nodes.ForEach(n => n.Collapsed = false)));
-        var formatting = ribbon.Group("Format", "Text"); formatTools = new FormattingTools(SelectedFormat, ApplyFormat, painter); formatting.Children.Add(formatTools);
+        var formatting = ribbon.Group("Format", "Typography"); formatTools = new FormattingTools(SelectedFormat, ApplyFormat, painter); formatting.Children.Add(formatTools);
         var layoutGroup = ribbon.Group("View", "Diagram layout"); layoutControls = layoutGroup;
         layoutGallery = new(DiagramGalleryKind.Layouts, index => { if (Current?.Layout != (ChartLayout)index) Modify(c => { c.Layout = (ChartLayout)index; FreePlacement.Reset(c); }, false); }); layoutGroup.Children.Add(layoutGallery);
         var placement = ribbon.Group("View", "Placement"); placementControls = placement; placement.Children.Add(freeMoveToggle); freeMoveToggle.Checked += (_, _) => SetFreeMove(true); freeMoveToggle.Unchecked += (_, _) => SetFreeMove(false); Add(placement,"Reset positions",() => Modify(FreePlacement.Reset)); balanceButton = Add(placement, "Balance branches", () => Modify(MindMapPlacement.Rebalance)); balanceButton.ToolTip = "Redistribute mind-map branches by subtree size.";
         var appearance = ribbon.Group("Format", "Node designs"); designGallery = new(DiagramGalleryKind.Styles, index => { if (Current?.Design != (NodeDesign)index) Modify(c => c.Design = (NodeDesign)index, false); }); appearance.Children.Add(designGallery);
-        var colours = ribbon.Group("Format", "Colour combinations"); paletteGallery = new(DiagramGalleryKind.Colours, index => { if (Current?.Palette != (DiagramPalette)index) Modify(c => c.Palette = (DiagramPalette)index, false); }); colours.Children.Add(paletteGallery);
+        var colours = ribbon.Group("Format", "Diagram palette"); paletteGallery = new(DiagramGalleryKind.Colours, index => { if (Current is not null) Modify(c => NodeColours.ApplyPackage(c,(DiagramPalette)index), false); }); colours.Children.Add(paletteGallery);
+        nodeColourControls=ribbon.Group("Format","Selected nodes"); NodeAction(nodeColourControls,"Node colour…",ColourSelectedNodes); NodeAction(nodeColourControls,"Reset colour",()=>Modify(c=>NodeColours.Set(c,selectedNodes,null),false));
+        logoControls=ribbon.Group("Format","Organisation logo"); Add(logoControls,"Upload / settings…",ManageOrganisationLogo);Add(logoControls,"Remove logo",()=>Modify(c=>c.OrganisationLogoPng=[]));
+        leadDirection.Style=leadRouting.Style=(Style)Application.Current.FindResource("RibbonCombo");
+        graphLayoutControls=ribbon.Group("View","Graph layout"); Add(graphLayoutControls,"Organise graph",OrganiseGraph,true);
         var camera = ribbon.Group("View", "Canvas"); var scale = new StackPanel { Orientation = Orientation.Horizontal, Height = 34 }; scale.Children.Add(zoom); scale.Children.Add(zoomLabel); camera.Children.Add(scale); Add(camera, "Fit / centre", Fit);
-        var output = ribbon.Group("Home", "Output"); Add(output, "Export", Export, true); Add(output, "Overdue log", showOverdue);
-        var stage = new Grid(); stage.Children.Add(viewport); stage.Children.Add(empty); Grid.SetRow(stage, 0); root.Children.Add(stage); InitialiseSmoothZoom(); Grid.SetRow(status, 1); root.Children.Add(status); Content = root;
+        var activity = ribbon.Group("View", "Activity"); Add(activity,"Overdue log",showOverdue);
+        var stage = new Grid(); stage.Children.Add(viewport); stage.Children.Add(empty); InitialiseOrganisationLogo(stage); Grid.SetRow(stage, 0); root.Children.Add(stage); InitialiseSmoothZoom(); Grid.SetRow(status, 1); root.Children.Add(status); Content = root;
         diagrams.SelectionChanged += DiagramChanged; zoom.ValueChanged += ZoomChanged;
         viewport.PreviewKeyDown += KeyDownChart; viewport.PreviewMouseWheel += ZoomWheel;
         canvas.MouseLeftButtonDown += (_, e) => { if (e.Source == canvas) { viewport.Focus(); e.Handled = true; } };
@@ -79,14 +87,16 @@ internal sealed partial class ChartWorkspace : UserControl
         var network = mode == AppMode.Graph;
         if (network != networkMode) { networkMode = network; chartId = null; selectedId = null; selectedLeadId = null; undo.Clear(); redo.Clear(); connectFrom = null; }
         defaultLayout = network ? ChartLayout.Freeform : ChartLayout.MindMap;
-        RibbonBar.ShowGroup(hierarchyControls, !network); RibbonBar.ShowGroup(leadControls, network); RibbonBar.ShowGroup(leadOptions, network); RibbonBar.ShowGroup(unlinkedControls, network); RibbonBar.ShowGroup(layoutControls, !network); RibbonBar.ShowGroup((Panel)fromTodoButton.Parent, !network);
+        RibbonBar.ShowGroup(hierarchyControls, !network); RibbonBar.ShowGroup(leadControls, network); RibbonBar.ShowGroup(leadPropertyControls,network); RibbonBar.ShowGroup(leadOptions, network); RibbonBar.ShowGroup(unlinkedControls, network); RibbonBar.ShowGroup(layoutControls, !network); RibbonBar.ShowGroup((Panel)fromTodoButton.Parent, !network);
+        RibbonBar.ShowGroup(graphLayoutControls,network);RibbonBar.ShowGroup(logoControls,network);RibbonBar.ShowGroup(nodeColourControls,network);RibbonBar.ShowGroup(graphCreationControls,network);
         RibbonBar.ShowGroup(placementControls, !network); fromTodoButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
-        empty.Text = network ? "Create a graph to start. Enter / Insert adds a node linked from the selection." : "Create a diagram. Choose a mind-map or WBS layout in View.";
-        RibbonBar.Label(siblingButton, network ? "Linked node" : "Sibling"); RibbonBar.Label(childButton, "Child"); childButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
+        empty.Text = network ? "Create a graph to start. Enter adds a peer based on existing connections; Insert adds a linked node." : "Create a diagram. Choose a mind-map or WBS layout in View.";
+        RibbonBar.Label(siblingButton, network ? "Peer node" : "Sibling"); RibbonBar.Label(childButton, "Child"); childButton.Visibility = network ? Visibility.Collapsed : Visibility.Visible;
         RefreshData(); if (!network && Current is Diagram chart) defaultLayout = chart.Layout;
     }
     public void RefreshIfIdle() { if (inline is null && freeDragOriginal is null) RefreshData(); }
     internal void CaptureRibbon(string tab) => ribbon.Show(tab);
+    internal void CaptureCheckRibbon() => ribbon.CaptureCheckBounds();
     public void RefreshData(bool resetHistory = false)
     {
         refreshing = true;
@@ -183,13 +193,13 @@ internal sealed partial class ChartWorkspace : UserControl
         if (Try(() => { var candidate = chart.Clone(); change(candidate); Commit(candidate); })) { RefreshData(); if (focus) viewport.Focus(); }
         else RefreshData();
     }
-    private void AddNode(bool child, bool unlinked = false)
+    private void AddNode(bool child, bool unlinked = false, LeadDirection? graphDirection = null)
     {
         if (!FinishInlineEdit()) return;
         if (Current is not Diagram chart) { NewDiagram(); return; }
         if (!networkMode && child && !selectedId.HasValue) { MessageBox.Show(OwnerWindow, "Select a parent node first.", "Add child"); return; }
         Guid? added = null;
-        if (!Try(() => { var candidate = chart.Clone(); var n = networkMode ? GraphCreation.Add(candidate, selectedId, direction: Direction, routing: Routing, format: SelectedFormat(), unlinked: unlinked, measure: WindowsNodeMetrics.Measure) : Charts.Add(candidate, selectedId, child); if (selectedId is Guid source) n.Format = chart.Nodes.Single(x => x.Id == source).Format.Clone(); added = n.Id; Commit(candidate); })) return;
+        if (!Try(() => { var candidate = chart.Clone(); var n = networkMode ? GraphCreation.Add(candidate, selectedId, direction: graphDirection ?? LeadDirection.Outgoing, routing: Routing, format: SelectedFormat(), unlinked: unlinked, measure: WindowsNodeMetrics.Measure) : Charts.Add(candidate, selectedId, child); if (selectedId is Guid source) n.Format = chart.Nodes.Single(x => x.Id == source).Format.Clone(); added = n.Id; Commit(candidate); })) return;
         selectedId = added; RefreshData(); viewport.Focus(); ScrollToSelection(); BeginTitle();
     }
     private void EditNode()
@@ -259,7 +269,7 @@ internal sealed partial class ChartWorkspace : UserControl
         var oldChartId = renderedChartId;
         var version = ++renderVersion;
         canvas.Children.Clear(); nodeViews.Clear(); titleViews.Clear(); hierarchyPaths.Clear();
-        var chart = Current; renderedChartId = chart?.Id; balanceButton.IsEnabled = chart?.Layout == ChartLayout.MindMap; empty.Visibility = chart is null || chart.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        var chart = Current; logoControls.IsEnabled=chart is not null; RefreshOrganisationLogo(); renderedChartId = chart?.Id; balanceButton.IsEnabled = chart?.Layout == ChartLayout.MindMap; empty.Visibility = chart is null || chart.Nodes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         foreach (var button in nodeActions) button.IsEnabled = selectedId.HasValue && chart?.Nodes.Any(n => n.Id == selectedId) == true;
         undoButton.IsEnabled = undo.Count > 0; redoButton.IsEnabled = redo.Count > 0;
         if (chart is null) { canvas.Width = OpenWorkspace.Padding * 2; canvas.Height = OpenWorkspace.Padding * 2; status.Text = "Offline · diagrams save with your tasks and backups."; return; }
@@ -308,7 +318,7 @@ internal sealed partial class ChartWorkspace : UserControl
         }
         canvas.Width = opening ? scene.Width : Math.Max(canvas.Width, scene.Width); canvas.Height = opening ? scene.Height : Math.Max(canvas.Height, scene.Height); StopZoomAnimation(); SetZoomVisual(chart.Zoom); zoomLabel.Text = $"{chart.Zoom:P0}"; Select(selectedId,true);
         status.Text = $"{chart.Nodes.Count} nodes · Drag space to pan · Ctrl+wheel to zoom";
-        status.ToolTip = "Pan: drag empty space, middle-drag, or Space+drag. Wheel pans vertically; Shift+wheel horizontally. Ctrl+wheel zooms. Ctrl+Enter opens node details.";
+        status.ToolTip = "Ctrl-click: select multiple nodes. Ctrl+C / Ctrl+V: copy/paste. Pan: drag empty space, middle-drag, or Space+drag. Wheel pans vertically; Shift+wheel horizontally. Ctrl+wheel zooms. Ctrl+Enter opens node details.";
         if (opening || centring) { centring = true; CentreCanvas(); }
         // Retain the selected node/nearest existing ancestor in the viewport as the chart reflows.
         if (!networkMode && oldChartId == chart.Id && !centring)
@@ -354,6 +364,15 @@ internal sealed partial class ChartWorkspace : UserControl
     {
         if (Keyboard.Modifiers == ModifierKeys.Control && e.Key is Key.C or Key.V or Key.A) KeyDownChart(sender,e);
     }
+    internal void CaptureCheckLogoVisibility(bool covered)
+    {
+        if (organisationOverlay.Visibility!=Visibility.Visible || organisationImage.Source is null || Math.Abs(organisationOverlay.Opacity-(covered?0:1))>.08) throw new InvalidOperationException("Organisation logo fading/visibility failed");
+    }
+    internal Point CapturePanUnderLogo()
+    {
+        var saved=new Point(viewport.HorizontalOffset,viewport.VerticalOffset);var box=scene.Boxes[0];viewport.ScrollToHorizontalOffset(box.X*displayZoom-14);viewport.ScrollToVerticalOffset(box.Y*displayZoom-14);return saved;
+    }
+    internal void CaptureRestorePan(Point offsets) {viewport.ScrollToHorizontalOffset(offsets.X);viewport.ScrollToVerticalOffset(offsets.Y);}
     private void KeyDownChart(object sender, KeyEventArgs e)
     {
         if (freeDragOriginal is not null) { if (e.Key == Key.Escape) { EndFreeDrag(true); Mouse.Capture(null); } e.Handled = true; return; }
@@ -375,7 +394,7 @@ internal sealed partial class ChartWorkspace : UserControl
         {
             case Key.Escape: connectFrom=null; selectedLeadId=null; Select(null); e.Handled=true; break;
             case Key.Space: e.Handled = true; break;
-            case Key.Enter: if (NodeInputPolicy.Enter(false,e.IsRepeat) == NodeEnterAction.CreateNode) AddNode(false); e.Handled = true; break;
+            case Key.Enter: if (NodeInputPolicy.Enter(false,e.IsRepeat) == NodeEnterAction.CreateNode) {if(networkMode)AddGraphPeer();else AddNode(false);} e.Handled = true; break;
             case Key.Insert: AddNode(true); e.Handled = true; break;
             case Key.F2: if (selectedLeadId.HasValue) EditSelectedLead(); else BeginTitle(); e.Handled = true; break;
             case Key.Delete: if (selectedLeadId.HasValue) DeleteSelectedLead(); else DeleteNode(); e.Handled = true; break;

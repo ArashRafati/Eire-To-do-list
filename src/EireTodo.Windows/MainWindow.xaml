@@ -110,13 +110,11 @@
         <WrapPanel>
           <TextBlock x:Name="TaskCount" Foreground="{StaticResource TextBrush}" FontSize="14" VerticalAlignment="Center" Margin="0,0,14,3"/>
           <Button x:Name="OverdueButton" Content="Show overdue log" Click="ToggleOverdueClick" Margin="0,0,7,3"/>
-          <Button Content="Backup / export" Click="ExportClick" Margin="0,0,7,3"/>
-          <Button Content="Restore" Click="RestoreClick" Margin="0,0,7,3"/>
-          <Button Content="Data folder" Click="DataFolderClick" Margin="0,0,0,3"/>
         </WrapPanel>
         <Grid Grid.Row="1" Margin="0,3,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
           <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <Border x:Name="OfflineBadge" Padding="0,3" Margin="0,0,8,0" IsHitTestVisible="False"><StackPanel Orientation="Horizontal"><Rectangle Width="4" Height="4" Fill="{StaticResource AccentTeal}" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBlock Text="OFFLINE" Foreground="{StaticResource Ink}" FontFamily="Consolas" FontSize="12"/></StackPanel></Border>
+            <TextBlock x:Name="FileStatus" FontSize="12" MaxWidth="200" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" VerticalAlignment="Center"/>
             <Button Content="⚙" Width="26" MinHeight="24" Padding="0" Click="WindowOptionsClick" ToolTip="Window settings · always on top and opacity" AutomationProperties.Name="Window settings"/>
           </StackPanel>
           <TextBlock x:Name="HeaderClock" Grid.Column="1" FontFamily="Consolas" FontSize="15.6" Foreground="{StaticResource Ink}" VerticalAlignment="Center" HorizontalAlignment="Right" IsHitTestVisible="False"/>

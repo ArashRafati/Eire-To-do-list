@@ -71,7 +71,7 @@ internal sealed partial class ChartWorkspace
         {
             var candidate = chart.Clone(); candidate.Nodes.Single(n => n.Id == id).Title = text; service.SaveDiagram(candidate);
             if (!inlineSaved && inlineBefore is not null) { undo.Push(inlineBefore); redo.Clear(); LimitHistory(); inlineSaved = true; }
-            inline.BorderBrush = Ui.Accent; changed(); status.Text = networkMode ? "Title saved · Enter / Insert: linked node · Ctrl+Enter: details" : "Title saved · Enter: sibling · Insert: child · Ctrl+Enter: details"; return true;
+            inline.BorderBrush = Ui.Accent; changed(); status.Text = networkMode ? "Title saved · Enter: graph peer · Insert: linked node · Ctrl+Enter: details" : "Title saved · Enter: sibling · Insert: child · Ctrl+Enter: details"; return true;
         }
         catch (Exception ex) { status.Text = "Title NOT saved. Keep this field open and retry: " + ex.Message; inline.BorderBrush = OverdueBrush; return false; }
     }
@@ -169,14 +169,24 @@ internal sealed partial class ChartWorkspace
         {
             if (e.Data.GetData(DragFormat) is NodeDrag drag && Current?.Id == drag.Diagram) { selectedId = drag.Node; var drop = Position(e); Modify(c => Charts.MoveRelative(c, drag.Node, id, drop)); ScrollToSelection(); } e.Handled = true;
         };
-        var menu = new ContextMenu();
-        void Item(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => { Select(id,selectedNodes.Contains(id)); action(); }; menu.Items.Add(item); }
-        Item("Node details · Ctrl+Enter", EditNode); Item("Edit title · F2", BeginTitle);
-        if (networkMode) Item("Connect from this node…", StartConnection);
-        else { Item("Move before / after…", MoveSelected); Item("Add sibling · Enter", () => AddNode(false)); Item("Add child · Insert", () => AddNode(true)); }
-        Item("Copy selected nodes · Ctrl+C",CopyNodes); Item("Paste as children · Ctrl+V",PasteNodes); Item("Show / hide full notes",ToggleNotes);
-        Item("Delete selected nodes", DeleteNode); border.ContextMenu = menu;
-        border.PreviewMouseRightButtonDown += (_, e) => { if (!FinishInlineEdit()) e.Handled = true; else Select(id,selectedNodes.Contains(id)); };
+        var menu=new ContextMenu();
+        MenuItem Item(string text,Action action,string key="",bool danger=false) => WorkspaceMenus.Action(text,()=>{Select(id,selectedNodes.Contains(id));action();},key,danger);
+        WorkspaceMenus.Section(menu,"Edit");menu.Items.Add(Item("Edit title",BeginTitle,"F2"));menu.Items.Add(Item("Node details",EditNode,"Ctrl+Enter"));
+        WorkspaceMenus.Section(menu,"Create / connect");var create=new MenuItem { Header="New node" };
+        if(networkMode)
+        {
+            create.Items.Add(Item("Peer with the same source / target",()=>AddGraphPeer(IncomingPeerRule.SameSource),"Enter"));
+            create.Items.Add(Item("Outgoing · selected → new",()=>AddNode(false,graphDirection:LeadDirection.Outgoing),"Insert"));
+            create.Items.Add(Item("Incoming · new → selected",()=>AddNode(false,graphDirection:LeadDirection.Incoming)));
+            create.Items.Add(Item("Bidirectional · selected ↔ new",()=>AddNode(false,graphDirection:LeadDirection.Both)));
+            create.Items.Add(Item("Unlinked",()=>AddNode(false,true)));
+        }
+        else { create.Items.Add(Item("Sibling",()=>AddNode(false),"Enter"));create.Items.Add(Item("Child",()=>AddNode(true),"Insert")); }
+        menu.Items.Add(create); if(networkMode){menu.Items.Add(Item("Connect one existing node…",StartConnection));menu.Items.Add(Item("Connect multiple nodes…",ConnectMultiple));}else menu.Items.Add(Item("Move before / after…",MoveSelected));
+        WorkspaceMenus.Section(menu,"Clipboard");menu.Items.Add(Item("Copy selected nodes",CopyNodes,"Ctrl+C"));menu.Items.Add(Item(networkMode?"Paste linked nodes":"Paste as children",PasteNodes,"Ctrl+V"));
+        WorkspaceMenus.Section(menu,"Appearance");menu.Items.Add(Item("Show / hide full notes",ToggleNotes));if(networkMode)menu.Items.Add(Item("Colour selected nodes…",ColourSelectedNodes));
+        menu.Items.Add(new Separator());menu.Items.Add(Item("Delete selected nodes",DeleteNode,"Delete",true));border.ContextMenu=menu;
+        border.PreviewMouseRightButtonDown += (_, e) => { if (!FinishInlineEdit()) e.Handled = true; else {if(networkMode&&selectedNodes.Count>1)selectedNodes.Add(id);Select(id,selectedNodes.Contains(id));} };
     }
     private static bool IsInsideTextBox(DependencyObject? source)
     {

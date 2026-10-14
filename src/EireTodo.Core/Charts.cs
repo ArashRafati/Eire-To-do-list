@@ -14,6 +14,8 @@ public sealed class ChartNode
     public Guid? ParentId { get; set; }
     public int Order { get; set; }
     public string Title { get; set; } = "New node";
+    public string? FillColour { get; set; }
+    public bool ColourFromPreset { get; set; }
     public bool Priority { get; set; }
     public string Notes { get; set; } = "";
     public bool ShowNotes { get; set; }
@@ -39,6 +41,9 @@ public sealed class Diagram
     public ChartLayout Layout { get; set; } = ChartLayout.MindMap;
     public DiagramPalette Palette { get; set; }
     public NodeDesign Design { get; set; }
+    public byte[] OrganisationLogoPng { get; set; } = [];
+    public double OrganisationLogoWidth { get; set; } = 140;
+    public double ExportLogoWidth { get; set; } = 90;
     public bool FreeMove { get; set; }
     public DateOnly ScheduleStart { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public double Zoom { get; set; } = 1;
@@ -78,8 +83,9 @@ public static class Charts
             !Enum.IsDefined(chart.Layout) || !Enum.IsDefined(chart.Palette) || !Enum.IsDefined(chart.Design) || chart.Nodes is null || chart.Nodes.Count > MaxNodes ||
             chart.ScheduleStart.Year < 1900 || chart.ScheduleStart.Year > 2090 || !double.IsFinite(chart.Zoom) || chart.Zoom < .2 || chart.Zoom > 2)
             throw new ArgumentException("Invalid diagram: use a name up to 100 characters and no more than 1,000 nodes.");
+        OrganisationBranding.Validate(chart);
         if (chart.Nodes.Any(n => n is null || n.Id == Guid.Empty || n.Number < 1 || n.Number > 1000000 || n.Order < 0 ||
-            string.IsNullOrWhiteSpace(n.Title) || n.Title.Length > 100 || n.Notes is null || n.Notes.Length > 250000 ||
+            n.FillColour is not null && !NodeColours.IsValid(n.FillColour) || string.IsNullOrWhiteSpace(n.Title) || n.Title.Length > 100 || n.Notes is null || n.Notes.Length > 250000 ||
             !Enum.IsDefined(n.MindMapSide) || n.DurationDays < 1 || n.DurationDays > 3650 || n.StartDate?.Year < 1900 || n.FinishDate?.Year < 1900 ||
             n.StartDate?.Year > 2090 || n.FinishDate?.Year > 2100 || n.StartDate.HasValue && n.FinishDate < n.StartDate) ||
             chart.Nodes.Select(n => n.Id).Distinct().Count() != chart.Nodes.Count ||

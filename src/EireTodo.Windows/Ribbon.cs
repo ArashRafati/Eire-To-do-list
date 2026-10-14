@@ -16,6 +16,9 @@ internal sealed class RibbonBar : Border
     private readonly Dictionary<string, StackPanel> panels = [];
     private readonly Dictionary<string, Button> buttons = [];
     private readonly Button fold;
+    public Action<Button>? FileRequested { get; set; }
+    private readonly Button fileButton;
+    public void OpenFile() => FileRequested?.Invoke(fileButton);
     private readonly StackPanel summary = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(6,2,6,2) };
     private readonly ScrollViewer summaryScroll;
     private readonly List<GroupState> groups = [];
@@ -36,7 +39,7 @@ internal sealed class RibbonBar : Border
         Background = (Brush)Application.Current.FindResource("PanelBrush"); BorderBrush = (Brush)Application.Current.FindResource("LineBrush"); BorderThickness = new Thickness(0,0,0,1); Margin = new Thickness(0, 0, 0, 4);
         var root = new DockPanel(); var heading = new DockPanel(); DockPanel.SetDock(heading, Dock.Top);
         summaryScroll = new ScrollViewer { Content = summary, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Visibility = Visibility.Collapsed }; DockPanel.SetDock(summaryScroll, Dock.Top);
-        fold = Ui.Button("⌃", (_, _) => { userCollapsed = pages.Visibility == Visibility.Visible; ApplyCollapse(); }); fold.Style = (Style)Application.Current.FindResource("RibbonButton"); fold.ToolTip = "Compact commands / full ribbon. Double-click a tab to toggle."; fold.Width = 30; fold.MinHeight = 28; fold.Padding = new Thickness(0); DockPanel.SetDock(fold, Dock.Right); heading.Children.Add(fold); heading.Children.Add(tabs); root.Children.Add(heading); root.Children.Add(summaryScroll); root.Children.Add(pages); Child = root;
+        fold = Ui.Button("⌃", (_, _) => { userCollapsed = pages.Visibility == Visibility.Visible; ApplyCollapse(); }); fold.Style = (Style)Application.Current.FindResource("RibbonButton"); fold.ToolTip = "Compact commands / full ribbon. Double-click a tab to toggle."; fold.Width = 30; fold.MinHeight = 28; fold.Padding = new Thickness(0); DockPanel.SetDock(fold, Dock.Right); heading.Children.Add(fold); fileButton = Ui.Button("File",(_,_) => OpenFile()); fileButton.Style=(Style)Application.Current.FindResource("RibbonButton"); fileButton.FontWeight=FontWeights.SemiBold; fileButton.Foreground=Ui.Brush("DarkTeal"); fileButton.MinHeight=30; fileButton.Padding=new Thickness(14,3,14,3); fileButton.ToolTip="Save, open, import and export · Alt+F"; DockPanel.SetDock(fileButton,Dock.Left); heading.Children.Add(fileButton); heading.Children.Add(tabs); root.Children.Add(heading); root.Children.Add(summaryScroll); root.Children.Add(pages); Child = root;
         foreach (var name in new[] { "Home", "Insert", "Format", "View" })
         {
             var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(8, 4, 2, 2) }; panels[name] = panel;
@@ -47,6 +50,14 @@ internal sealed class RibbonBar : Border
             buttons[name] = button; tabs.Children.Add(button);
         }
         Show("Home");
+    }
+    internal void CaptureCheckBounds()
+    {
+        foreach(var group in groups.Where(g=>g.View.IsVisible)) foreach(FrameworkElement child in group.Controls.Children)
+        {
+            if(!child.IsVisible)continue; var bounds=child.TransformToAncestor(group.Controls).TransformBounds(new Rect(0,0,child.ActualWidth,child.ActualHeight));
+            if(bounds.Y<-.5 || bounds.Bottom>group.Controls.ActualHeight+.5) throw new InvalidOperationException("Ribbon control is clipped in " + group.Tab);
+        }
     }
     public void SetCompact(bool value) { compact = value; ApplyCollapse(); }
     private void ApplyCollapse()
@@ -121,9 +132,9 @@ internal sealed class RibbonBar : Border
     }
     public WrapPanel Group(string tab, string caption)
     {
-        var content = new DockPanel(); var label = new TextBlock { Text = caption.ToUpperInvariant(), FontSize = 11, Foreground = Ui.Ink, Margin = new Thickness(0, 2, 0, 0), HorizontalAlignment = HorizontalAlignment.Left }; DockPanel.SetDock(label, Dock.Bottom); content.Children.Add(label);
-        var controls = new WrapPanel { Orientation = Orientation.Vertical, Height = 84 }; content.Children.Add(controls);
-        var border = new Border { Child = content, BorderBrush = (Brush)Application.Current.FindResource("LineBrush"), BorderThickness = new Thickness(0, 0, 1, 0), Padding = new Thickness(0, 0, 9, 0), Margin = new Thickness(0, 0, 9, 0) };
+        var content = new DockPanel(); var label = new TextBlock { Text = caption.ToUpperInvariant(), FontSize = 10.5, Foreground = Ui.Brush("SecondaryTextBrush"), Margin = new Thickness(3, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Left }; DockPanel.SetDock(label, Dock.Bottom); content.Children.Add(label);
+        var controls = new WrapPanel { Orientation = Orientation.Vertical, Height = 80 }; content.Children.Add(controls);
+        var border = new Border { Child = content, BorderBrush = (Brush)Application.Current.FindResource("LineBrush"), BorderThickness = new Thickness(0, 0, 1, 0), Padding = new Thickness(0, 0, 12, 0), Margin = new Thickness(0, 0, 12, 0) };
         var state = new GroupState { View = border, Controls = controls, Scope = scope, Tab = tab }; border.Tag = state; groups.Add(state); panels[tab].Children.Add(border); SetScope(activeScope); return controls;
     }
     public static void ShowGroup(Panel panel, bool visible)
@@ -188,16 +199,18 @@ internal sealed class FormattingTools : StackPanel
     public FormattingTools(Func<TextFormat?> selected, Action<TextFormat> apply, FormatPainter painter)
     {
         this.apply = apply; this.selected = selected;
-        var fonts = new WrapPanel(); family = new ComboBox { Width = 190, FontSize = 14, MinHeight = 28, ToolTip = "Font family", ItemsSource = Fonts.SystemFontFamilies.Select(f => f.Source).Where(s => s.IndexOfAny(['/', '\\', ':', '#']) < 0).Order().ToList(), IsTextSearchEnabled = true };
-        size = new ComboBox { Width = 76, FontSize = 14, MinHeight = 28, ToolTip = "Font size (12–48)", ItemsSource = new double[] { 12, 14, 15, 16, 17, 18, 20, 22, 24, 28, 32, 36, 40, 44, 48 }, IsEditable = true, Margin = new Thickness(6, 0, 6, 0) };
+        var fonts = new WrapPanel(); family = new ComboBox { Width = 174, FontSize = 14, MinHeight = 30, Style = (Style)Application.Current.FindResource("RibbonCombo"), ToolTip = "Font family", ItemsSource = Fonts.SystemFontFamilies.Select(f => f.Source).Where(s => s.IndexOfAny(['/', '\\', ':', '#']) < 0).Order().ToList(), IsTextSearchEnabled = true };
+        size = new ComboBox { Width = 68, FontSize = 14, MinHeight = 30, Style = (Style)Application.Current.FindResource("RibbonCombo"), ToolTip = "Font size (12–48)", ItemsSource = new double[] { 12, 14, 15, 16, 17, 18, 20, 22, 24, 28, 32, 36, 40, 44, 48 }, IsEditable = true, Margin = new Thickness(6, 0, 6, 0) };
         fonts.Children.Add(family); fonts.Children.Add(size); Children.Add(fonts);
         var styles = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
         foreach (var box in new[] { bold, italic, underline }) { box.Style = (Style)Application.Current.FindResource("RibbonToggle"); box.ToolTip = box == bold ? "Bold" : box == italic ? "Italic" : "Underline"; box.Margin = new Thickness(0, 0, 5, 0); styles.Children.Add(box); box.Checked += (_, _) => Commit(); box.Unchecked += (_, _) => Commit(); }
-        align = new ComboBox { Width = 105, FontSize = 14, MinHeight = 28, ToolTip = "Text alignment", ItemsSource = new[] { "Left", "Centre", "Right" }, Margin = new Thickness(0, 0, 8, 0) }; styles.Children.Add(align);
+        align = new ComboBox { Width = 96, FontSize = 14, MinHeight = 30, Style = (Style)Application.Current.FindResource("RibbonCombo"), ToolTip = "Text alignment", ItemsSource = new[] { "Left", "Centre", "Right" }, Margin = new Thickness(0, 0, 8, 0) }; styles.Children.Add(align);
         painterButton = RibbonBar.Action(styles, "Format painter", () => { if (painter.Armed) painter.Clear(); else if (selected() is TextFormat value) painter.Copy(value); });
         painterButton.ToolTip = "Copy the selected item's formatting, then click a task or node to apply. Click again to cancel.";
-        painter.Changed += () => { RibbonBar.Label(painterButton,painter.Armed ? "Paint next item · cancel" : "Format painter"); painterButton.BorderBrush = painter.Armed ? Ui.Accent : (Brush)Application.Current.FindResource("LineBrush"); };
-        RibbonBar.Action(styles, "Reset", () => { if (selected() is not null) apply(new()); }); Children.Add(styles);
+        painter.Changed += () => { RibbonBar.Label(painterButton,painter.Armed ? "Paint next item · cancel" : "Format painter"); if(painterButton.Content is StackPanel iconRow && iconRow.Children.Count>1) iconRow.Children.RemoveAt(iconRow.Children.Count-1); painterButton.BorderBrush = painter.Armed ? Ui.Accent : (Brush)Application.Current.FindResource("LineBrush"); };
+        var reset = RibbonBar.Action(styles, "Reset", () => { if (selected() is not null) apply(new()); });
+        foreach(var button in new[] { painterButton,reset }) { button.Width=30; button.Height=30; button.Padding=new Thickness(4); if(button.Content is StackPanel row) row.Children.RemoveAt(row.Children.Count-1); }
+        Width=280; Children.Add(styles);
         family.SelectionChanged += (_, _) => Commit(); size.SelectionChanged += (_, _) => Commit(); align.SelectionChanged += (_, _) => Commit();
         size.LostKeyboardFocus += (_, _) => Commit(); size.PreviewKeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) { Commit(); e.Handled = true; } };
         Refresh();

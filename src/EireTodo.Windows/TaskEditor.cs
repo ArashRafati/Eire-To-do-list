@@ -85,9 +85,10 @@ internal static class Ui
     internal static System.Windows.Media.Brush Ink => Brush("TextBrush");
     internal static System.Windows.Media.Brush Error => Brush("ErrorBrush");
     internal static void ApplyWindowStyle(Window window) => window.Style = (Style)Application.Current.FindResource("AppWindow");
-    internal static DataTemplate DisplayTemplate(string property)
+    internal static DataTemplate DisplayTemplate(string property, double fontSize = 17)
     {
         var text = new FrameworkElementFactory(typeof(TextBlock));
+        text.SetValue(TextBlock.FontSizeProperty,fontSize);
         text.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding(property));
         text.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
         return new DataTemplate { VisualTree = text };

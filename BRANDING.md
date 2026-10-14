@@ -13,7 +13,7 @@ Run `python3 scripts/package-brand.py assets/teal-folded-hexagon.png` before a
 source rebuild to regenerate icon frames. These assets are already embedded in
 the delivered executable; no external logo file is needed when running it.
 Default window/header artwork loads through absolute WPF pack resource streams,
-so launch does not depend on the current folder. Home → Brand → Choose logo PNG
+so launch does not depend on the current folder. File → Application logo
 remains available for a user-selected override stored with their data.
 
 SUMAPP is the application name, executable/product name, left header brand and
@@ -76,3 +76,18 @@ Version 3.6 expands the galleries to 21 colour packs, 15 node designs and ten
 hierarchy layouts without changing the application brand palette or logo. New
 shape strokes and layout directions are shared by gallery previews, WPF and PDF.
 The close dialog uses the original SUMAPP PNG and existing semantic theme.
+
+## 3.7 organisation branding and extended packages
+
+The application still uses the supplied GitHub SUMAPP symbol unchanged. Per-graph
+organisation branding is separate: upload the original PNG under Format →
+Organisation logo. Original bytes remain in data/backups, proportional workspace
+and export widths are independently configurable, and PDF/print reserve a clear
+top-left header. The viewport backing fades when diagram content overlaps.
+
+There are now 34 colour packages, 15 node designs and 10 hierarchy layouts. Six
+three-colour packages deliberately assign coordinated colours across existing
+graph nodes; new graph nodes retain one default colour. User-selected swatches or
+hex colours apply to selected nodes, with contrast-aware text. Package reset
+keeps manual overrides. Priority yellow/black and overdue red remain semantic
+states. Application chrome stays neutral/teal, independent of diagram packages.

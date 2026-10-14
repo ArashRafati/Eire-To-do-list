@@ -78,7 +78,7 @@ internal static class BrandChecks
         });
         check("New diagram packs and designs preserve old values, hierarchy, graph positions and backup data", () =>
         {
-            Assert(Enum.GetValues<DiagramPalette>().Length == 21 && Enum.GetValues<NodeDesign>().Length == 15);
+            Assert(Enum.GetValues<DiagramPalette>().Length == 34 && Enum.GetValues<NodeDesign>().Length == 15);
             Assert((int)DiagramPalette.Monochrome == 5 && (int)NodeDesign.Minimal == 3);
             var store = new DataStore(Path.Combine(root, "gallery-persistence")); var service = new TodoService(store, store.Load());
             foreach (var kind in Enum.GetValues<DiagramKind>()) foreach (var palette in Enum.GetValues<DiagramPalette>())
@@ -147,6 +147,20 @@ internal static class BrandChecks
         File.WriteAllBytes(Path.Combine(directory, "SUMAPP-mind-map.pdf"), DiagramPdf.Write(drawing));
         var preview = new { Scene = ChartGeometry.Arrange(chart), Chart = chart, Marks = drawing.Pages[0].Layers[1].Marks.Select(m => new { Kind = m.GetType().Name, Data = (object)m }), Theme = new { BrandTheme.Primary, BrandTheme.DarkTeal, BrandTheme.Accent, BrandTheme.Ink, BrandTheme.Surface, BrandTheme.Yellow, BrandTheme.Black, BrandTheme.SoftTeal } };
         File.WriteAllText(Path.Combine(directory, "SUMAPP-design.json"), JsonSerializer.Serialize(preview, DataDocument.JsonOptions));
+        var graph = NetworkCharts.Create("Engineering review · connections");
+        graph.Nodes[0].Title = "Client document";
+        var review = NetworkCharts.Add(graph,graph.Nodes[0].Id,true,"Engineering review");
+        NetworkCharts.Add(graph,review.Id,true,"Mechanical checks");
+        NetworkCharts.Add(graph,review.Id,true,"Drawing register");
+        var peer = GraphPeers.Add(graph,review.Id); peer.Title="Commercial review";
+        GraphConnections.ConnectMany(graph,peer.Id,new[]{review.Id},LeadDirection.Outgoing,LeadRouting.Curve,"Coordinate");
+        graph.OrganisationLogoPng = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory,"TestLogo.png"));
+        graph.OrganisationLogoWidth = 100; graph.ExportLogoWidth = 90;
+        NodeColours.ApplyPackage(graph,DiagramPalette.MixTealOrange);
+        GraphOrganisation.Organise(graph,preferredWidth:1000);
+        var graphDrawing = DiagramPdf.Compose(graph,new(IncludeDetails:false));
+        File.WriteAllText(Path.Combine(directory,"SUMAPP-graph-design.json"),JsonSerializer.Serialize(new { Scene=OpenWorkspace.CompactGraph(graph,true), Chart=graph, Marks=graphDrawing.Pages[0].Layers[1].Marks.Select(m=>new { Kind=m.GetType().Name, Data=(object)m }) },DataDocument.JsonOptions));
+        foreach(var orientation in Enum.GetValues<PdfOrientation>()) File.WriteAllBytes(Path.Combine(directory,"organisation-"+orientation+".pdf"),DiagramPdf.Write(DiagramPdf.Compose(graph,new(Orientation:orientation))));
         object Example(Diagram sample)
         {
             var drawing = DiagramPdf.Compose(sample, new(IncludeDetails: false));

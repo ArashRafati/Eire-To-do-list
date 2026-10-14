@@ -95,6 +95,8 @@ internal sealed class PdfSheetVisual : FrameworkElement
             context.PushTransform(new TranslateTransform(layer.X,layer.Y)); context.PushTransform(new ScaleTransform(layer.Scale,layer.Scale));
             foreach(var mark in layer.Marks)switch(mark)
             {
+                case PdfImage image:
+                    context.DrawImage(OrganisationLogoEditor.Decode(image.Png),new Rect(image.X,image.Y,image.Width,image.Height)); break;
                 case PdfText text:
                     var typeface=new Typeface(exportFont,text.Italic?FontStyles.Italic:FontStyles.Normal,text.Bold?FontWeights.Bold:FontWeights.Normal,FontStretches.Normal);
                     var formatted=new FormattedText(text.Text,CultureInfo.InvariantCulture,FlowDirection.LeftToRight,typeface,text.Size,Colour(text.Colour),VisualTreeHelper.GetDpi(this).PixelsPerDip);
