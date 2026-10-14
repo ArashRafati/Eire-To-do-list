@@ -24,7 +24,9 @@ if [ ! -x "$DOTNET_ROOT/dotnet" ] || [ "$("$DOTNET_ROOT/dotnet" --version)" != "
 fi
 export PATH="$DOTNET_ROOT:$PATH"
 mkdir -p "$NUGET_PACKAGES" "$DOTNET_CLI_HOME"
+python3 scripts/check-xaml-resources.py
 dotnet restore tests/EireTodo.Checks/EireTodo.Checks.csproj --locked-mode
 dotnet run --project tests/EireTodo.Checks/EireTodo.Checks.csproj -c Release --no-restore -- --exports-dir artifacts/export-checks
 dotnet restore src/EireTodo.Windows/EireTodo.Windows.csproj --locked-mode
 dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-restore -o artifacts/windows-x64
+dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-restore -p:PublishSingleFile=false -p:IncludeNativeLibrariesForSelfExtract=false -o artifacts/windows-folder

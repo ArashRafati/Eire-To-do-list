@@ -1,9 +1,35 @@
 # SUMAPP
 
 A portable, offline Windows desktop to-do, mind-map/WBS and graph widget built with WPF and .NET 10.
-The Windows x64 release bundles its runtime in `SUMAPP.exe`; users unzip and
+The Windows x64 release bundles its runtime beside the versioned executable; users unzip and
 double-click it under a standard account. It uses no installer, services,
 accounts, elevated privileges, or network requests.
+
+## Startup repair and portable folder — version 3.7.1
+
+The 3.7 resources registered implicit ListBox and ListBoxItem styles twice. These
+resources load before the old startup handler; a failure there could exit without
+showing a message. This release removes those duplicate registrations, adds a
+resource-key regression check, and catches resource-initialisation failures from
+the application entry point. Errors are displayed and written to
+`%LOCALAPPDATA%\EireTodo\startup-error.txt`. Existing tasks/diagrams stay preserved.
+
+The primary release is now **SUMAPP-3.7.1-Windows-x64.zip**. Extract the complete
+folder and double-click **SUMAPP-3.7.1.exe**. Keep its DLLs and runtime folders
+beside it. The launcher is about 228 KiB; the runtime is still included, with no
+installation/elevation required. This avoids single-file native-library
+extraction at launch. The ZIP is not dramatically smaller: .NET/WPF runtime
+files account for most of it. Launch speed/native Windows operation remain to be
+verified on Windows. **SUMAPP-3.7.1-Source.zip** contains source and exact build steps.
+Earlier sections referring to SUMAPP.exe apply to this versioned filename.
+
+`bash scripts/setup-cloud.sh` checks resource keys, runs Core checks and publishes
+both the single-file diagnostic build and the portable folder. Packaging uses
+`artifacts/windows-folder`; `python3 scripts/inspect-build.py
+artifacts/windows-folder/SUMAPP.exe` verifies its manifest, icons and runtime.
+`python3 scripts/package-release.py` derives versioned ZIP/executable names from
+the project version. The published assembly remains SUMAPP so resource addresses
+and runtime dependencies stay valid despite the versioned launcher filename.
 
 ## Graph workflow and organised tools — version 3.7
 

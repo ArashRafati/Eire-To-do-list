@@ -32,22 +32,35 @@ function Run-Dotnet {
     & $script:dotnetExe @args
     if ($LASTEXITCODE -ne 0) { throw "dotnet failed with exit code $LASTEXITCODE" }
 }
+# WPF resources load before OnStartup; detect duplicate implicit/explicit keys.
+$markup = [xml](Get-Content src/EireTodo.Windows/App.xaml -Raw)
+$resourceKeys = New-Object 'System.Collections.Generic.HashSet[string]'
+foreach ($resource in $markup.Application.'Application.Resources'.ChildNodes) {
+    if ($resource.NodeType -ne [System.Xml.XmlNodeType]::Element) { continue }
+    $key = $resource.GetAttribute('Key', 'http://schemas.microsoft.com/winfx/2006/xaml')
+    if (!$key -and $resource.LocalName -eq 'Style') { $key = 'Type:' + $resource.GetAttribute('TargetType') }
+    if ($key -and !$resourceKeys.Add($key)) { throw "Duplicate application resource: $key" }
+}
 Run-Dotnet restore tests/EireTodo.Checks/EireTodo.Checks.csproj --locked-mode
 Run-Dotnet run --project tests/EireTodo.Checks/EireTodo.Checks.csproj -c Release --no-restore
 Run-Dotnet restore src/EireTodo.Windows/EireTodo.Windows.csproj --locked-mode
-Run-Dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-restore -o artifacts/windows-x64
-# Zip only the self-contained executable and user documentation.
+Run-Dotnet publish src/EireTodo.Windows/EireTodo.Windows.csproj -c Release --no-restore -p:PublishSingleFile=false -p:IncludeNativeLibrariesForSelfExtract=false -o artifacts/windows-folder
+$releaseVersion = ([xml](Get-Content src/EireTodo.Windows/EireTodo.Windows.csproj)).Project.PropertyGroup.Version
+$appName = 'SUMAPP-' + $releaseVersion
+$releaseZip = Join-Path artifacts ($appName + '-Windows-x64.zip')
+# Zip the complete self-contained folder and user documentation; no runtime installation needed.
 $staging = Join-Path 'artifacts' ('portable-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
 try {
-    Copy-Item artifacts/windows-x64/SUMAPP.exe $staging
+    Copy-Item 'artifacts/windows-folder/*' $staging -Recurse
+    Rename-Item (Join-Path $staging 'SUMAPP.exe') ($appName + '.exe')
     Copy-Item QUICKSTART.txt $staging
     Copy-Item BRANDING.md $staging
     Copy-Item WINDOWS-VERIFICATION.md $staging
     Copy-Item PLANNING-EXPORTS.md $staging
     Copy-Item THIRD-PARTY-NOTICES.txt $staging
     if (Test-Path previews) { Copy-Item previews (Join-Path $staging 'previews') -Recurse }
-    Compress-Archive -Path "$staging/*" -DestinationPath artifacts/SUMAPP-Windows-x64.zip -Force
+    Compress-Archive -Path "$staging/*" -DestinationPath $releaseZip -Force
 } finally { Remove-Item -LiteralPath $staging -Recurse -Force }
-Get-FileHash artifacts/SUMAPP-Windows-x64.zip -Algorithm SHA256
-Write-Host 'Portable app: artifacts/SUMAPP-Windows-x64.zip'
+Get-FileHash $releaseZip -Algorithm SHA256
+Write-Host "Portable app: $releaseZip"

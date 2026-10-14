@@ -1,5 +1,13 @@
 # Changes
 
+## 3.7.1 — silent startup repair and versioned portable packaging
+
+- Remove duplicate ListBox/ListBoxItem resource registrations that could fail before the startup handler.
+- Add duplicate-resource regression validation and early resource-initialisation error reporting to the user-profile folder.
+- Package the complete self-contained folder to avoid single-file extraction at launch; keep installed-runtime/admin requirements absent.
+- Include the version in executable and Windows/source ZIP filenames while preserving SUMAPP assembly/resource identity.
+- Preserve existing data and functionality. Native Windows execution remains unavailable in this Linux environment.
+
 ## 3.7.0 — graph organisation, connections, branding and colour packages
 
 - Group File actions at the top left, streamline Home/context menus, and correct compact Format controls and wrapping gallery labels.

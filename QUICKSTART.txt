@@ -1,12 +1,13 @@
-SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.7.0 — PORTABLE WINDOWS WIDGET
+SUMAPP TO-DO / MIND MAP + WBS / GRAPH 3.7.1 — PORTABLE WINDOWS WIDGET
 
-1. Unzip SUMAPP-Windows-x64.zip to a folder you can write to, such as
+1. Unzip SUMAPP-3.7.1-Windows-x64.zip to a folder you can write to, such as
    your Desktop or Documents. Do not run it from inside the zip.
-2. Double-click SUMAPP.exe. No installer, runtime installation, account,
+   Extract ALL files. Keep the DLLs/runtime folders beside the executable.
+2. Double-click SUMAPP-3.7.1.exe. No installer, runtime installation, account,
    network connection or administrator privileges are required.
 
 UPDATING: Back up your data first. Close the running app, unzip the new release, then run the
-new SUMAPP.exe. Your tasks, projects and preferences are read from the same
+new SUMAPP-3.7.1.exe. Your tasks, projects and preferences are read from the same
 profile data folder (%LOCALAPPDATA%\EireTodo). The update needs no manual data
 migration. SUMAPP uses readable neutral surfaces, teal actions and its corrected
 logo/icon. The Eire header uses the supplied emblem beside the Eire workspace label.
@@ -158,7 +159,8 @@ All application data and window settings are stored at:
 Paste %LOCALAPPDATA%\EireTodo into File Explorer, or click Data folder.
 No data is stored alongside the executable; moving/updating the app keeps it.
 The directory is local to the current Windows user. Files are not encrypted.
-The bundled runtime may unpack native files under the user's TEMP\.net folder.
+The folder-based release carries its runtime beside the executable; it does not
+need single-file extraction into TEMP\.net at launch.
 This is a cache, not an installed runtime, and contains no task data.
 
 Every task/project/diagram change uses an atomic file replace. Inline titles
@@ -190,7 +192,7 @@ preserved. Priority is available in task/node details. Node sizing now follows
 actual text measurements and reflows after title editing/format changes.
 
 WINDOWS SCREENSHOTS: From the app folder in a normal PowerShell window, run:
-.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
+.\SUMAPP-3.7.1.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"
 This uses isolated temporary sample data and leaves your actual profile intact.
 It saves real WPF to-do/mind-map/gallery PNGs and visual-checks.txt. This command cannot
 be tested in the Linux cloud environment. See BRANDING.md for current limitations.
@@ -213,7 +215,7 @@ logo selected later changes window icons; changing the Explorer icon needs a reb
 
 3.5.1 STARTUP FIX
 Bundled artwork loads from executable resources rather than Windows file paths.
-Close the failed 3.5 launch, unzip this updated build and run its SUMAPP.exe.
+Close the failed 3.5 launch, unzip this updated build and run its SUMAPP-3.7.1.exe.
 Keep %LOCALAPPDATA%\EireTodo unchanged; your tasks and diagrams use that folder.
 
 VERSION 3.6
@@ -256,3 +258,10 @@ This is separate from File > Application logo and SUMAPP's embedded app icon.
 
 The Linux build passes 80 automated groups and binary/package checks. Windows
 UI behaviour needs WINDOWS-VERIFICATION.md; Linux previews are labelled designs.
+
+VERSION 3.7.1 STARTUP REPAIR
+Duplicate application styles have been removed. Resource-loading errors now
+show a message and write %LOCALAPPDATA%\EireTodo\startup-error.txt.
+Use the new versioned executable inside the newly extracted complete folder.
+Do not delete your existing profile. The app launcher is smaller, but the runtime
+files are still included so no separate installation is needed.

@@ -28,7 +28,7 @@ Back up existing app data first if you have used it before.
    Cancel leaves data intact. Blank/duplicate destinations and save failures
    must not remove projects or reassign tasks partially.
 0. **Native sample screenshots.** From the extracted app folder in PowerShell:
-   `.\SUMAPP.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"`.
+   `.\SUMAPP-3.7.1.exe --capture-previews "$env:USERPROFILE\Pictures\SUMAPP-previews"`.
    Inspect all four PNGs and `visual-checks.txt`. The command uses isolated sample data
    and checks header/View visibility at 520×400, 940×620 and 1440×900, and long
    title sizing across three fonts at 12–48 px. Actual user data is not touched.
@@ -337,3 +337,14 @@ Earlier version-specific Enter/Files instructions are superseded below.
 - Run the existing --capture-previews command: it now checks real Format control
   bounds, company-logo visibility and panning at three window sizes. Inspect its
   captured PNGs and report Windows/DPI/standard-account results.
+
+## 3.7.1 startup acceptance
+
+Extract every file from SUMAPP-3.7.1-Windows-x64.zip into a new writable folder.
+Double-click SUMAPP-3.7.1.exe as a standard user, with the existing profile present.
+Record launch time and verify original tasks/diagrams/settings. Repeat from a
+different current working folder. Keep all adjacent DLLs/runtime folders intact.
+If a startup error appears, read %LOCALAPPDATA%\EireTodo\startup-error.txt.
+Do not delete data or bypass company security policy. Test resource-error
+reporting with a source-level intentionally duplicated resource in a separate
+disposable developer build; the repaired release should not contain duplicates.

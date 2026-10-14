@@ -14,8 +14,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             args.Handled = true;
-            MessageBox.Show("An unexpected error occurred. The app will close; changes already saved remain on disk.\n\n" + args.Exception.Message,
-                "SUMAPP error", MessageBoxButton.OK, MessageBoxImage.Error);
+            StartupDiagnostics.Report(args.Exception,"An unexpected error occurred. The app will close; changes already saved remain on disk.");
             Shutdown(1);
         };
         CultureInfo.DefaultThreadCurrentCulture = AustralianDates.Culture;
@@ -53,7 +52,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"SUMAPP could not start. No new tasks were accepted.\n\n{ex.Message}\n\nData folder: {directory}", "Startup error", MessageBoxButton.OK, MessageBoxImage.Error);
+            StartupDiagnostics.Report(ex,"SUMAPP could not start. No new tasks were accepted.");
             Shutdown(1);
         }
     }

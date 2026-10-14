@@ -1,6 +1,6 @@
 # Build and verification evidence
 
-Current delivery: version **3.7.0**, including the combined mind-map/WBS module, ten hierarchy layouts,
+Current delivery: version **3.7.1**, including the combined mind-map/WBS module, ten hierarchy layouts,
 CSV/MSPDI/P6 PMXML/PDF exports, inline titles, a grouped ribbon, branch drag/drop,
 text formatting, overdue history, a bottom-right clock and the Graph module, the custom Windows app icon,
 larger typography and high-contrast window/control styles.
@@ -173,3 +173,19 @@ Independent MPXJ/CSV/XML/Poppler checks also pass for current fixtures. PyMuPDF
 decodes the organisation image on every landscape/portrait PDF page and verifies
 90 pt proportional sizing, top-left coordinates and no text overlap. These
 checks concern exported files, not WPF rendering or printer output.
+
+## 3.7.1 startup and packaging evidence
+
+Source inspection found duplicate implicit ListBox and ListBoxItem resources in
+3.7. The resource uniqueness check now validates all 55 application/window keys
+and rejects a fixture with the same duplicate style. The duplicates are removed;
+the new entry point catches errors from App.InitializeComponent before OnStartup.
+This diagnoses a startup defect, but does not establish the precise failure on
+the user's Windows machine without its error output.
+
+The folder-based Windows publish succeeds, and binary inspection verifies the
+standard-user manifest, original icons/resources and included .NET/WPF runtime.
+The 228 KiB launcher uses adjacent DLLs; no single-file extraction is required.
+The complete folder is around 157 MB uncompressed. Package checks verify every
+application/runtime file and the versioned executable against the published files.
+Native Windows startup, elapsed launch time and taskbar interaction remain unrun.

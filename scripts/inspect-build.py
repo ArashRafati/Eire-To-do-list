@@ -87,41 +87,54 @@ assert next(n for n in xml.iter() if n.tag.endswith('dpiAwareness')).text == 'Pe
 
 signature = bytes.fromhex('8b1202b96a612038727b930214d7a03213f5b9e6efae3318ee3b2dce24b36aae')
 signature_position = b.find(signature)
-assert signature_position > 8, 'Missing .NET single-file bundle marker'
-p = u64(signature_position - 8)
-major, minor, count = struct.unpack_from('<III', b, p)
-p += 12
-assert major == 6, f'Unexpected bundle format {major}.{minor}'
+single_file = signature_position > 8 and u64(signature_position - 8) != 0
+if single_file:
+    p = u64(signature_position - 8)
+    major, minor, count = struct.unpack_from('<III', b, p)
+    p += 12
+    assert major == 6, f'Unexpected bundle format {major}.{minor}'
 
-def read_string():
-    global p
-    size = 0
-    for shift in range(0, 35, 7):
-        c = b[p]; p += 1; size |= (c & 0x7f) << shift
-        if c < 128: break
-    else: raise AssertionError('Invalid string length')
-    text = b[p:p+size].decode('utf-8'); p += size
-    return text
+    def read_string():
+        global p
+        size = 0
+        for shift in range(0, 35, 7):
+            c = b[p]; p += 1; size |= (c & 0x7f) << shift
+            if c < 128: break
+        else: raise AssertionError('Invalid string length')
+        text = b[p:p+size].decode('utf-8'); p += size
+        return text
 
-bundle_id = read_string()
-p += 40  # deps/config locations + header flags
-files = {}
-for i in range(count):
-    offset, size, compressed_size = struct.unpack_from('<QQQ', b, p)
-    p += 24
-    kind = b[p]; p += 1
-    name = read_string()
-    assert offset + (compressed_size or size) <= len(b), 'Invalid bundle entry'
-    files[name] = (offset, size, compressed_size, kind)
-for name in ['SUMAPP.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
-             'PresentationFramework.dll', 'PresentationCore.dll', 'WindowsBase.dll',
-             'PresentationNative_cor3.dll', 'PdfSharp.dll']:
-    assert name in files, 'Missing bundled runtime/application file: ' + name
+    bundle_id = read_string()
+    p += 40  # deps/config locations + header flags
+    files = {}
+    for i in range(count):
+        offset, size, compressed_size = struct.unpack_from('<QQQ', b, p)
+        p += 24
+        kind = b[p]; p += 1
+        name = read_string()
+        assert offset + (compressed_size or size) <= len(b), 'Invalid bundle entry'
+        files[name] = (offset, size, compressed_size, kind)
+    for name in ['SUMAPP.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
+                 'PresentationFramework.dll', 'PresentationCore.dll', 'WindowsBase.dll',
+                 'PresentationNative_cor3.dll', 'PdfSharp.dll']:
+        assert name in files, 'Missing bundled runtime/application file: ' + name
 
-def content(name):
-    offset, size, compressed, kind = files[name]
-    raw = b[offset:offset+(compressed or size)]
-    return zlib.decompress(raw, -15) if compressed else raw
+    def content(name):
+        offset, size, compressed, kind = files[name]
+        raw = b[offset:offset+(compressed or size)]
+        return zlib.decompress(raw, -15) if compressed else raw
+else:
+    folder = path.parent
+    assert b'SUMAPP.dll' in b, 'Launcher no longer points to the stable managed assembly'
+    assert (folder / 'SUMAPP.dll').is_file(), 'Not a complete folder-based portable app'
+    files = {str(p.relative_to(folder)): p for p in folder.rglob('*') if p.is_file()}
+    count = len(files)
+    for name in ['SUMAPP.dll', 'EireTodo.Core.dll', 'System.Private.CoreLib.dll',
+                 'PresentationFramework.dll', 'PresentationCore.dll', 'WindowsBase.dll',
+                 'PresentationNative_cor3.dll', 'PdfSharp.dll', 'coreclr.dll', 'clrjit.dll',
+                 'hostfxr.dll', 'hostpolicy.dll']:
+        assert name in files, 'Missing portable runtime/application file: ' + name
+    def content(name): return files[name].read_bytes()
 
 managed_core = content('EireTodo.Core.dll')
 for font in (Path(__file__).resolve().parents[1] / 'src/EireTodo.Core/Assets').glob('*.ttf'):
@@ -158,15 +171,16 @@ assert 'frameworks' not in runtime and 'framework' not in runtime, 'Requires an 
 frameworks = {f['name']: f['version'] for f in runtime['includedFrameworks']}
 assert 'Microsoft.NETCore.App' in frameworks and 'Microsoft.WindowsDesktop.App' in frameworks
 # .NET 10's single-file host statically includes the CLR and JIT. Verify exports.
-export_table = file_offset(u32(optional + 112))
-export_count = u32(export_table + 24)
-export_names = file_offset(u32(export_table + 32))
-exports = set()
-for i in range(export_count):
-    offset = file_offset(u32(export_names + 4 * i))
-    exports.add(b[offset:b.index(0, offset)].decode('ascii'))
-assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
+if single_file:
+    export_table = file_offset(u32(optional + 112))
+    export_count = u32(export_table + 24)
+    export_names = file_offset(u32(export_table + 32))
+    exports = set()
+    for i in range(export_count):
+        offset = file_offset(u32(export_names + 4 * i))
+        exports.add(b[offset:b.index(0, offset)].decode('ascii'))
+    assert {'CLRJitAttachState', 'DotNetRuntimeInfo', 'g_CLREngineMetrics'} <= exports, 'Missing embedded CLR/JIT host'
 print(json.dumps({'executable': str(path), 'platform': 'Windows x64 GUI',
     'execution_level': execution.attrib['level'], 'ui_access': execution.attrib['uiAccess'],
-    'dpi_awareness': 'PerMonitorV2', 'compiled_absolute_pack_resource_loader': True, 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'original_sumapp_png_sha256': original_logo_sha256, 'bundle_files': count,
+    'dpi_awareness': 'PerMonitorV2', 'compiled_absolute_pack_resource_loader': True, 'embedded_icon_sizes': embedded_icon_sizes, 'header_logos': ['SUMAPP', 'Eire'], 'original_sumapp_png_sha256': original_logo_sha256, 'single_file': single_file, 'portable_files': count,
     'bundled_frameworks': frameworks, 'offline_pdf_library_and_font': True, 'requires_installed_dotnet': False}, indent=2))
